@@ -56,7 +56,6 @@ conanbuildinfo.*
 conan.lock
 graph_info.json
 *.pyc
-__pycache__/
 test_package/build/
 
 # Conan 2.x specific
@@ -64,8 +63,6 @@ CMakePresets.json
 conan_toolchain.cmake
 conan_provider.cmake
 cmakedeps_macros.cmake
-*.cmake
-!CMakeLists.txt
 
 # IDE specific files
 .clang-format
@@ -109,7 +106,6 @@ CMakeLists.txt.user.*
 ._*
 
 ## Linux
-*~
 .directory
 
 ## Windows
@@ -152,7 +148,6 @@ Doxyfile.bak
 # Core dumps
 core
 core.*
-vgcore.*
 
 # Valgrind
 *.memcheck
@@ -176,7 +171,6 @@ ENV/
 # Backup files
 *.bak
 *.backup
-*~
 
 # Editor swap files
 *.kate-swp

@@ -12,13 +12,17 @@ ColumnLimit: 120
 
 # Namespaces
 CompactNamespaces: true
+FixNamespaceComments: true
+
+# Commnets
+ReflowComments: true
 
 # Classes / access
 AccessModifierOffset: -4
 
 # Braces / constructors / templates
 BreakBeforeBraces: Attach
-BreakConstructorInitializers: AfterColon
+BreakConstructorInitializers: BeforeComma
 ConstructorInitializerIndentWidth: 4
 ConstructorInitializerAllOnOneLineOrOnePerLine: false
 AlwaysBreakTemplateDeclarations: true
@@ -29,6 +33,7 @@ AllowShortLambdasOnASingleLine: None
 AllowShortBlocksOnASingleLine: Never
 AllowShortIfStatementsOnASingleLine: Never
 AllowShortLoopsOnASingleLine: false
+AllowShortEnumsOnASingleLine: false
 
 # Arguments / parameters (cleaner diffs)
 BinPackArguments: false
@@ -45,6 +50,7 @@ PointerAlignment: Left
 
 # Empty lines
 MaxEmptyLinesToKeep: 1
+KeepEmptyLinesAtTheStartOfBlocks: true
 
 # Includes
 SortIncludes: true
