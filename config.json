@@ -1,0 +1,32 @@
+{
+  "LOG_DIR_PATH": "./logs",
+  "server": {
+    "host": "127.0.0.1",
+    "port": 8080,
+    "max_players": 100,
+    "tick_rate_ms": 100,
+    "client_disconnect_timeout_sec": 10
+  },
+  "database": {
+    "connection_string": "",
+    "pool_size": 10
+  },
+  "gameplay": {
+    "lobby_max_players": 4,
+    "map_name": "test",
+    "match_duration_sec": 300,
+    "player_default_hp": 100,
+    "monster_default_hp": 50,
+    "monsters_per_player": 3,
+    "default_radius_attack": 2,
+    "default_radius_view": 4,
+    "default_map_blc_x": 0,
+    "default_map_blc_y": 0,
+    "default_map_trc_x": 40,
+    "default_map_trc_y": 20
+  },
+  "logger": {
+    "level": "info",
+    "output_dir": "./logs"
+  }
+}

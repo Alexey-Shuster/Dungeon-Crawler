@@ -1,0 +1,187 @@
+# Compiled Object files
+*.o
+*.obj
+*.lo
+*.slo
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.so.*
+*.dylib
+*.dll
+
+# Compiled Static libraries
+*.a
+*.lib
+*.lai
+*.la
+
+# Executables
+*.exe
+*.out
+*.app
+#server
+#client
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps/
+CMakeUserPresets.json
+*.cmake
+!CMakeLists.txt
+
+# Build directories
+build/
+Build/
+out/
+debug/
+release/
+Debug/
+Release/
+
+# Conan
+conanfile.txt.user
+conaninfo.txt
+conanbuildinfo.*
+conan.lock
+graph_info.json
+*.pyc
+__pycache__/
+test_package/build/
+
+# Conan 2.x specific
+CMakePresets.json
+conan_toolchain.cmake
+conan_provider.cmake
+cmakedeps_macros.cmake
+*.cmake
+!CMakeLists.txt
+
+# IDE specific files
+.clang-format
+
+## Visual Studio Code
+.vscode/
+*.code-workspace
+.history/
+
+## CLion / IntelliJ IDEA
+.idea/
+cmake-build-*/
+*.iml
+
+## Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.vcxproj
+*.vcxproj.filters
+*.sln
+
+## Qt Creator
+*.pro.user
+*.pro.user.*
+CMakeLists.txt.user
+CMakeLists.txt.user.*
+
+## Xcode
+*.xcodeproj/
+*.xcworkspace/
+
+# OS specific files
+
+## macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+## Linux
+*~
+.directory
+
+## Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Logs and databases
+*.log
+*.sql
+*.sqlite
+*.db
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.*.swp
+.*.swo
+
+# Package managers
+node_modules/
+.npm/
+
+# Testing
+Testing/
+*.gcda
+*.gcno
+*.gcov
+
+# Documentation generated
+docs/_build/
+docs/html/
+docs/latex/
+Doxyfile.bak
+
+# Core dumps
+core
+core.*
+vgcore.*
+
+# Valgrind
+*.memcheck
+vgcore.*
+
+# GDB
+.gdb_history
+
+# Python (for test scripts)
+*.py[cod]
+*$py.class
+*.pyo
+__pycache__/
+.pytest_cache/
+.Python
+.venv/
+venv/
+env/
+ENV/
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Editor swap files
+*.kate-swp
+.*.sw[a-z]
+
+# Specific client-server project structure
+network/server/build/
+network/client/build/

@@ -1,0 +1,57 @@
+# Base
+Language: Cpp
+BasedOnStyle: Google
+Standard: c++20
+
+# Indentation / columns
+IndentWidth: 4
+ContinuationIndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 120
+
+# Namespaces
+CompactNamespaces: true
+
+# Classes / access
+AccessModifierOffset: -4
+
+# Braces / constructors / templates
+BreakBeforeBraces: Attach
+BreakConstructorInitializers: AfterColon
+ConstructorInitializerIndentWidth: 4
+ConstructorInitializerAllOnOneLineOrOnePerLine: false
+AlwaysBreakTemplateDeclarations: true
+
+# Short constructs
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortLambdasOnASingleLine: None
+AllowShortBlocksOnASingleLine: Never
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+
+# Arguments / parameters (cleaner diffs)
+BinPackArguments: false
+BinPackParameters: false
+AlignAfterOpenBracket: Align
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+
+# Spaces / pointers / control statements
+SpacesBeforeTrailingComments: 2
+SpaceBeforeParens: ControlStatements
+DerivePointerAlignment: false
+PointerAlignment: Left
+
+# Empty lines
+MaxEmptyLinesToKeep: 1
+
+# Includes
+SortIncludes: true
+IncludeBlocks: Regroup
+
+IncludeCategories:
+  - Regex: '^<.*>$'
+    Priority: 1
+  - Regex: '^".*"$'
+    Priority: 2
