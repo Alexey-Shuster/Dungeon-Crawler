@@ -2,6 +2,7 @@
 
 #include <boost/date_time.hpp>
 #include <boost/json.hpp>
+#include <boost/lexical_cast.hpp>
 #include <boost/log/core.hpp>
 #include <boost/log/expressions.hpp>
 #include <boost/log/sinks/bounded_fifo_queue.hpp>
@@ -17,6 +18,7 @@
 #include <exception>
 #include <filesystem>
 #include <fstream>
+#include <sstream>
 #include <string_view>
 
 #include "config.h"
@@ -37,6 +39,9 @@ BOOST_LOG_ATTRIBUTE_KEYWORD(timestamp, "TimeStamp", boost::posix_time::ptime)
 BOOST_LOG_ATTRIBUTE_KEYWORD(source_file, "File", std::string)
 BOOST_LOG_ATTRIBUTE_KEYWORD(source_function, "Function", std::string)
 BOOST_LOG_ATTRIBUTE_KEYWORD(source_line, "Line", uint32_t)
+BOOST_LOG_ATTRIBUTE_KEYWORD(pid, "PID", int)
+BOOST_LOG_ATTRIBUTE_KEYWORD(tid, "TID", boost::log::attributes::current_thread_id::value_type)
+BOOST_LOG_ATTRIBUTE_KEYWORD(run_uuid, "RunUUID", std::string)
 
 std::string Logger::GetProcessIdentifier() {
     static std::string process_identifier = []() {
@@ -76,41 +81,82 @@ void LogFormatter(const log::record_view& rec, log::formatting_ostream& strm) {
     auto file = *rec[source_file];
     auto function = *rec[source_function];
     auto line = *rec[source_line];
+    auto process_id = *rec[pid];
+    auto thread_id_str = boost::lexical_cast<std::string>(*rec[tid]);
+    auto run_uuid_val = *rec[run_uuid];
     auto message = *rec[log::expressions::smessage];
 
-    json::object log_data;
-    log_data["severity"] = boost::log::trivial::to_string(severity);
-    log_data["timestamp"] = to_iso_extended_string(ts);
-    log_data["file"] = file;
-    log_data["function"] = function;
-    log_data["line"] = line;
-    log_data["message"] = message;
-
-    strm << json::serialize(log_data);
+    if (config::getSettings().logger.format == "json") {
+        json::object log_data;
+        log_data["timestamp"] = to_iso_extended_string(ts);
+        log_data["severity"] = boost::log::trivial::to_string(severity);
+        log_data["pid"] = process_id;
+        log_data["tid"] = thread_id_str;
+        log_data["run_uuid"] = run_uuid_val;
+        log_data["file"] = file;
+        log_data["line"] = line;
+        log_data["function"] = function;
+        log_data["message"] = message;
+        strm << json::serialize(log_data);
+    } else {
+        // format: [timestamp] [severity] [pid:tid] [run_uuid] [file:line] [function] message
+        strm << "[" << to_iso_extended_string(ts) << "]"
+             << " [" << boost::log::trivial::to_string(severity) << "]"
+             << " [pid:tid = " << process_id << ":" << thread_id_str << "]"
+             << " [uuid = " << run_uuid_val << "]"
+             << " [" << file << " : " << line << "]"
+             << " [" << function << "] " << message;
+    }
 }
 
 void Logger::Initialize() {
     log::add_common_attributes();
 
+    if (config::getSettings().logger.format == "json") {
+        std::cout << "[Logger] Info: Using JSON log format (default)." << std::endl;
+    } else {
+        std::cout << "[Logger] Info: Using text log format." << std::endl;
+    }
+
+    log::core::get()->add_global_attribute("PID", boost::log::attributes::make_constant(::getpid()));
+    log::core::get()->add_global_attribute("TID", boost::log::attributes::current_thread_id());
+    log::core::get()->add_global_attribute("RunUUID", boost::log::attributes::make_constant(GetProcessIdentifier()));
+
     std::string log_dir_path = GetLogDirPath();
     std::string process_identifier = GetProcessIdentifier();
-
     std::filesystem::create_directories(log_dir_path);
 
-    std::filesystem::path log_file_name =
-        std::filesystem::path(log_dir_path) / process_identifier / "%Y-%m-%d_%H-%M-%S_%N.log";
+    // Base file name pattern
+    auto base_path = std::filesystem::path(log_dir_path) / process_identifier;
+    std::string base_pattern = (base_path / "%Y-%m-%d_%H-%M-%S_%N").string();
 
-    auto file_backend = boost::make_shared<sinks::text_file_backend>(keywords::file_name = log_file_name.string(),
-                                                                     keywords::rotation_size = LOG_SIZE_ROTATION,
-                                                                     keywords::time_based_rotation = LOG_TIME_ROTATION,
-                                                                     keywords::auto_flush = true);
+    // Helper to create and add a sink
+    auto create_sink = [&](const std::string& suffix, log::trivial::severity_level min_sev) {
+        std::string file_pattern = base_pattern + suffix + ".log";
+        auto backend = boost::make_shared<sinks::text_file_backend>(keywords::file_name = file_pattern,
+                                                                    keywords::rotation_size = LOG_SIZE_ROTATION,
+                                                                    keywords::time_based_rotation = LOG_TIME_ROTATION,
+                                                                    keywords::auto_flush = true);
 
-    auto sink = boost::make_shared<async_synk>(file_backend);
-    sink->set_filter(log::trivial::severity >= log::trivial::info);
-    sink->set_formatter(&LogFormatter);
+        auto sink = boost::make_shared<async_synk>(backend);
+        sink->set_filter(log::trivial::severity >= min_sev);
+        sink->set_formatter(&LogFormatter);
 
-    log::core::get()->add_sink(boost::static_pointer_cast<log::sinks::sink>(sink));
-    sinks_.push_back(sink);
+        log::core::get()->add_sink(sink);
+        sinks_.push_back(sink);
+        return sink;
+    };
+
+    // debug (0) < info (1) < warning (2) < error (3) < fatal (4)
+
+    // Main log – always INFO and above
+    create_sink("", log::trivial::info);
+
+    // Debug log – only when config level is "debug"
+    if (config::getSettings().logger.level == "debug") {
+        create_sink("_debug", log::trivial::debug);
+        std::cout << "[Logger] Info: Debug logging enabled – separate debug file will be written." << std::endl;
+    }
 }
 
 Logger::Logger() {
@@ -144,16 +190,19 @@ Logger::~Logger() {
     }
 }
 
-void Logger::LogInfo(const SourceInfo& source_info, const std::string& message) {
-    BOOST_LOG_TRIVIAL(info) << log::add_value("File", source_info.file)
-                            << log::add_value("Function", source_info.function)
-                            << log::add_value("Line", source_info.line) << message;
-}
+#define DEFINE_LOG_METHOD(MethodName, BoostLevel)                                             \
+    void Logger::MethodName(const SourceInfo& source_info, const std::string& message) {      \
+        BOOST_LOG_TRIVIAL(BoostLevel) << log::add_value("File", source_info.file)             \
+                                      << log::add_value("Function", source_info.function)     \
+                                      << log::add_value("Line", source_info.line) << message; \
+    }
 
-void Logger::LogError(const SourceInfo& source_info, const std::string& message) {
-    BOOST_LOG_TRIVIAL(error) << log::add_value("File", source_info.file)
-                             << log::add_value("Function", source_info.function)
-                             << log::add_value("Line", source_info.line) << message;
-}
+// Generate all functions
+DEFINE_LOG_METHOD(LogInfo, info)
+DEFINE_LOG_METHOD(LogError, error)
+DEFINE_LOG_METHOD(LogDebug, debug)
+DEFINE_LOG_METHOD(LogWarn, warning)
+
+#undef DEFINE_LOG_METHOD
 
 }  // namespace logger
