@@ -10,15 +10,17 @@
 
 namespace map {
 
-inline const auto& cfg = config::get_settings();
-
-const Position kDefaultBLC(cfg.gameplay.default_map_blc_x, cfg.gameplay.default_map_blc_y);
-const Position kDefaultTRC(cfg.gameplay.default_map_trc_x, cfg.gameplay.default_map_trc_y);
-const MapSize kDefaultMapSize{kDefaultBLC, kDefaultTRC};
+inline MapSize getCfgMapSize() {
+    const auto& cfg = config::getSettings();
+    return MapSize{
+        Position(cfg.gameplay.default_map_blc_x, cfg.gameplay.default_map_blc_y),
+        Position(cfg.gameplay.default_map_trc_x, cfg.gameplay.default_map_trc_y)
+    };
+}
 
 class GameMap {
 public:
-    explicit GameMap(MapSize map_size = kDefaultMapSize) : map_size_{map_size} {
+    explicit GameMap(MapSize map_size = getCfgMapSize()) : map_size_{map_size} {
         LOG_INFO(std::format("GameMap created with bottom_left_corner ({}, {}), top_right_corner ({}, {})",
                              map_size_.getBottomLeftCorner().x,
                              map_size_.getBottomLeftCorner().y,

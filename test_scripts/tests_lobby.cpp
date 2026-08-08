@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "../src/domain/lobby.h"
+#include "config.h"
 
 using namespace lobby;
 
@@ -19,7 +20,7 @@ protected:
 // ---------------------------------------------------------------------------
 TEST_F(LobbyTest, Constructor_InitialState) {
     EXPECT_EQ(lobby->getId(), LobbyId{42});
-    EXPECT_EQ(lobby->getPlayerCount(), 1); // leader is already present
+    EXPECT_EQ(lobby->getPlayerCount(), 1);  // leader is already present
     EXPECT_EQ(lobby->getLeader(), PlayerId{1});
 }
 
@@ -31,7 +32,7 @@ TEST_F(LobbyTest, AddPlayer_Success) {
     EXPECT_TRUE(lobby->addPlayer(pid));
     EXPECT_TRUE(lobby->containsPlayer(pid));
     EXPECT_EQ(lobby->getPlayerCount(), 2);
-    EXPECT_EQ(lobby->getLeader(), PlayerId{1}); // leader remains unchanged
+    EXPECT_EQ(lobby->getLeader(), PlayerId{1});  // leader remains unchanged
 }
 
 TEST_F(LobbyTest, AddPlayer_Duplicate_ReturnsFalse) {
@@ -102,7 +103,7 @@ TEST_F(LobbyTest, SetReady_ExistingPlayer_Success) {
     lobby->addPlayer(pid);
     EXPECT_TRUE(lobby->setReady(pid, true));
     // We can indirectly verify readiness via checkAllReady().
-    EXPECT_FALSE(lobby->checkAllReady()); // leader is still not ready
+    EXPECT_FALSE(lobby->checkAllReady());  // leader is still not ready
 }
 
 TEST_F(LobbyTest, SetReady_NonExistentPlayer_ReturnsFalse) {
@@ -123,7 +124,7 @@ TEST_F(LobbyTest, CheckAllReady_AllReady_ReturnsTrue) {
 TEST_F(LobbyTest, CheckAllReady_NotAllReady_ReturnsFalse) {
     PlayerId p2{2};
     lobby->addPlayer(p2);
-    lobby->setReady(PlayerId{1}, true); // p2 not ready
+    lobby->setReady(PlayerId{1}, true);  // p2 not ready
     EXPECT_FALSE(lobby->checkAllReady());
 }
 
@@ -134,7 +135,7 @@ TEST_F(LobbyTest, CheckAllReady_SinglePlayerReady_ReturnsTrue) {
 }
 
 TEST_F(LobbyTest, CheckAllReady_SinglePlayerNotReady_ReturnsFalse) {
-    EXPECT_FALSE(lobby->checkAllReady()); // leader default is false
+    EXPECT_FALSE(lobby->checkAllReady());  // leader default is false
 }
 
 // ---------------------------------------------------------------------------
@@ -158,7 +159,7 @@ TEST_F(LobbyTest, FullLifecycle_AddRemoveAndReadiness) {
     // the remaining players.
     EXPECT_TRUE(lobby->removePlayer(p3));
     EXPECT_EQ(lobby->getPlayerCount(), 2);
-    EXPECT_TRUE(lobby->checkAllReady()); // remaining two are still ready
+    EXPECT_TRUE(lobby->checkAllReady());  // remaining two are still ready
 
     // Remove the leader – new leader assigned (p2)
     EXPECT_TRUE(lobby->removePlayer(PlayerId{1}));
@@ -182,4 +183,14 @@ TEST_F(LobbyTest, GetId_ReturnsCorrectId) {
     LobbyId id{123};
     Lobby other(id, PlayerId{5});
     EXPECT_EQ(other.getId(), id);
+}
+
+// ============================================================================
+// Test Runner
+// ============================================================================
+
+int main(int argc, char** argv) {
+    config::Settings::initialize("");
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

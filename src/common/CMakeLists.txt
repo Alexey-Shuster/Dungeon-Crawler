@@ -34,6 +34,9 @@ target_include_directories(podzemeliya_common PUBLIC
         ${PROJECT_ROOT}/src/common
 )
 
+# Cbor for serialization
+find_package(libcbor REQUIRED)
+
 target_link_libraries(podzemeliya_common PUBLIC
         platform_deps
         boost_deps

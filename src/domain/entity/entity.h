@@ -14,20 +14,26 @@ struct EntityData {
     uint32_t radius_view;
 };
 
-inline const auto& cfg = config::get_settings();
+inline EntityData getCfgPlayerData() {
+    const auto& cfg = config::getSettings();
+    return EntityData{.health{Health(cfg.gameplay.player_default_hp)},
+                      .radius_attack = static_cast<uint32_t>(cfg.gameplay.default_radius_attack),
+                      .radius_view = static_cast<uint32_t>(cfg.gameplay.default_radius_view)};
+}
 
-const EntityData kDefaultPlayerData{.health{Health(cfg.gameplay.player_default_hp)},
-                                    .radius_attack = static_cast<uint32_t>(cfg.gameplay.default_radius_attack),
-                                    .radius_view = static_cast<uint32_t>(cfg.gameplay.default_radius_view)};
-
-const EntityData kDefaultMonsterData{.health{Health(cfg.gameplay.monster_default_hp)},
-                                     .radius_attack = static_cast<uint32_t>(cfg.gameplay.default_radius_attack),
-                                     .radius_view = static_cast<uint32_t>(cfg.gameplay.default_radius_view)};
+inline EntityData getCfgMonsterData() {
+    const auto& cfg = config::getSettings();
+    return EntityData{.health{Health(cfg.gameplay.monster_default_hp)},
+                      .radius_attack = static_cast<uint32_t>(cfg.gameplay.default_radius_attack),
+                      .radius_view = static_cast<uint32_t>(cfg.gameplay.default_radius_view)};
+}
 
 class Entity {
 public:
-    Entity(map::Position position, EntityData data, EntityState state) :
-        position_(position), data_(std::move(data)), state_(state) {}
+    Entity(map::Position position, EntityData data, EntityState state)
+        : position_(position)
+        , data_(std::move(data))
+        , state_(state) {}
 
     virtual ~Entity() = default;
 
@@ -81,8 +87,10 @@ class PlayerEntity : public Entity {
 public:
     PlayerEntity(PlayerId pid,
                  map::Position position,
-                 EntityData data = kDefaultPlayerData,
-                 EntityState state = EntityState::Alive) : Entity(position, std::move(data), state), pid_(pid) {}
+                 EntityData data = getCfgPlayerData(),
+                 EntityState state = EntityState::Alive)
+        : Entity(position, std::move(data), state)
+        , pid_(pid) {}
 
     PlayerId GetId() const {
         return pid_;
@@ -96,8 +104,10 @@ class MonsterEntity : public Entity {
 public:
     MonsterEntity(MobId mid,
                   map::Position position,
-                  EntityData data = kDefaultMonsterData,
-                  EntityState state = EntityState::Alive) : Entity(position, std::move(data), state), mid_(mid) {}
+                  EntityData data = getCfgMonsterData(),
+                  EntityState state = EntityState::Alive)
+        : Entity(position, std::move(data), state)
+        , mid_(mid) {}
 
     MobId GetId() const {
         return mid_;

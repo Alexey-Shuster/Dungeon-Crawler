@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <atomic>
 #include <cstdlib>
+#include <format>
 #include <fstream>
 #include <functional>
 #include <iomanip>
@@ -22,11 +23,19 @@
 #define PRINT_VAR(x) std::cout << std::left << std::setw(35) << #x << x << "\n"
 
 namespace config {
+
 // ----------------------------------------------------------------------------
-// Internal helpers (file‑static)
+// Internal helpers
 // ----------------------------------------------------------------------------
 
 namespace {
+
+inline constexpr std::string_view kWarn = "[Settings] Warning:";
+inline constexpr std::string_view kInfo = "[Settings] Info:";
+inline constexpr std::string_view kFailConvert = "Failed to convert value for key";
+inline constexpr std::string_view kUseDefault = "Using default.";
+inline constexpr std::string_view kNewLine = "\n";
+
 /// Cache for environment variables to avoid repeated `getenv` calls.
 std::unordered_map<std::string, std::string> s_envCache;
 
@@ -39,92 +48,62 @@ std::atomic<bool> s_loadDone{false};
 
 using SettingHandler = std::function<void(Settings&, const std::string&)>;
 
+// Basic types template (int, double, std::string)
+template <typename FieldType>
+void assign_field(FieldType& field, const std::string& value) {
+    if constexpr (std::is_same_v<FieldType, std::string>) {
+        field = value;
+    } else {
+        field = boost::lexical_cast<FieldType>(value);
+    }
+}
+
+// Specialization for types from std::chrono::duration
+template <typename Rep, typename Period>
+void assign_field(std::chrono::duration<Rep, Period>& field, const std::string& value) {
+    field = std::chrono::duration<Rep, Period>(boost::lexical_cast<Rep>(value));
+}
+
+// Helper for binding deeply nested fields (&Settings::server, &Settings::Server::host, etc.)
+template <typename SubStruct, typename FieldType>
+SettingHandler bind_field(SubStruct Settings::* sub_ptr, FieldType SubStruct::* field_ptr) {
+    return [sub_ptr, field_ptr](Settings& s, const std::string& v) {
+        assign_field((s.*sub_ptr).*field_ptr, v);
+    };
+}
+
 const std::unordered_map<std::string, SettingHandler> kHandlers = {
-    {"server.host",
-     [](Settings& s, const std::string& v) {
-         s.server.host = v;
-     }},
-    {"server.port",
-     [](Settings& s, const std::string& v) {
-         s.server.port = boost::lexical_cast<int>(v);
-     }},
-    {"server.max_players",
-     [](Settings& s, const std::string& v) {
-         s.server.max_players = boost::lexical_cast<int>(v);
-     }},
-    {"server.tick_rate_ms",
-     [](Settings& s, const std::string& v) {
-         s.server.tick_rate = std::chrono::milliseconds(boost::lexical_cast<int>(v));
-     }},
+    // Server
+    {"server.host", bind_field(&Settings::server, &Settings::Server::host)},
+    {"server.port", bind_field(&Settings::server, &Settings::Server::port)},
+    {"server.max_players", bind_field(&Settings::server, &Settings::Server::max_players)},
+    {"server.tick_rate_ms", bind_field(&Settings::server, &Settings::Server::tick_rate)},
     {"server.client_disconnect_timeout_sec",
-     [](Settings& s, const std::string& v) {
-         s.server.client_disconnect_timeout = std::chrono::seconds(boost::lexical_cast<int>(v));
-     }},
-    {"database.connection_string",
-     [](Settings& s, const std::string& v) {
-         s.database.connection_string = v;
-     }},
-    {"database.pool_size",
-     [](Settings& s, const std::string& v) {
-         s.database.pool_size = boost::lexical_cast<int>(v);
-     }},
-    {"gameplay.lobby_max_players",
-     [](Settings& s, const std::string& v) {
-         s.gameplay.lobby_max_players = boost::lexical_cast<int>(v);
-     }},
-    {"gameplay.map_name",
-     [](Settings& s, const std::string& v) {
-         s.gameplay.map_name = v;
-     }},
-    {"gameplay.match_duration_sec",
-     [](Settings& s, const std::string& v) {
-         s.gameplay.match_duration = std::chrono::seconds(boost::lexical_cast<int>(v));
-     }},
-    {"gameplay.player_default_hp",
-     [](Settings& s, const std::string& v) {
-         s.gameplay.player_default_hp = boost::lexical_cast<int>(v);
-     }},
-    {"gameplay.monster_default_hp",
-     [](Settings& s, const std::string& v) {
-         s.gameplay.monster_default_hp = boost::lexical_cast<int>(v);
-     }},
-    {"gameplay.max_monsters_per_player",
-     [](Settings& s, const std::string& v) {
-         s.gameplay.monsters_per_player = boost::lexical_cast<int>(v);
-     }},
-    {"gameplay.default_radius_attack",
-     [](Settings& s, const std::string& v) {
-         s.gameplay.default_radius_attack = boost::lexical_cast<double>(v);
-     }},
-    {"gameplay.default_radius_view",
-     [](Settings& s, const std::string& v) {
-         s.gameplay.default_radius_view = boost::lexical_cast<double>(v);
-     }},
-    {"gameplay.default_map_blc_x",
-     [](Settings& s, const std::string& v) {
-         s.gameplay.default_radius_view = boost::lexical_cast<int>(v);
-     }},
-    {"gameplay.default_map_blc_y",
-     [](Settings& s, const std::string& v) {
-         s.gameplay.default_radius_view = boost::lexical_cast<int>(v);
-     }},
-    {"gameplay.default_map_trc_x",
-     [](Settings& s, const std::string& v) {
-         s.gameplay.default_radius_view = boost::lexical_cast<int>(v);
-     }},
-    {"gameplay.default_map_trc_y",
-     [](Settings& s, const std::string& v) {
-         s.gameplay.default_radius_view = boost::lexical_cast<int>(v);
-     }},
-    {"logger.level",
-     [](Settings& s, const std::string& v) {
-         s.logger.level = v;
-     }},
-    {"logger.output_dir",
-     [](Settings& s, const std::string& v) {
-         s.logger.output_dir = v;
-     }},
+     bind_field(&Settings::server, &Settings::Server::client_disconnect_timeout)},
+
+    // Database
+    {"database.connection_string", bind_field(&Settings::database, &Settings::Database::connection_string)},
+    {"database.pool_size", bind_field(&Settings::database, &Settings::Database::pool_size)},
+
+    // Gameplay
+    {"gameplay.lobby_max_players", bind_field(&Settings::gameplay, &Settings::Gameplay::lobby_max_players)},
+    {"gameplay.map_name", bind_field(&Settings::gameplay, &Settings::Gameplay::map_name)},
+    {"gameplay.match_duration_sec", bind_field(&Settings::gameplay, &Settings::Gameplay::match_duration)},
+    {"gameplay.player_default_hp", bind_field(&Settings::gameplay, &Settings::Gameplay::player_default_hp)},
+    {"gameplay.monster_default_hp", bind_field(&Settings::gameplay, &Settings::Gameplay::monster_default_hp)},
+    {"gameplay.monsters_per_player", bind_field(&Settings::gameplay, &Settings::Gameplay::monsters_per_player)},
+    {"gameplay.default_radius_attack", bind_field(&Settings::gameplay, &Settings::Gameplay::default_radius_attack)},
+    {"gameplay.default_radius_view", bind_field(&Settings::gameplay, &Settings::Gameplay::default_radius_view)},
+    {"gameplay.default_map_blc_x", bind_field(&Settings::gameplay, &Settings::Gameplay::default_map_blc_x)},
+    {"gameplay.default_map_blc_y", bind_field(&Settings::gameplay, &Settings::Gameplay::default_map_blc_y)},
+    {"gameplay.default_map_trc_x", bind_field(&Settings::gameplay, &Settings::Gameplay::default_map_trc_x)},
+    {"gameplay.default_map_trc_y", bind_field(&Settings::gameplay, &Settings::Gameplay::default_map_trc_y)},
+
+    // Logger
+    {"logger.level", bind_field(&Settings::logger, &Settings::Logger::level)},
+    {"logger.output_dir", bind_field(&Settings::logger, &Settings::Logger::output_dir)},
 };
+
 }  // namespace
 
 const Settings& Settings::instance() {
@@ -132,11 +111,15 @@ const Settings& Settings::instance() {
 }
 
 void Settings::initialize(const std::string& json_path) {
-    mutableInstance().load(json_path);
+    if (!initialized_) {
+        instance_ = std::unique_ptr<Settings>(new Settings());
+        instance_->load(json_path);
+        initialized_ = true;
+    }
 }
 
 bool Settings::isInitialized() {
-    return instance().loaded_;
+    return initialized_ && instance().loaded_;
 }
 
 std::optional<std::string> Settings::getEnv(const std::string& key) {
@@ -177,19 +160,21 @@ void Settings::overrideSetting(const std::string& key, std::string value) {
     try {
         it->second(*this, value);
     } catch (const boost::bad_lexical_cast&) {
-        std::cerr << "[Settings] Warning: Failed to convert value for key '" << key << "'. Using default.\n";
+        std::cerr << std::format("{} {} '{}'. {}", kWarn, kFailConvert, key, kUseDefault) << kNewLine;
     }
 }
 
 Settings& Settings::mutableInstance() {
-    static Settings instance;
-    return instance;
+    if (!initialized_ || !instance_) {
+        throw std::logic_error("Settings not initialized – call initialize() first");
+    }
+    return *instance_;
 }
 
 void Settings::load(const std::string& json_path) {
     // Track first call
     if (s_loadDone.load(std::memory_order_acquire)) {
-        std::cerr << "[Settings] Warning: load() called more than once – ignoring.\n";
+        std::cerr << std::format("{} load() called more than once – ignoring.", kWarn) << kNewLine;
         return;
     }
 
@@ -206,13 +191,14 @@ void Settings::load(const std::string& json_path) {
                 boost::system::error_code ec;
                 boost::json::value jv = boost::json::parse(input, ec);
                 if (ec) {
-                    throw std::runtime_error("JSON parse error: " + ec.message());
+                    throw std::runtime_error(std::format("JSON parse error: ", ec.message()));
                 }
+                std::cout << std::format("{} Loaded JSON configuration from '{}'", kInfo, json_path) << kNewLine;
 
                 dynamic_.clear();         // очищаем перед заполнением
                 flattenAndStore("", jv);  // теперь применяет известные ключи сразу
             } else {
-                std::cerr << "[Settings] Warning: " << json_path << " not found, using defaults.\n";
+                std::cerr << std::format("{} {} not found. {}", kWarn, json_path, kUseDefault) << kNewLine;
             }
         }
 
@@ -231,6 +217,7 @@ void Settings::load(const std::string& json_path) {
 
         for (const auto& key : allKeys) {
             if (auto envVal = getEnv(key)) {
+                std::cout << std::format("{} ENV override: {} = {}", kInfo, key, *envVal) << kNewLine;
                 overrideSetting(key, *envVal);
             }
         }
@@ -295,14 +282,20 @@ void Settings::flattenAndStore(std::string_view prefix, const boost::json::value
             try {
                 it->second(*this, value);
             } catch (const boost::bad_lexical_cast&) {
-                std::cerr << "[Settings] Warning: Failed to convert value for key '" << key
-                          << "' from JSON. Using default.\n";
+                std::cerr << std::format("{} {} '{}' from JSON. {}", kWarn, kFailConvert, key, kUseDefault) << kNewLine;
             }
         } else {
-            //  Unknown key
+            //  Unknown key – store in dynamic_
+            std::cout << std::format("{} Dynamic JSON key: {} = {} ", kInfo, key, value) << kNewLine;
             dynamic_[std::move(key)] = std::move(value);
         }
     }
+}
+
+std::string Settings::get(const std::string& key, std::string_view default_value) const {
+    if (auto it = dynamic_.find(key); it != dynamic_.end())
+        return it->second;
+    return std::string(default_value);
 }
 
 void Settings::dump() const {
@@ -346,15 +339,18 @@ void Settings::clearEnvCacheForTesting() {
 }
 
 void Settings::resetForTesting() {
-    Settings& mutable_self = const_cast<Settings&>(instance());
-    mutable_self.loaded_ = false;
-    mutable_self.dynamic_.clear();
-    mutable_self.server = Server{};
-    mutable_self.database = Database{};
-    mutable_self.gameplay = Gameplay{};
-    mutable_self.logger = Logger{};
+    if (instance_) {
+        instance_->loaded_ = false;
+        instance_->dynamic_.clear();
+        instance_->server = Server{};
+        instance_->database = Database{};
+        instance_->gameplay = Gameplay{};
+        instance_->logger = Logger{};
+        instance_.reset();  // delete the object
+    }
+    initialized_ = false;
 
-    // Reset flags for testing
+    // Reset other global state (environment cache, load flag)
     s_loadDone.store(false, std::memory_order_release);
     s_envCache.clear();
 }

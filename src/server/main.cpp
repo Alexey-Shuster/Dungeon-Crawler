@@ -25,7 +25,7 @@ using namespace boost::asio;
 int main(int argc, char* argv[]) {
     try {
         config::Settings::initialize("config.json");
-        const auto& cfg = config::get_settings();
+        const auto& cfg = config::getSettings();
         logger::Logger::Instance();
 
         LOG_INFO("Starting Dungeon Crawler Server ...");

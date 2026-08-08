@@ -3,6 +3,7 @@
 
 #include "../src/common/logger.h"
 #include "../src/domain/dungeon/dungeon.h"
+#include "config.h"
 
 using namespace dungeon;
 
@@ -10,8 +11,8 @@ using namespace dungeon;
 class TestableDungeon : public Dungeon {
 public:
     template <typename PlayersContainer>
-    explicit TestableDungeon(map::GameMap game_map, PlayersContainer&& container) :
-        Dungeon(std::move(game_map), std::forward<PlayersContainer>(container)) {}
+    explicit TestableDungeon(map::GameMap game_map, PlayersContainer&& container)
+        : Dungeon(std::move(game_map), std::forward<PlayersContainer>(container)) {}
 
     using Dungeon::addMonsterEntity;
     using Dungeon::addPlayerEntity;
@@ -157,5 +158,5 @@ TEST(DungeonTest, ConstructorCreatesMonsters) {
     auto d = std::make_shared<TestableDungeon>(std::move(game_map), players);
 
     EXPECT_GT(d->monsters_entities_.size(), 0);
-    EXPECT_EQ(d->monsters_entities_.size(), kMonstersPerPlayerCounter * players.size());
+    EXPECT_EQ(d->monsters_entities_.size(), config::getSettings().gameplay.monsters_per_player * players.size());
 }

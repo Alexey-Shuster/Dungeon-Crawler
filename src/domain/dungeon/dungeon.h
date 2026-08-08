@@ -22,10 +22,7 @@
 
 namespace dungeon {
 
-inline const auto& cfg = config::get_settings();
-
 constexpr size_t kMaxAttempts{1000};
-const size_t kMonstersPerPlayerCounter = cfg.gameplay.monsters_per_player;
 
 struct DungeonState {
     map::GameMap game_map;
@@ -36,15 +33,17 @@ struct DungeonState {
 class Dungeon : public std::enable_shared_from_this<Dungeon> {
 public:
     template <typename PlayersContainer>
-    explicit Dungeon(map::GameMap game_map, PlayersContainer&& container) :
-        game_map_{game_map}, dist_x_{game_map_.size().getBottomLeftCorner().x, game_map_.size().getTopRightCorner().x},
-        dist_y_{game_map_.size().getBottomLeftCorner().y, game_map_.size().getTopRightCorner().y},
-        dist_direction_{0, 3}, dist_monsters_counter_{0, 0} {
+    explicit Dungeon(map::GameMap game_map, PlayersContainer&& container)
+        : game_map_{game_map}
+        , dist_x_{game_map_.size().getBottomLeftCorner().x, game_map_.size().getTopRightCorner().x}
+        , dist_y_{game_map_.size().getBottomLeftCorner().y, game_map_.size().getTopRightCorner().y}
+        , dist_direction_{0, 3}
+        , dist_monsters_counter_{0, 0} {
         for (auto& player_id : container) {
             addPlayerEntity(player_id);
         }
         for (size_t j = 0; j < std::size(container); ++j) {
-            for (size_t i = 0; i < kMonstersPerPlayerCounter; ++i) {
+            for (size_t i = 0; i < config::getSettings().gameplay.monsters_per_player; ++i) {
                 addMonsterEntity(MobId{mob_id_counter_});
                 ++mob_id_counter_;
             }

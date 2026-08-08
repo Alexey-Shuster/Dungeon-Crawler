@@ -13,8 +13,8 @@
 int main() {
     try {
         config::Settings::initialize("config.json");
+        const auto& cfg = config::getSettings();
         logger::Logger::Instance();
-        const auto& cfg = config::get_settings();
 
         boost::asio::io_context io_context;
         boost::asio::signal_set signals(io_context, SIGINT, SIGTERM);
