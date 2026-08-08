@@ -8,17 +8,11 @@
 #include <mutex>
 #include <unordered_map>
 
-#ifdef _WIN32
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN  // Исключает редко используемые компоненты из Win32 API
-#endif
-#ifndef NOMINMAX
-#define NOMINMAX  // Запрещает макросы min и max, ломающие std::min/max
-#endif
-#include <winuser.h>  // IWYU pragma: keep // Содержит GetAsyncKeyState и VK_* константы
-#else
-#include <X11/Xlib.h>
-#include <X11/keysym.h>
+#include "win_defs.h"  // IWYU pragma: keep // windows.h
+
+#ifndef _WIN32
+    #include <X11/Xlib.h>
+    #include <X11/keysym.h>
 #endif
 
 namespace utility {
@@ -48,15 +42,17 @@ public:
     void start(KeyCallback cb, std::chrono::milliseconds interval = std::chrono::milliseconds(20));
     void stop();
 
+protected:
+    virtual void fetchKeyState();            // platform‑specific state retrieval
+    virtual bool isKeyDown(char key) const;  // uses the cached state
+
 private:
     void poll();
-    void fetchKeyState();            // platform‑specific state retrieval
-    bool isKeyDown(char key) const;  // uses the cached state
 
     boost::asio::io_context& io_context_;
     boost::asio::steady_timer timer_;
     KeyCallback callback_;
-    std::chrono::milliseconds interval_;
+    std::chrono::milliseconds interval_{};
     const bool edge_triggered_;
     std::unordered_map<char, bool> prev_state_;  // only used if edge_triggered_
 

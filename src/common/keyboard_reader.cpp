@@ -11,11 +11,13 @@ namespace utility {
 static constexpr int kKeyDownMask = 0x8000;  // most significant bit indicates "pressed"
 #endif
 
-// List of keys we monitor (case‑insensitive)
-static constexpr std::array<char, 5> kKeys = {'w', 'a', 's', 'd', 'x'};
+// List of monitored keys (case‑insensitive)
+static constexpr std::array<char, 12> kKeys = {'w', 'a', 's', 'd', 'x', '1', '2', '3', '4', '5', '6', '7'};
 
-KeyboardReader::KeyboardReader(boost::asio::io_context& io, bool edge_triggered) :
-    io_context_(io), timer_(io), edge_triggered_(edge_triggered) {
+KeyboardReader::KeyboardReader(boost::asio::io_context& io, bool edge_triggered)
+    : io_context_(io)
+    , timer_(io)
+    , edge_triggered_(edge_triggered) {
 #ifndef _WIN32
     // Ensure X11 is thread‑safe
     static bool x11_initialized = []() {
@@ -63,24 +65,28 @@ void KeyboardReader::start(KeyCallback cb, std::chrono::milliseconds interval) {
             char lower = std::tolower(static_cast<unsigned char>(key));
             KeySym ks = 0;
             // Map the character to the corresponding X11 KeySym.
-            switch (lower) {
-                case 'w':
-                    ks = XK_w;
-                    break;
-                case 'a':
-                    ks = XK_a;
-                    break;
-                case 's':
-                    ks = XK_s;
-                    break;
-                case 'd':
-                    ks = XK_d;
-                    break;
-                case 'x':
-                    ks = XK_x;
-                    break;
-                default:
-                    continue;  // should not happen
+            if (lower >= '1' && lower <= '7') {
+                ks = XK_0 + (lower - '0');  // XK_1, XK_2, ...
+            } else {
+                switch (lower) {
+                    case 'w':
+                        ks = XK_w;
+                        break;
+                    case 'a':
+                        ks = XK_a;
+                        break;
+                    case 's':
+                        ks = XK_s;
+                        break;
+                    case 'd':
+                        ks = XK_d;
+                        break;
+                    case 'x':
+                        ks = XK_x;
+                        break;
+                    default:
+                        continue;  // should not happen
+                }
             }
             KeyCode kc = XKeysymToKeycode(display_, ks);
             if (kc != 0) {
@@ -151,30 +157,16 @@ void KeyboardReader::fetchKeyState() {
 #endif
 }
 
-bool KeyboardReader::isKeyDown(char key) const {
-    const char lower = std::tolower(static_cast<unsigned char>(key));
+bool KeyboardReader::isKeyDown(char key) const {  // NOLINT (silence use-static)
+    const char lower = static_cast<char>(std::tolower(static_cast<unsigned char>(key)));
 
 #ifdef _WIN32
     // Use explicit virtual‑key codes
-    int vk = 0;
-    switch (lower) {
-        case 'w':
-            vk = 'W';
-            break;
-        case 'a':
-            vk = 'A';
-            break;
-        case 's':
-            vk = 'S';
-            break;
-        case 'd':
-            vk = 'D';
-            break;
-        case 'x':
-            vk = 'X';
-            break;
-        default:
-            return false;
+    const auto vk = std::toupper(static_cast<unsigned char>(lower));
+
+    // Check whether VK-code is allowed
+    if (!((vk >= '1' && vk <= '7') || vk == 'W' || vk == 'A' || vk == 'S' || vk == 'D' || vk == 'X')) {
+        return false;
     }
     return (GetAsyncKeyState(vk) & kKeyDownMask) != 0;
 

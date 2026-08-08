@@ -16,6 +16,20 @@ namespace network::keyboard_controller {
             return "MOVE RIGHT";
         case 'x':
             return "ATTACK";
+        case '1':
+            return "JOIN 12345";
+        case '2':
+            return "CREATE_LOBBY";
+        case '3':
+            return "";
+        case '4':
+            return "";
+        case '5':
+            return "START_GAME";
+        case '6':
+            return "";
+        case '7':
+            return "EXIT";
 
         default:
             return std::nullopt;

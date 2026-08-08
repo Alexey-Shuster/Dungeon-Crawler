@@ -7,6 +7,7 @@
 #include "../common/keyboard_reader.h"
 #include "../common/logger.h"
 #include "../common/stdin_reader.h"
+#include "../common/terminal_guard.h"
 #include "client.h"
 #include "client_controller.h"
 
@@ -21,19 +22,23 @@ int main() {
 
         auto client = network::Client::create(io_context);
         auto client_controller = network::ClientController::create(client);
+
+        auto terminal_guard = std::make_shared<utility::TerminalGuard>();
         auto stdin_reader = std::make_shared<utility::StdinReader>(io_context);
         auto keyboard_reader = std::make_shared<utility::KeyboardReader>(io_context);
 
-        signals.async_wait([&io_context, stdin_reader, keyboard_reader](const boost::system::error_code& ec,
-                                                                        [[maybe_unused]] int signal_number) {
-            if (!ec) {
-                LOG_INFO(std::format("Client interrupted by signal: {}", signal_number));
+        signals.async_wait(
+            [&io_context, terminal_guard, stdin_reader, keyboard_reader](const boost::system::error_code& ec,
+                                                                         [[maybe_unused]] int signal_number) {
+                if (!ec) {
+                    LOG_INFO(std::format("Client interrupted by signal: {}", signal_number));
 
-                stdin_reader->stop();
-                keyboard_reader->stop();
-                io_context.stop();
-            }
-        });
+                    terminal_guard->restore();
+                    stdin_reader->stop();
+                    keyboard_reader->stop();
+                    io_context.stop();
+                }
+            });
 
         // Connect callback: forward incoming frames to dispatcher
         client->setOnReceiveMessage([client_controller](const network::MessageData& data) {
@@ -53,6 +58,12 @@ int main() {
             cfg.server.tick_rate);
 
         client->startConnect(cfg.server.host, cfg.server.port);
+
+        std::cout << "Terminal input disabled.\n"
+                  << "Press num-keys to connect and start game.\n"
+                  << "1 - Join server, 2 - Create party, 3 - Join party, 4 - Set ready to play, 5 - Start game, 6 - "
+                     "Reconnect, 7 - Exit.\n"
+                  << "Player control: WASD for movement, X - attack.\n";
 
         auto log_str = std::format("Client started. Connecting to {}:{}", cfg.server.host, cfg.server.port);
         LOG_INFO(log_str);
