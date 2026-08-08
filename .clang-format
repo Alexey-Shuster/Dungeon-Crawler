@@ -9,6 +9,7 @@ ContinuationIndentWidth: 4
 TabWidth: 4
 UseTab: Never
 ColumnLimit: 120
+IndentPPDirectives: BeforeHash
 
 # Namespaces
 CompactNamespaces: true

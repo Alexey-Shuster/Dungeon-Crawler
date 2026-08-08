@@ -51,6 +51,7 @@ add_test_target(test_common
         tests_hash.cpp
         tests_serialization.cpp
         tests_serialization_dto.cpp
+        tests_keyboard_reader.cpp
 )
 
 target_link_libraries(test_common PRIVATE

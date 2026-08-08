@@ -24,6 +24,8 @@ set(COMMON_SOURCES
         keyboard_reader.cpp
         number_utils.h
         serialization_game_state.cpp
+        terminal_guard.h
+        win_defs.h
 )
 
 add_library(podzemeliya_common STATIC

@@ -45,7 +45,7 @@ int main(int argc, char* argv[]) {
         auto response_sender = network::ResponseSender::create(event_bus, session_registry);
 
         auto server = std::make_shared<network::TcpServer>(io_context, event_bus);
-        auto game_loop = std::make_shared<infra::GameLoop>(io_context, event_bus, std::chrono::milliseconds{1000});
+        auto game_loop = std::make_shared<infra::GameLoop>(io_context, event_bus, cfg.server.tick_rate);
 
         server->start();
         game_loop->start();

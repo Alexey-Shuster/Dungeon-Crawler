@@ -24,6 +24,6 @@ TEST(KeyboardControllerTest, IgnoreUnknownKeys) {
     EXPECT_EQ(network::keyboard_controller::commandFromKey('c'), std::nullopt);
     EXPECT_EQ(network::keyboard_controller::commandFromKey(']'), std::nullopt);
     EXPECT_EQ(network::keyboard_controller::commandFromKey('/'), std::nullopt);
-    EXPECT_EQ(network::keyboard_controller::commandFromKey('1'), std::nullopt);
+    EXPECT_EQ(network::keyboard_controller::commandFromKey('0'), std::nullopt);
     EXPECT_EQ(network::keyboard_controller::commandFromKey(' '), std::nullopt);
 }
