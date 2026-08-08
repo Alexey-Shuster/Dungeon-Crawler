@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(Podzemeliya VERSION 0.1)
-
-enable_testing() 
+project(Dungeons VERSION 0.1)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -29,12 +27,6 @@ include(${CMAKE_BINARY_DIR}/generators/conan_toolchain.cmake)
 # -----------------------------------------------------------------------------
 include(${CMAKE_SOURCE_DIR}/cmake/platform_deps.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/boost_deps.cmake)
-
-# -----------------------------------------------------------------------------
-#   Global dependencies
-# -----------------------------------------------------------------------------
-# Cbor
-find_package(libcbor REQUIRED)
 
 # -----------------------------------------------------------------------------
 #   Copy global config.json

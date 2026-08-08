@@ -32,6 +32,7 @@ namespace config {
  * const auto& cfg = config::get_settings();
  * std::cout << cfg.server.port;
  * int custom = cfg.get<int>("mod.my_value", 0);
+ * // WARN: do not use as global constant - app throws
  * @endcode
  */
 class Settings {
@@ -85,34 +86,12 @@ public:
      * @return Converted value or default.
      */
     template <typename T>
-    T get(const std::string& key, const T& default_value = {}) const {
-        if (auto it = dynamic_.find(key); it != dynamic_.end()) {
-            try {
-                if constexpr (std::is_same_v<T, bool>) {
-                    const std::string& s = it->second;
-                    if (kTrueValues.contains(s))
-                        return true;
-                    if (kFalseValues.contains(s))
-                        return false;
-                    return boost::lexical_cast<bool>(s);  // fallback
-                } else {
-                    return boost::lexical_cast<T>(it->second);
-                }
-            } catch (const boost::bad_lexical_cast&) {
-                return default_value;
-            }
-        }
-        return default_value;
-    }
+    T get(const std::string& key, const T& default_value = {}) const;
 
     /**
      * @brief Overload for string values (avoids lexical_cast).
      */
-    [[nodiscard]] std::string get(const std::string& key, std::string_view default_value) const {
-        if (auto it = dynamic_.find(key); it != dynamic_.end())
-            return it->second;
-        return std::string(default_value);
-    }
+    [[nodiscard]] std::string get(const std::string& key, std::string_view default_value) const;
 
     /**
      * @brief Print all currently active settings to stdout (for debug).
@@ -147,6 +126,9 @@ public:
     Settings& operator=(Settings&&) = delete;
 
 private:
+    inline static std::unique_ptr<Settings> instance_ = nullptr;
+    inline static bool initialized_ = false;
+
     Settings() = default;
 
     static Settings& mutableInstance();
@@ -210,11 +192,32 @@ public:
 #endif
 };
 
+template <typename T>
+T Settings::get(const std::string& key, const T& default_value) const {
+    if (auto it = dynamic_.find(key); it != dynamic_.end()) {
+        try {
+            if constexpr (std::is_same_v<T, bool>) {
+                const std::string& s = it->second;
+                if (kTrueValues.contains(s))
+                    return true;
+                if (kFalseValues.contains(s))
+                    return false;
+                return boost::lexical_cast<bool>(s);  // fallback
+            } else {
+                return boost::lexical_cast<T>(it->second);
+            }
+        } catch (const boost::bad_lexical_cast&) {
+            return default_value;
+        }
+    }
+    return default_value;
+}
+
 /**
  * @brief Convenience global accessor.
  * @return const reference to the singleton Settings object.
  */
-inline const Settings& get_settings() {
+inline const Settings& getSettings() {
     return Settings::instance();
 }
 }  // namespace config

@@ -1,4 +1,3 @@
-// test_scripts/tests_game_manager.cpp
 #include <atomic>
 #include <boost/asio/io_context.hpp>
 #include <chrono>
@@ -13,6 +12,7 @@
 #include "../src/app/lobby_registry.h"
 #include "../src/common/events.h"
 #include "../src/infra/eventbus.h"
+#include "config.h"
 
 using namespace game;
 using namespace events;
@@ -544,6 +544,7 @@ TEST_F(GameManagerTest, MoveRequest_DirectionConversion_CorrectDirection) {
 // ============================================================================
 
 int main(int argc, char** argv) {
+    config::Settings::initialize("");
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

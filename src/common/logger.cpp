@@ -21,10 +21,6 @@
 
 #include "config.h"
 
-namespace {
-const auto& cfg = config::get_settings();
-}
-
 namespace logger {
 
 std::vector<boost::shared_ptr<Logger::async_synk>> Logger::sinks_;
@@ -52,23 +48,25 @@ std::string Logger::GetProcessIdentifier() {
 }
 
 std::string Logger::GetLogDirPath() {
-    auto config_log_dir_path = cfg.logger.output_dir;
+    auto config_log_dir_path = config::getSettings().logger.output_dir;
 
     if (!config_log_dir_path.empty()) {
-        std::cout << "[INFO] Using LOG_DIR_PATH parameter from config file: " << config_log_dir_path << std::endl;
+        std::cout << "[Logger] Info: Using logger.output_dir parameter from config file: " << config_log_dir_path
+                  << std::endl;
         return config_log_dir_path;
     } else {
-        std::cout << "[INFO] Config file not found, checking environment variable..." << std::endl;
+        std::cout << "[Logger] Info: Config file not found, checking environment variable..." << std::endl;
     }
 
     if (const char* env_log_dir_path = std::getenv(LOG_DIR_PATH.data())) {
-        std::cout << "[INFO] Using LOG_DIR_PATH from environment variable: " << env_log_dir_path << std::endl;
+        std::cout << "[Logger] Info: Using LOGGER_OUTPUT_DIR from environment variable: " << env_log_dir_path
+                  << std::endl;
         return env_log_dir_path;
     } else {
-        std::cout << "[INFO] LOG_DIR_PATH environment variable not set." << std::endl;
+        std::cout << "[Logger] Info: LOGGER_OUTPUT_DIR environment variable not set." << std::endl;
     }
 
-    std::cout << "[INFO] Using default log directory: " << DEFAULT_LOG_DIR_PATH << std::endl;
+    std::cout << "[Logger] Info: Using default log directory: " << DEFAULT_LOG_DIR_PATH << std::endl;
     return std::string(DEFAULT_LOG_DIR_PATH);
 }
 

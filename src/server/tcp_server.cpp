@@ -15,7 +15,7 @@ using boost::asio::ip::tcp;
 
 TcpServer::TcpServer(boost::asio::io_context& io, std::shared_ptr<events::EventBus> event_bus) :
     io_context_(io), acceptor_(io), event_bus_(std::move(event_bus)) {
-    auto& cfg = config::get_settings();  // читаем конфиги
+    auto& cfg = config::getSettings();  // читаем конфиги
     std::string ip = cfg.server.host;
     uint16_t port = cfg.server.port;
 

@@ -5,12 +5,10 @@
 
 #include "../common/config.h"
 
-namespace {
-const auto& cfg = config::get_settings();
-}
-
 namespace lobby {
-Lobby::Lobby(LobbyId lid, PlayerId pid) : id_(lid), leader_id_(pid) {
+Lobby::Lobby(LobbyId lid, PlayerId pid)
+    : id_(lid)
+    , leader_id_(pid) {
     // Player is NOT added here – caller must call addPlayer explicitly.
 }
 
@@ -66,7 +64,7 @@ bool Lobby::checkAllReady() const {
 }
 
 bool Lobby::isFull() const {
-    return players_.size() == cfg.gameplay.lobby_max_players;
+    return players_.size() == config::getSettings().gameplay.lobby_max_players;
 }
 
 bool Lobby::isEmpty() const {
