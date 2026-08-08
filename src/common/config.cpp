@@ -102,6 +102,7 @@ const std::unordered_map<std::string, SettingHandler> kHandlers = {
     // Logger
     {"logger.level", bind_field(&Settings::logger, &Settings::Logger::level)},
     {"logger.output_dir", bind_field(&Settings::logger, &Settings::Logger::output_dir)},
+    {"logger.format", bind_field(&Settings::logger, &Settings::Logger::format)},
 };
 
 }  // namespace
@@ -326,6 +327,7 @@ void Settings::dump() const {
     PRINT_VAR(gameplay.default_map_trc_y);
     PRINT_VAR(logger.level);
     PRINT_VAR(logger.output_dir);
+    PRINT_VAR(logger.format);
 
     for (const auto& [key, val] : dynamic_) {
         std::cout << std::setw(35) << key << val << "\n";

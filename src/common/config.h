@@ -70,8 +70,9 @@ public:
     } gameplay;
 
     struct Logger {
-        std::string level = "info";
+        std::string level = "info";  // "debug", "info", "warn", "error"
         std::string output_dir = "./logs";
+        std::string format = "json";  // "json" or "text"
     } logger;
 
     // ========================================================================
