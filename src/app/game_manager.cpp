@@ -105,10 +105,11 @@ void GameManager::onMoveRequestEvent(const events::MoveRequestEvent& event) {
 
 void GameManager::onAttackRequestEvent(const events::AtackRequestEvent& event) {
     auto player_id = event.player_id;
+    static auto attack = config::getSettings().gameplay.player_default_attack;
     if (auto game_id_opt = dungeon_registry_.findPlayerDungeon(player_id); game_id_opt.has_value()) {
         auto game_id = game_id_opt.value();
         if (auto dungeon = dungeon_registry_.findDungeon(game_id); dungeon) {
-            dungeon->addPlayerAttackCommand(player_id);
+            dungeon->addPlayerAttackCommand(player_id, attack);
             LOG_INFO(std::format("[GameManager] Player {} attacked in dungeon {}", player_id.value, game_id.value));
         } else {
             LOG_ERROR(std::format("[GameManager] Dungeon {} not found for player {}", game_id.value, player_id.value));

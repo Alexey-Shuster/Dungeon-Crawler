@@ -94,6 +94,8 @@ const std::unordered_map<std::string, SettingHandler> kHandlers = {
     {"gameplay.monsters_per_player", bind_field(&Settings::gameplay, &Settings::Gameplay::monsters_per_player)},
     {"gameplay.default_radius_attack", bind_field(&Settings::gameplay, &Settings::Gameplay::default_radius_attack)},
     {"gameplay.default_radius_view", bind_field(&Settings::gameplay, &Settings::Gameplay::default_radius_view)},
+    {"gameplay.player_default_attack", bind_field(&Settings::gameplay, &Settings::Gameplay::player_default_attack)},
+    {"gameplay.monster_default_attack", bind_field(&Settings::gameplay, &Settings::Gameplay::monster_default_attack)},
     {"gameplay.default_map_blc_x", bind_field(&Settings::gameplay, &Settings::Gameplay::default_map_blc_x)},
     {"gameplay.default_map_blc_y", bind_field(&Settings::gameplay, &Settings::Gameplay::default_map_blc_y)},
     {"gameplay.default_map_trc_x", bind_field(&Settings::gameplay, &Settings::Gameplay::default_map_trc_x)},
@@ -321,6 +323,8 @@ void Settings::dump() const {
     PRINT_VAR(gameplay.monsters_per_player);
     PRINT_VAR(gameplay.default_radius_attack);
     PRINT_VAR(gameplay.default_radius_view);
+    PRINT_VAR(gameplay.player_default_attack);
+    PRINT_VAR(gameplay.monster_default_attack);
     PRINT_VAR(gameplay.default_map_blc_x);
     PRINT_VAR(gameplay.default_map_blc_y);
     PRINT_VAR(gameplay.default_map_trc_x);
