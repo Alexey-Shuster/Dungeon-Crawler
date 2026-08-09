@@ -12,11 +12,11 @@
 #include <string>
 #include <unordered_map>
 
+#include "../../common/config.h"
+#include "../../common/direction.h"
 #include "../../common/logger.h"
 #include "../../common/types.h"
-#include "../common/config.h"
 #include "../entity/entity.h"
-#include "../map/direction.h"
 #include "../map/game_map.h"
 #include "../map/position.h"
 
@@ -53,7 +53,7 @@ public:
     }
 
     void addPlayerAttackCommand(PlayerId player_id, uint32_t damage = 10);
-    void addMovePlayerCommand(PlayerId player_id, map::Direction direction);
+    void addMovePlayerCommand(PlayerId player_id, Direction direction);
     std::optional<DungeonState> processTick([[maybe_unused]] std::chrono::milliseconds time_delta);
     std::vector<PlayerId> getPlayers() const;
 
@@ -116,7 +116,7 @@ protected:
     }
 
     template <typename Container>
-    bool moveEntity(Container& container, const Container::key_type& id, map::Direction direction) {
+    bool moveEntity(Container& container, const Container::key_type& id, Direction direction) {
         auto entity_ptr = getEntityPtr(container, id);
         if (!entity_ptr) {
             return false;
@@ -181,7 +181,7 @@ protected:
 
     void updateMonstersCounterDistributions();
     map::Position makeRandomPosition() const noexcept;
-    map::Direction makeRandomDirection() const noexcept;
+    Direction makeRandomDirection() const noexcept;
     void moveRandomMonsters();
     void monstersRandomAttack();
     bool addPlayerEntity(PlayerId player_id);

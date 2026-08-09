@@ -1,6 +1,7 @@
 #include "dungeon.h"
 
 #include <random>
+#include <ranges>
 #include <vector>
 
 #include "../../common/logger.h"
@@ -14,8 +15,8 @@ map::Position dungeon::Dungeon::makeRandomPosition() const noexcept {
     return map::Position{dist_x_(gen_), dist_y_(gen_)};
 }
 
-map::Direction dungeon::Dungeon::makeRandomDirection() const noexcept {
-    return static_cast<map::Direction>(dist_direction_(gen_));
+Direction dungeon::Dungeon::makeRandomDirection() const noexcept {
+    return static_cast<Direction>(dist_direction_(gen_));
 }
 
 void dungeon::Dungeon::moveRandomMonsters() {
@@ -54,7 +55,7 @@ void dungeon::Dungeon::addPlayerAttackCommand(PlayerId player_id, uint32_t damag
     });
 }
 
-void dungeon::Dungeon::addMovePlayerCommand(PlayerId player_id, map::Direction direction) {
+void dungeon::Dungeon::addMovePlayerCommand(PlayerId player_id, Direction direction) {
     std::lock_guard<std::mutex> guard(players_action_mtx_);
     commands_.push([self = weak_from_this(), player_id, direction]() {
         auto shared_self = self.lock();
@@ -87,7 +88,7 @@ std::optional<dungeon::DungeonState> dungeon::Dungeon::processTick(
 
 std::vector<PlayerId> dungeon::Dungeon::getPlayers() const {
     std::vector<PlayerId> player_ids;
-    for (const auto& [id, _] : players_entities_) {
+    for (const auto& id : players_entities_ | std::views::keys) {
         player_ids.push_back(id);
     }
     return player_ids;
@@ -107,7 +108,7 @@ bool dungeon::Dungeon::isAvailable(const map::Position& position) const noexcept
 }
 
 bool dungeon::Dungeon::isGameOver() const noexcept {
-    for (const auto& [_, player_entity] : players_entities_) {
+    for (const auto& player_entity : players_entities_ | std::views::values) {
         if (player_entity.isAlive()) {
             return false;
         }

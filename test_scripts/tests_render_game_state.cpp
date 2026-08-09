@@ -53,7 +53,7 @@ TEST(RenderGameStateTest, WithEntities) {
     std::vector<std::string> expected = {"=== Game State ===",
                                          "#####",
                                          "#...#",  // y=2
-                                         "#.P.#",  // y=1: player at (1,1)
+                                         "#.@.#",  // y=1: player at (1,1)
                                          "#..M#",  // y=0: monster at (2,0)
                                          "#####",
                                          "Entities: 2",
@@ -69,7 +69,7 @@ TEST(RenderGameStateTest, EntitiesOverwriteBarriers) {
     std::vector<std::string> expected = {"=== Game State ===",
                                          "#####",
                                          "#...#",
-                                         "#.P.#",  // Player overwrites barrier
+                                         "#.@.#",  // Player overwrites barrier
                                          "#...#",
                                          "#####",
                                          "Entities: 1",
@@ -83,7 +83,7 @@ TEST(RenderGameStateTest, NonZeroOrigin) {
 
     std::vector<std::string> expected = {"=== Game State ===",
                                          "#####",
-                                         "#P..#",  // y=7: player at (5,7)
+                                         "#@..#",  // y=7: player at (5,7)
                                          "#.b.#",  // y=6: barrier at (6,6)
                                          "#...#",  // y=5: none
                                          "#####",

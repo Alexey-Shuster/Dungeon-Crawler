@@ -6,12 +6,13 @@
 #include "config.h"
 
 using namespace dungeon;
+using namespace map;
 
 // Тестовый класс для доступа к protected полям
 class TestableDungeon : public Dungeon {
 public:
     template <typename PlayersContainer>
-    explicit TestableDungeon(map::GameMap game_map, PlayersContainer&& container)
+    explicit TestableDungeon(GameMap game_map, PlayersContainer&& container)
         : Dungeon(std::move(game_map), std::forward<PlayersContainer>(container)) {}
 
     using Dungeon::addMonsterEntity;
@@ -46,13 +47,13 @@ public:
         return false;
     }
 
-    bool isPositionFree(const map::Position& pos) const {
+    bool isPositionFree(const Position& pos) const {
         return isAvailable(pos);
     }
 };
 
 TEST(DungeonTest, AddPlayer) {
-    map::GameMap game_map(map::MapSize{map::Position{0, 0}, map::Position{20, 20}});
+    GameMap game_map(MapSize{Position{0, 0}, Position{20, 20}});
     PlayerId p1{1};
     auto d = std::make_shared<TestableDungeon>(std::move(game_map), std::vector<PlayerId>{});
 
@@ -66,7 +67,7 @@ TEST(DungeonTest, AddPlayer) {
 }
 
 TEST(DungeonTest, RemovePlayer) {
-    map::GameMap game_map(map::MapSize{map::Position{0, 0}, map::Position{20, 20}});
+    GameMap game_map(MapSize{Position{0, 0}, Position{20, 20}});
     PlayerId p1{1};
     auto d = std::make_shared<TestableDungeon>(std::move(game_map), std::vector<PlayerId>{p1});
 
@@ -81,7 +82,7 @@ TEST(DungeonTest, RemovePlayer) {
 }
 
 TEST(DungeonTest, AddMonster) {
-    map::GameMap game_map(map::MapSize{map::Position{0, 0}, map::Position{20, 20}});
+    GameMap game_map(MapSize{Position{0, 0}, Position{20, 20}});
     MobId m1{100};
     auto d = std::make_shared<TestableDungeon>(std::move(game_map), std::vector<PlayerId>{});
 
@@ -95,7 +96,7 @@ TEST(DungeonTest, AddMonster) {
 }
 
 TEST(DungeonTest, PositionOccupied) {
-    map::GameMap game_map(map::MapSize{map::Position{0, 0}, map::Position{20, 20}});
+    GameMap game_map(MapSize{Position{0, 0}, Position{20, 20}});
     PlayerId p1{1};
     MobId m1{100};
     auto d = std::make_shared<TestableDungeon>(std::move(game_map), std::vector<PlayerId>{});
@@ -110,7 +111,7 @@ TEST(DungeonTest, PositionOccupied) {
 }
 
 TEST(DungeonTest, OutOfBounds) {
-    map::GameMap game_map(map::MapSize{map::Position{0, 0}, map::Position{5, 5}});
+    GameMap game_map(MapSize{Position{0, 0}, Position{5, 5}});
     PlayerId p1{1};
     auto d = std::make_shared<TestableDungeon>(std::move(game_map), std::vector<PlayerId>{});
 
@@ -129,13 +130,13 @@ TEST(DungeonTest, OutOfBounds) {
 }
 
 TEST(DungeonTest, PlayerMoveCommand) {
-    map::GameMap game_map(map::MapSize{map::Position{0, 0}, map::Position{20, 20}});
+    GameMap game_map(MapSize{Position{0, 0}, Position{20, 20}});
     PlayerId p1{1};
     auto d = std::make_shared<TestableDungeon>(std::move(game_map), std::vector<PlayerId>{p1});
 
     auto old_pos = d->findPlayer(p1).value().GetPosition();
 
-    d->addMovePlayerCommand(p1, map::Direction::kUp);
+    d->addMovePlayerCommand(p1, Direction::kUp);
     d->processTick(std::chrono::milliseconds{16});
 
     auto new_pos = d->findPlayer(p1).value().GetPosition();
@@ -143,7 +144,7 @@ TEST(DungeonTest, PlayerMoveCommand) {
 }
 
 TEST(DungeonTest, PlayerAttackCommand) {
-    map::GameMap game_map(map::MapSize{map::Position{0, 0}, map::Position{20, 20}});
+    GameMap game_map(MapSize{Position{0, 0}, Position{20, 20}});
     PlayerId p1{1};
     auto d = std::make_shared<TestableDungeon>(std::move(game_map), std::vector<PlayerId>{p1});
 
@@ -153,7 +154,7 @@ TEST(DungeonTest, PlayerAttackCommand) {
 }
 
 TEST(DungeonTest, ConstructorCreatesMonsters) {
-    map::GameMap game_map(map::MapSize{map::Position{0, 0}, map::Position{20, 20}});
+    GameMap game_map(MapSize{Position{0, 0}, Position{20, 20}});
     auto players = std::vector<PlayerId>{PlayerId{1}, PlayerId{2}, PlayerId{3}};
     auto d = std::make_shared<TestableDungeon>(std::move(game_map), players);
 
