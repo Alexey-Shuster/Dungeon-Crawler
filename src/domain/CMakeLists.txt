@@ -1,7 +1,6 @@
 set(DOMAIN_SOURCES
         lobby.h
         lobby.cpp
-        map/direction.h
         map/position.h
         map/game_map.h
         map/game_map.cpp

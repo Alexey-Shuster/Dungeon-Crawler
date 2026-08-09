@@ -40,10 +40,11 @@ void dungeon::Dungeon::monstersRandomAttack() {
         return;
     }
     size_t monsters_counters = dist_monsters_counter_(gen_);
+    static auto attack = config::getSettings().gameplay.monster_default_attack;
     for (size_t i = 0; i < monsters_counters; ++i) {
         size_t monster_number = dist_monsters_counter_(gen_);
         auto it = std::next(monsters_entities_.begin(), monster_number);
-        attackByEntity(monsters_entities_, it->first, players_entities_, 10);
+        attackByEntity(monsters_entities_, it->first, players_entities_, attack);
     }
 }
 

@@ -4,6 +4,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/unordered/unordered_flat_map.hpp>
 #include <chrono>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -43,30 +44,32 @@ public:
 
     struct Server {
         std::string host = "127.0.0.1";
-        int port = 8080;
-        int max_players = 100;
+        uint16_t port = 8080;
+        uint16_t max_players = 100;
         std::chrono::milliseconds tick_rate = std::chrono::milliseconds(100);
-        std::chrono::seconds client_disconnect_timeout = std::chrono::seconds(10);
+        std::chrono::seconds client_disconnect_timeout = std::chrono::seconds(60);
     } server;
 
     struct Database {
         std::string connection_string{};
-        int pool_size = 10;
+        uint16_t pool_size = 10;
     } database;
 
     struct Gameplay {
-        int lobby_max_players = 4;
+        uint16_t lobby_max_players = 4;
         std::string map_name = "test";
-        std::chrono::seconds match_duration = std::chrono::seconds(300);
-        int player_default_hp = 100;
-        int monster_default_hp = 50;
-        int monsters_per_player = 3;
+        std::chrono::seconds match_duration = std::chrono::seconds(100);
+        uint32_t player_default_hp = 100;
+        uint32_t monster_default_hp = 50;
+        uint16_t monsters_per_player = 3;
         double default_radius_attack = 2;
         double default_radius_view = 4;
-        int default_map_blc_x = 0;
-        int default_map_blc_y = 0;
-        int default_map_trc_x = 100;
-        int default_map_trc_y = 25;
+        uint32_t player_default_attack = 10;
+        uint32_t monster_default_attack = 5;
+        int64_t default_map_blc_x = 0;
+        int64_t default_map_blc_y = 0;
+        int64_t default_map_trc_x = 60;
+        int64_t default_map_trc_y = 30;
     } gameplay;
 
     struct Logger {

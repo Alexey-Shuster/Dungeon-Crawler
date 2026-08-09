@@ -19,7 +19,7 @@ inline void unsetenv(const char* name) {
     _putenv(eq.c_str());
 }
 #else
-#include <unistd.h>  // for setenv/unsetenv
+    #include <unistd.h>  // for setenv/unsetenv
 #endif
 
 namespace fs = std::filesystem;
@@ -140,12 +140,12 @@ TEST_F(SettingsTest, DefaultValuesForAllKnownFields) {
     EXPECT_EQ(cfg.server.port, 8080);
     EXPECT_EQ(cfg.server.max_players, 100);
     EXPECT_EQ(cfg.server.tick_rate.count(), 100);
-    EXPECT_EQ(cfg.server.client_disconnect_timeout.count(), 10);
+    EXPECT_EQ(cfg.server.client_disconnect_timeout.count(), 60);
     EXPECT_EQ(cfg.database.connection_string, "");
     EXPECT_EQ(cfg.database.pool_size, 10);
     EXPECT_EQ(cfg.gameplay.lobby_max_players, 4);
     EXPECT_EQ(cfg.gameplay.map_name, "test");
-    EXPECT_EQ(cfg.gameplay.match_duration.count(), 300);
+    EXPECT_EQ(cfg.gameplay.match_duration.count(), 100);
     EXPECT_EQ(cfg.logger.level, "info");
     EXPECT_EQ(cfg.logger.output_dir, "./logs");
 }
@@ -546,7 +546,7 @@ TEST_F(SettingsTest, MissingJsonFileUsesDefaults) {
     const auto& cfg = config::getSettings();
 
     EXPECT_EQ(cfg.server.port, 8080);
-    EXPECT_EQ(cfg.gameplay.default_map_trc_x, 100);
+    EXPECT_EQ(cfg.gameplay.default_map_trc_x, 60);
     // No exception
 }
 

@@ -52,7 +52,7 @@ public:
         updateMonstersCounterDistributions();
     }
 
-    void addPlayerAttackCommand(PlayerId player_id, uint32_t damage = 10);
+    void addPlayerAttackCommand(PlayerId player_id, uint32_t damage);
     void addMovePlayerCommand(PlayerId player_id, Direction direction);
     std::optional<DungeonState> processTick([[maybe_unused]] std::chrono::milliseconds time_delta);
     std::vector<PlayerId> getPlayers() const;
