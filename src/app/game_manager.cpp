@@ -8,8 +8,10 @@ namespace game {
 
 GameManager::GameManager(boost::asio::io_context& io_context,
                          std::shared_ptr<events::EventBus> event_bus,
-                         std::shared_ptr<lobby::LobbyRegistry> lobby_registry) :
-    strand_(io_context.get_executor()), event_bus_(std::move(event_bus)), lobby_registry_(std::move(lobby_registry)) {}
+                         std::shared_ptr<lobby::LobbyRegistry> lobby_registry)
+    : strand_(io_context.get_executor())
+    , event_bus_(std::move(event_bus))
+    , lobby_registry_(std::move(lobby_registry)) {}
 
 std::shared_ptr<GameManager> GameManager::create(boost::asio::io_context& io_context,
                                                  std::shared_ptr<events::EventBus> event_bus,
@@ -81,15 +83,18 @@ void GameManager::onGameTickEvent(const events::GameTickEvent& event) {
 void GameManager::onMoveRequestEvent(const events::MoveRequestEvent& event) {
     auto player_id = event.player_id;
     auto direction = event.direction;
+    std::string dir_str{};
+    if (auto dir = directionToString(direction)) {
+        dir_str = *dir;
+    }
     if (auto game_id_opt = dungeon_registry_.findPlayerDungeon(player_id); game_id_opt.has_value()) {
         auto game_id = game_id_opt.value();
         if (auto dungeon = dungeon_registry_.findDungeon(game_id); dungeon) {
-            auto command_direction = map::commandDirectionFromMessageDirection(direction);
-            dungeon->addMovePlayerCommand(player_id, command_direction);
+            dungeon->addMovePlayerCommand(player_id, direction);
             LOG_INFO(std::format("[GameManager] Player {} moved in dungeon #{} to direction {}",
                                  player_id.value,
                                  game_id.value,
-                                 map::directionToString(command_direction)));
+                                 dir_str));
         } else {
             LOG_ERROR(std::format("[GameManager] Dungeon {} not found for player {}", game_id.value, player_id.value));
         }

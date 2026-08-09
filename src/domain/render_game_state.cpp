@@ -17,7 +17,7 @@ namespace serialization {
 namespace {
 
 // ---- ASCII symbols ----
-constexpr char kPlayerSymbol = 'P';
+constexpr char kPlayerSymbol = '@';
 constexpr char kMonsterSymbol = 'M';
 constexpr char kOtherPlayerSymbol = 'C';
 constexpr char kBarrierSymbol = 'b';
