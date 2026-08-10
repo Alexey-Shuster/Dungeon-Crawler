@@ -4,55 +4,60 @@
 #include <boost/log/sinks/text_file_backend.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/log/utility/manipulators/add_value.hpp>
-#include <iostream>
 #include <string>
 #include <vector>
 
 namespace utils {
 
 struct LogSrcInfo {
-    std::string file;
-    std::string function;
+    const char* file;
+    const char* function;
     uint32_t line;
+
+    // Implicit conversion from C++20 standard source location
+    constexpr LogSrcInfo(std::source_location loc = std::source_location::current()) noexcept
+        : file(loc.file_name())
+        , function(loc.function_name())
+        , line(loc.line()) {}
 };
 
-#define LOG_SRC_INFO                     \
-    LogSrcInfo {                         \
-        __FILE__, __FUNCTION__, __LINE__ \
-    }
-
-#define LOG_INFO(message) utils::Logger::LogInfo(utils::LOG_SRC_INFO, message)
-#define LOG_ERROR(message) utils::Logger::LogError(utils::LOG_SRC_INFO, message)
-#define LOG_DEBUG(message) utils::Logger::LogDebug(utils::LOG_SRC_INFO, message)
-#define LOG_WARN(message) utils::Logger::LogWarn(utils::LOG_SRC_INFO, message)
+#define LOG_INFO(msg) ::utils::Logger::Instance().LogInfo(msg)
+#define LOG_ERROR(msg) ::utils::Logger::Instance().LogError(msg)
+#define LOG_DEBUG(msg) ::utils::Logger::Instance().LogDebug(msg)
+#define LOG_WARN(msg) ::utils::Logger::Instance().LogWarn(msg)
 
 class Logger {
 public:
     static Logger& Instance();
 
     ~Logger();
+    Logger(const Logger&) = delete;
+    Logger& operator=(const Logger&) = delete;
 
-    static void LogInfo(const LogSrcInfo& source_info, const std::string& message);
-    static void LogError(const LogSrcInfo& source_info, const std::string& message);
-    static void LogDebug(const LogSrcInfo& source_info, const std::string& message);
-    static void LogWarn(const LogSrcInfo& source_info, const std::string& message);
+    void LogInfo(std::string_view message, LogSrcInfo src = LogSrcInfo{});
+    void LogError(std::string_view message, LogSrcInfo src = LogSrcInfo{});
+    void LogDebug(std::string_view message, LogSrcInfo src = LogSrcInfo{});
+    void LogWarn(std::string_view message, LogSrcInfo src = LogSrcInfo{});
+
+    void Shutdown();
 
 private:
     Logger();
-    static void Initialize();
-    static std::string GetLogDirPath();
-    static std::string GetProcessIdentifier();
+    void Initialize();
+
+    std::string GetLogDirPath();
+    std::string GetProcessIdentifier();
 
     template <typename LogStream>
-    void LogWithSource(LogStream&& stream, const LogSrcInfo& source_info, const std::string& message);
+    void LogWithSource(LogStream&& stream, const LogSrcInfo& source_info, std::string_view message);
 
 private:
     using async_synk = boost::log::sinks::asynchronous_sink<boost::log::sinks::text_file_backend>;
-    inline static std::vector<boost::shared_ptr<async_synk>> sinks_;
+    std::vector<boost::shared_ptr<async_synk>> sinks_{};
 };
 
 template <typename LogStream>
-void Logger::LogWithSource(LogStream&& stream, const LogSrcInfo& source_info, const std::string& message) {
+void Logger::LogWithSource(LogStream&& stream, const LogSrcInfo& source_info, std::string_view message) {
     stream << boost::log::add_value("File", source_info.file) << boost::log::add_value("Function", source_info.function)
            << boost::log::add_value("Line", source_info.line) << message;
 }

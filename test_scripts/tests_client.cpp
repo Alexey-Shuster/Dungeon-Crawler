@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "../client/client.h"
+#include "../common/config.h"
 #include "../common/logger.h"
 
 using namespace network;
@@ -16,9 +17,11 @@ using boost::asio::ip::tcp;
 // Helper: Simple echo server for testing
 class EchoServer {
 public:
-    EchoServer(boost::asio::io_context& io, uint16_t port) :
-        io_(io), acceptor_(io, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port)), socket_(io),
-        is_running_(true) {
+    EchoServer(boost::asio::io_context& io, uint16_t port)
+        : io_(io)
+        , acceptor_(io, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port))
+        , socket_(io)
+        , is_running_(true) {
         accept();
     }
 
@@ -281,7 +284,8 @@ TEST_F(ClientTest, SendFromMultipleThreads) {
 
 class TrackingClient {
 public:
-    explicit TrackingClient(std::shared_ptr<Client> client) : client_(client) {}
+    explicit TrackingClient(std::shared_ptr<Client> client)
+        : client_(client) {}
 
     void sendAndTrack(const std::string& message) {
         sent_count_++;
@@ -426,8 +430,9 @@ TEST_F(ClientTest, DisconectTest) {
 
     class DisServer {
     public:
-        DisServer(boost::asio::io_context& io, uint16_t port) :
-            acceptor_(io, tcp::endpoint(tcp::v4(), port)), socket_(io) {
+        DisServer(boost::asio::io_context& io, uint16_t port)
+            : acceptor_(io, tcp::endpoint(tcp::v4(), port))
+            , socket_(io) {
             accept();
         }
 
@@ -497,11 +502,4 @@ TEST_F(ClientTest, SendMessageDataDirectly) {
     EXPECT_NO_THROW(client->send(data));
     runIO(io, 200);
     server.stop();
-}
-
-// ==================== MAIN ====================
-
-int main(int argc, char** argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
 }
