@@ -18,9 +18,15 @@ elseif (MSVC)
     target_compile_options(tests_base INTERFACE /wd4834)
 endif ()
 
-function(add_test_target TARGET_NAME)
+function(add_test_target TARGET_NAME INIT_SRC)
+    get_filename_component(INIT_SRC_NAME "${INIT_SRC}" NAME)
+
+    if (NOT "${INIT_SRC_NAME}" STREQUAL "tests_init_config_logger.cpp")
+        message(FATAL_ERROR "add_test_target: Main source for '${TARGET_NAME}' must be exactly 'tests_init_config_logger.cpp'. Given: '${INIT_SRC}'")
+    endif ()
+
     # ${ARGN} автоматически собирает все аргументы, переданные после TARGET_NAME
-    add_executable(${TARGET_NAME} ${ARGN})
+    add_executable(${TARGET_NAME} ${INIT_SRC} ${ARGN})
 
     target_link_libraries(${TARGET_NAME} PRIVATE tests_base)
 
@@ -28,6 +34,7 @@ function(add_test_target TARGET_NAME)
 endfunction()
 
 add_test_target(test_app
+        tests_init_config_logger.cpp
         tests_lobby_registry.cpp
         tests_game_manager.cpp
 )
@@ -37,6 +44,7 @@ target_link_libraries(test_app PRIVATE
 )
 
 add_test_target(test_client
+        tests_init_config_logger.cpp
         tests_client.cpp
         tests_keyboard_controller.cpp
 )
@@ -46,6 +54,7 @@ target_link_libraries(test_client PRIVATE
 )
 
 add_test_target(test_common
+        tests_init_config_logger.cpp
         tests_config.cpp
         tests_frame_codec.cpp
         tests_hash.cpp
@@ -64,6 +73,7 @@ if (BUILD_TESTS)
 endif ()
 
 add_test_target(test_domain
+        tests_init_config_logger.cpp
         tests_lobby.cpp
         tests_position.cpp
         tests_direction.cpp
@@ -76,6 +86,7 @@ target_link_libraries(test_domain PRIVATE
 )
 
 add_test_target(test_infra
+        tests_init_config_logger.cpp
         tests_eventbus.cpp
 )
 
@@ -84,6 +95,7 @@ target_link_libraries(test_infra PRIVATE
 )
 
 add_test_target(test_server
+        tests_init_config_logger.cpp
         tests_session.cpp
         tests_session_registry.cpp
         tests_connection_manager.cpp

@@ -9,7 +9,7 @@
 int main(int argc, char* argv[]) {
     config::Settings::initialize("config.json");
     const auto& cfg = config::getSettings();
-    logger::Logger::Instance();
+    utils::Logger::Instance();
 
     boost::asio::io_context io;
 

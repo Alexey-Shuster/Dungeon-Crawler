@@ -6,26 +6,25 @@
 #include <boost/log/core.hpp>
 #include <boost/log/expressions.hpp>
 #include <boost/log/sinks/bounded_fifo_queue.hpp>
-#include <boost/log/sinks/unbounded_fifo_queue.hpp>
 #include <boost/log/utility/manipulators/add_value.hpp>
 #include <boost/log/utility/setup/common_attributes.hpp>
 #include <boost/log/utility/setup/console.hpp>
 #include <boost/log/utility/setup/file.hpp>
-#include <boost/smart_ptr.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <exception>
 #include <filesystem>
 #include <fstream>
-#include <sstream>
+#include <iostream>
 #include <string_view>
 
 #include "config.h"
 
-namespace logger {
+namespace utils {
 
-std::vector<boost::shared_ptr<Logger::async_synk>> Logger::sinks_;
+namespace log = boost::log;
+namespace sinks = log::sinks;
 
 namespace keywords = log::keywords;
 namespace json = boost::json;
@@ -118,6 +117,17 @@ void Logger::Initialize() {
         std::cout << "[Logger] Info: Using text log format." << std::endl;
     }
 
+    // debug (0) < info (1) < warning (2) < error (3) < fatal (4)
+
+    auto main_log_level = log::trivial::info;
+    auto config_log_level = config::getSettings().logger.level;
+
+    if (config_log_level == "warn") {
+        main_log_level = log::trivial::warning;
+    } else if (config_log_level == "error") {
+        main_log_level = log::trivial::error;
+    }
+
     log::core::get()->add_global_attribute("PID", boost::log::attributes::make_constant(::getpid()));
     log::core::get()->add_global_attribute("TID", boost::log::attributes::current_thread_id());
     log::core::get()->add_global_attribute("RunUUID", boost::log::attributes::make_constant(GetProcessIdentifier()));
@@ -142,18 +152,17 @@ void Logger::Initialize() {
         sink->set_filter(log::trivial::severity >= min_sev);
         sink->set_formatter(&LogFormatter);
 
-        log::core::get()->add_sink(sink);
         sinks_.push_back(sink);
+        log::core::get()->add_sink(sink);
+
         return sink;
     };
 
-    // debug (0) < info (1) < warning (2) < error (3) < fatal (4)
-
     // Main log – always INFO and above
-    create_sink("", log::trivial::info);
+    create_sink("", main_log_level);
 
     // Debug log – only when config level is "debug"
-    if (config::getSettings().logger.level == "debug") {
+    if (config_log_level == "debug") {
         create_sink("_debug", log::trivial::debug);
         std::cout << "[Logger] Info: Debug logging enabled – separate debug file will be written." << std::endl;
     }
@@ -161,10 +170,9 @@ void Logger::Initialize() {
 
 Logger::Logger() {
     try {
-        static std::once_flag initialize_flag;
-        std::call_once(initialize_flag, Initialize);
-    } catch (const std::exception& excp) {
-        std::cerr << "[WARNING] Logger initialization failed: " << excp.what() << std::endl;
+        Initialize();
+    } catch (const std::exception& e) {
+        std::cerr << "[Logger] Warning: initialization failed: " << e.what() << std::endl;
         throw;
     }
 }
@@ -175,29 +183,39 @@ Logger& Logger::Instance() {
 }
 
 Logger::~Logger() {
+    Shutdown();
+}
+
+void Logger::Shutdown() {
     try {
         auto core = log::core::get();
         for (auto& sink : sinks_) {
             if (sink) {
+                // 1. Remove the sink from the core to stop dispatching new log records to it
                 core->remove_sink(sink);
+
+                // 2. Stop the sink's internal thread to prevent it from accepting new entries into its queue
                 sink->stop();
+
+                // 3. Flush the buffer to ensure all remaining queued log entries are written to disk
                 sink->flush();
+
+                // 4. Release the smart pointer resources
                 sink.reset();
             }
         }
-    } catch (const std::exception& excp) {
-        std::cerr << "WARNING: exceptions in Logger destructor: " << excp.what();
+    } catch (const std::exception& e) {
+        std::cerr << "[Logger] Warning: exceptions in Logger destructor: " << e.what() << std::endl;
     }
 }
 
-#define DEFINE_LOG_METHOD(MethodName, BoostLevel)                                             \
-    void Logger::MethodName(const SourceInfo& source_info, const std::string& message) {      \
-        BOOST_LOG_TRIVIAL(BoostLevel) << log::add_value("File", source_info.file)             \
-                                      << log::add_value("Function", source_info.function)     \
-                                      << log::add_value("Line", source_info.line) << message; \
+#define DEFINE_LOG_METHOD(MethodName, BoostLevel)                                            \
+    void Logger::MethodName(std::string_view message, LogSrcInfo src) {                      \
+        BOOST_LOG_TRIVIAL(BoostLevel) << boost::log::add_value("File", src.file)             \
+                                      << boost::log::add_value("Function", src.function)     \
+                                      << boost::log::add_value("Line", src.line) << message; \
     }
 
-// Generate all functions
 DEFINE_LOG_METHOD(LogInfo, info)
 DEFINE_LOG_METHOD(LogError, error)
 DEFINE_LOG_METHOD(LogDebug, debug)
@@ -205,4 +223,4 @@ DEFINE_LOG_METHOD(LogWarn, warning)
 
 #undef DEFINE_LOG_METHOD
 
-}  // namespace logger
+}  // namespace utils

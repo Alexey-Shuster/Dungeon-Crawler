@@ -184,13 +184,3 @@ TEST_F(LobbyTest, GetId_ReturnsCorrectId) {
     Lobby other(id, PlayerId{5});
     EXPECT_EQ(other.getId(), id);
 }
-
-// ============================================================================
-// Test Runner
-// ============================================================================
-
-int main(int argc, char** argv) {
-    config::Settings::initialize("");
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}
