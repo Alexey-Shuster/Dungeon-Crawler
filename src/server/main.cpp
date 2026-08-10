@@ -26,7 +26,7 @@ int main(int argc, char* argv[]) {
     try {
         config::Settings::initialize("config.json");
         const auto& cfg = config::getSettings();
-        logger::Logger::Instance();
+        utils::Logger::Instance();
 
         LOG_INFO("Starting Dungeon Crawler Server ...");
         auto event_bus = events::EventBus::create();

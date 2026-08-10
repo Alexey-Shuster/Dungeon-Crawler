@@ -8,25 +8,23 @@
 #include <string>
 #include <vector>
 
-namespace logger {
+namespace utils {
 
-namespace log = boost::log;
-namespace sinks = boost::log::sinks;
-
-struct SourceInfo {
+struct LogSrcInfo {
     std::string file;
     std::string function;
     uint32_t line;
 };
 
-#define SOURCE_INFO                      \
-    SourceInfo {                         \
+#define LOG_SRC_INFO                     \
+    LogSrcInfo {                         \
         __FILE__, __FUNCTION__, __LINE__ \
     }
-#define LOG_INFO(message) logger::Logger::LogInfo(logger::SOURCE_INFO, message)
-#define LOG_ERROR(message) logger::Logger::LogError(logger::SOURCE_INFO, message)
-#define LOG_DEBUG(message) logger::Logger::LogDebug(logger::SOURCE_INFO, message)
-#define LOG_WARN(message) logger::Logger::LogWarn(logger::SOURCE_INFO, message)
+
+#define LOG_INFO(message) utils::Logger::LogInfo(utils::LOG_SRC_INFO, message)
+#define LOG_ERROR(message) utils::Logger::LogError(utils::LOG_SRC_INFO, message)
+#define LOG_DEBUG(message) utils::Logger::LogDebug(utils::LOG_SRC_INFO, message)
+#define LOG_WARN(message) utils::Logger::LogWarn(utils::LOG_SRC_INFO, message)
 
 class Logger {
 public:
@@ -34,10 +32,10 @@ public:
 
     ~Logger();
 
-    static void LogInfo(const SourceInfo& source_info, const std::string& message);
-    static void LogError(const SourceInfo& source_info, const std::string& message);
-    static void LogDebug(const SourceInfo& source_info, const std::string& message);
-    static void LogWarn(const SourceInfo& source_info, const std::string& message);
+    static void LogInfo(const LogSrcInfo& source_info, const std::string& message);
+    static void LogError(const LogSrcInfo& source_info, const std::string& message);
+    static void LogDebug(const LogSrcInfo& source_info, const std::string& message);
+    static void LogWarn(const LogSrcInfo& source_info, const std::string& message);
 
 private:
     Logger();
@@ -46,14 +44,17 @@ private:
     static std::string GetProcessIdentifier();
 
     template <typename LogStream>
-    void LogWithSource(LogStream&& stream, const SourceInfo& source_info, const std::string& message) {
-        stream << log::add_value("File", source_info.file) << log::add_value("Function", source_info.function)
-               << log::add_value("Line", source_info.line) << message;
-    }
+    void LogWithSource(LogStream&& stream, const LogSrcInfo& source_info, const std::string& message);
 
 private:
-    using async_synk = sinks::asynchronous_sink<sinks::text_file_backend>;
-    static std::vector<boost::shared_ptr<async_synk>> sinks_;
+    using async_synk = boost::log::sinks::asynchronous_sink<boost::log::sinks::text_file_backend>;
+    inline static std::vector<boost::shared_ptr<async_synk>> sinks_;
 };
 
-}  // namespace logger
+template <typename LogStream>
+void Logger::LogWithSource(LogStream&& stream, const LogSrcInfo& source_info, const std::string& message) {
+    stream << boost::log::add_value("File", source_info.file) << boost::log::add_value("Function", source_info.function)
+           << boost::log::add_value("Line", source_info.line) << message;
+}
+
+}  // namespace utils

@@ -23,9 +23,10 @@
 
 #include "config.h"
 
-namespace logger {
+namespace utils {
 
-std::vector<boost::shared_ptr<Logger::async_synk>> Logger::sinks_;
+namespace log = boost::log;
+namespace sinks = log::sinks;
 
 namespace keywords = log::keywords;
 namespace json = boost::json;
@@ -118,6 +119,17 @@ void Logger::Initialize() {
         std::cout << "[Logger] Info: Using text log format." << std::endl;
     }
 
+    // debug (0) < info (1) < warning (2) < error (3) < fatal (4)
+
+    auto main_log_level = log::trivial::info;
+    auto config_log_level = config::getSettings().logger.level;
+
+    if (config_log_level == "warn") {
+        main_log_level = log::trivial::warning;
+    } else if (config_log_level == "error") {
+        main_log_level = log::trivial::error;
+    }
+
     log::core::get()->add_global_attribute("PID", boost::log::attributes::make_constant(::getpid()));
     log::core::get()->add_global_attribute("TID", boost::log::attributes::current_thread_id());
     log::core::get()->add_global_attribute("RunUUID", boost::log::attributes::make_constant(GetProcessIdentifier()));
@@ -147,13 +159,11 @@ void Logger::Initialize() {
         return sink;
     };
 
-    // debug (0) < info (1) < warning (2) < error (3) < fatal (4)
-
     // Main log – always INFO and above
-    create_sink("", log::trivial::info);
+    create_sink("", main_log_level);
 
     // Debug log – only when config level is "debug"
-    if (config::getSettings().logger.level == "debug") {
+    if (config_log_level == "debug") {
         create_sink("_debug", log::trivial::debug);
         std::cout << "[Logger] Info: Debug logging enabled – separate debug file will be written." << std::endl;
     }
@@ -191,7 +201,7 @@ Logger::~Logger() {
 }
 
 #define DEFINE_LOG_METHOD(MethodName, BoostLevel)                                             \
-    void Logger::MethodName(const SourceInfo& source_info, const std::string& message) {      \
+    void Logger::MethodName(const LogSrcInfo& source_info, const std::string& message) {      \
         BOOST_LOG_TRIVIAL(BoostLevel) << log::add_value("File", source_info.file)             \
                                       << log::add_value("Function", source_info.function)     \
                                       << log::add_value("Line", source_info.line) << message; \
@@ -205,4 +215,4 @@ DEFINE_LOG_METHOD(LogWarn, warning)
 
 #undef DEFINE_LOG_METHOD
 
-}  // namespace logger
+}  // namespace utils
