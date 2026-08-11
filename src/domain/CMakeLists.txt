@@ -15,6 +15,13 @@ set(DOMAIN_SOURCES
         render_game_state.h
         create_game_state.cpp
         render_game_state.cpp
+        dungeon/entity_manager.h
+        dungeon/collision_check.h
+        dungeon/position_gen.h
+        dungeon/direction_gen.h
+        dungeon/spawner.h
+        dungeon/command_queue.h
+        dungeon/monster_control.h
 )
 
 add_library(podzemeliya_domain STATIC

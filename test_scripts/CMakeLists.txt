@@ -79,6 +79,7 @@ add_test_target(test_domain
         tests_direction.cpp
         tests_dungeon.cpp
         tests_render_game_state.cpp
+        tests_entity_manager.cpp
 )
 
 target_link_libraries(test_domain PRIVATE
