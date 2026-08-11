@@ -18,10 +18,52 @@
 #include <fstream>
 #include <iostream>
 #include <string_view>
-
-#include "config.h"
+#include <system_error>
 
 namespace utils {
+
+namespace {
+
+namespace fs = std::filesystem;
+
+bool IsLogDirValid(const std::string& path_str) {
+    if (path_str.empty()) {
+        return false;
+    }
+
+    fs::path log_dir(path_str);
+    std::error_code ec;
+
+    // try to create dir
+    if (!fs::exists(log_dir, ec)) {
+        fs::create_directories(log_dir, ec);
+        if (ec) {
+            return false;
+        }
+    }
+
+    // check if is dir
+    if (!fs::is_directory(log_dir, ec) || ec) {
+        return false;
+    }
+
+    // check write permission
+    fs::path test_file = log_dir / ".logger_write_test";
+    std::ofstream test_stream(test_file);
+
+    if (!test_stream.is_open()) {
+        return false;
+    }
+
+    test_stream.close();
+    fs::remove(test_file, ec);
+
+    return true;
+}
+}  // namespace
+
+std::unique_ptr<Logger> Logger::instance_ = nullptr;
+std::mutex Logger::init_mutex_;
 
 namespace log = boost::log;
 namespace sinks = log::sinks;
@@ -29,8 +71,6 @@ namespace sinks = log::sinks;
 namespace keywords = log::keywords;
 namespace json = boost::json;
 
-constexpr std::string_view LOG_DIR_PATH = "LOG_DIR_PATH";
-constexpr std::string_view DEFAULT_LOG_DIR_PATH = "./logs";
 constexpr const uint32_t LOG_SIZE_ROTATION{10 * 1024 * 1024};
 const sinks::file::rotation_at_time_point LOG_TIME_ROTATION{0, 0, 0};
 
@@ -42,85 +82,142 @@ BOOST_LOG_ATTRIBUTE_KEYWORD(pid, "PID", int)
 BOOST_LOG_ATTRIBUTE_KEYWORD(tid, "TID", boost::log::attributes::current_thread_id::value_type)
 BOOST_LOG_ATTRIBUTE_KEYWORD(run_uuid, "RunUUID", std::string)
 
-std::string Logger::GetProcessIdentifier() {
-    static std::string process_identifier = []() {
-        boost::uuids::random_generator gen;
-        boost::uuids::uuid process_id = gen();
-        return boost::uuids::to_string(process_id);
-    }();
-    return process_identifier;
-}
+class CustomLogFormatter {
+public:
+    explicit CustomLogFormatter(std::string format)
+        : format_(std::move(format)) {}
 
-std::string Logger::GetLogDirPath() {
-    auto config_log_dir_path = config::getSettings().logger.output_dir;
+    void operator()(const boost::log::record_view& rec, boost::log::formatting_ostream& strm) const {
+        auto severity = *rec[boost::log::trivial::severity];
+        auto ts = *rec[timestamp];
+        auto file = *rec[source_file];
+        auto function = *rec[source_function];
+        auto line = *rec[source_line];
+        auto process_id = *rec[pid];
+        auto thread_id_str = boost::lexical_cast<std::string>(*rec[tid]);
+        auto run_uuid_val = *rec[run_uuid];
+        auto message = *rec[boost::log::expressions::smessage];
 
-    if (!config_log_dir_path.empty()) {
-        std::cout << "[Logger] Info: Using logger.output_dir parameter from config file: " << config_log_dir_path
-                  << std::endl;
-        return config_log_dir_path;
-    } else {
-        std::cout << "[Logger] Info: Config file not found, checking environment variable..." << std::endl;
+        if (format_ == "json") {
+            json::object log_data;
+            log_data["timestamp"] = to_iso_extended_string(ts);
+            log_data["severity"] = boost::log::trivial::to_string(severity);
+            log_data["pid"] = process_id;
+            log_data["tid"] = thread_id_str;
+            log_data["run_uuid"] = run_uuid_val;
+            log_data["file"] = file;
+            log_data["line"] = line;
+            log_data["function"] = function;
+            log_data["message"] = message;
+            strm << json::serialize(log_data);
+        } else {
+            // format: [timestamp] [severity] [pid:tid] [run_uuid] [file:line] [function] message
+            strm << "[" << to_iso_extended_string(ts) << "]"
+                 << " [" << boost::log::trivial::to_string(severity) << "]"
+                 << " [pid:tid = " << process_id << ":" << thread_id_str << "]"
+                 << " [uuid = " << run_uuid_val << "]"
+                 << " [" << file << " : " << line << "]"
+                 << " [" << function << "] " << message;
+        }
     }
 
-    if (const char* env_log_dir_path = std::getenv(LOG_DIR_PATH.data())) {
-        std::cout << "[Logger] Info: Using LOGGER_OUTPUT_DIR from environment variable: " << env_log_dir_path
-                  << std::endl;
-        return env_log_dir_path;
-    } else {
-        std::cout << "[Logger] Info: LOGGER_OUTPUT_DIR environment variable not set." << std::endl;
-    }
+private:
+    std::string format_;
+};
 
-    std::cout << "[Logger] Info: Using default log directory: " << DEFAULT_LOG_DIR_PATH << std::endl;
-    return std::string(DEFAULT_LOG_DIR_PATH);
+Logger& Logger::Instance() {
+    // Double-Checked Locking Pattern (DCLP)
+    if (!instance_) {
+        std::lock_guard lock(init_mutex_);
+        if (!instance_) {
+            std::clog << "[Logger] Warning: Instance() called prior to Initialize(). Default log config used."
+                      << std::endl;
+            instance_.reset(new Logger(LogConfig{}));
+        }
+    }
+    return *instance_;
 }
 
-void LogFormatter(const log::record_view& rec, log::formatting_ostream& strm) {
-    auto severity = *rec[log::trivial::severity];
-    auto ts = *rec[timestamp];
-    auto file = *rec[source_file];
-    auto function = *rec[source_function];
-    auto line = *rec[source_line];
-    auto process_id = *rec[pid];
-    auto thread_id_str = boost::lexical_cast<std::string>(*rec[tid]);
-    auto run_uuid_val = *rec[run_uuid];
-    auto message = *rec[log::expressions::smessage];
-
-    if (config::getSettings().logger.format == "json") {
-        json::object log_data;
-        log_data["timestamp"] = to_iso_extended_string(ts);
-        log_data["severity"] = boost::log::trivial::to_string(severity);
-        log_data["pid"] = process_id;
-        log_data["tid"] = thread_id_str;
-        log_data["run_uuid"] = run_uuid_val;
-        log_data["file"] = file;
-        log_data["line"] = line;
-        log_data["function"] = function;
-        log_data["message"] = message;
-        strm << json::serialize(log_data);
+void Logger::Initialize(const LogConfig& config) {
+    std::lock_guard lock(init_mutex_);
+    if (!instance_) {
+        instance_.reset(new Logger(config));
     } else {
-        // format: [timestamp] [severity] [pid:tid] [run_uuid] [file:line] [function] message
-        strm << "[" << to_iso_extended_string(ts) << "]"
-             << " [" << boost::log::trivial::to_string(severity) << "]"
-             << " [pid:tid = " << process_id << ":" << thread_id_str << "]"
-             << " [uuid = " << run_uuid_val << "]"
-             << " [" << file << " : " << line << "]"
-             << " [" << function << "] " << message;
+        std::clog << "[Logger] Warning: Logger is already initialized. Call ignored." << std::endl;
     }
 }
 
-void Logger::Initialize() {
+void Logger::Reset() {
+    std::lock_guard lock(init_mutex_);
+    if (instance_) {
+        instance_->Shutdown();  // stop sinks
+        instance_.reset();      // delete logger object
+    }
+}
+
+Logger::~Logger() {
+    Shutdown();
+}
+
+void Logger::Shutdown() {
+    static bool already_shutdown = false;
+    if (already_shutdown)
+        return;
+
+    try {
+        auto core = log::core::get();
+        core->flush();
+        for (auto& sink : sinks_) {
+            if (sink) {
+                core->remove_sink(sink);
+                sink.reset();  // auto-stop sinks while destruction
+            }
+        }
+        sinks_.clear();
+        already_shutdown = true;
+    } catch (const std::exception& e) {
+        std::cerr << "[Logger] Warning: exceptions in Logger::Shutdown: " << e.what() << std::endl;
+    }
+}
+
+Logger::Logger(const LogConfig& config) {
+    namespace fs = std::filesystem;
+
+    std::string validated_log_dir = config.log_dir;
+    bool use_file_logging = true;
+
+    if (!IsLogDirValid(validated_log_dir)) {
+        std::cerr << "[Logger] Warning: Invalid or unwritable log directory: " + config.log_dir << std::endl;
+        auto default_log_dir = LogConfig{}.log_dir;
+        std::clog << "[Logger] Info: Trying default directory: " << default_log_dir << std::endl;
+
+        if (IsLogDirValid(default_log_dir)) {
+            validated_log_dir = default_log_dir;
+        } else {
+            std::cerr << "[Logger] Error: Default log directory also invalid: " << default_log_dir << std::endl;
+            std::clog << "[Logger] Info: Falling back to console-only output." << std::endl;
+            use_file_logging = false;
+        }
+    }
+
     log::add_common_attributes();
 
-    if (config::getSettings().logger.format == "json") {
-        std::cout << "[Logger] Info: Using JSON log format (default)." << std::endl;
+    std::string log_format = config.log_format;
+    if (log_format == "json") {
+        std::clog << "[Logger] Info: Using JSON log format." << std::endl;
+    } else if (log_format == "text") {
+        std::clog << "[Logger] Info: Using text log format." << std::endl;
     } else {
-        std::cout << "[Logger] Info: Using text log format." << std::endl;
+        log_format = LogConfig{}.log_format;
+        std::clog << "[Logger] Warning: Unknown log format '" << config.log_format
+                  << "'. Using default format: " << log_format << std::endl;
     }
 
     // debug (0) < info (1) < warning (2) < error (3) < fatal (4)
 
     auto main_log_level = log::trivial::info;
-    auto config_log_level = config::getSettings().logger.level;
+    auto config_log_level = config.log_level;
+    std::ranges::transform(config_log_level, config_log_level.begin(), ::tolower);
 
     if (config_log_level == "warn") {
         main_log_level = log::trivial::warning;
@@ -132,81 +229,65 @@ void Logger::Initialize() {
     log::core::get()->add_global_attribute("TID", boost::log::attributes::current_thread_id());
     log::core::get()->add_global_attribute("RunUUID", boost::log::attributes::make_constant(GetProcessIdentifier()));
 
-    std::string log_dir_path = GetLogDirPath();
-    std::string process_identifier = GetProcessIdentifier();
-    std::filesystem::create_directories(log_dir_path);
+    if (use_file_logging) {
+        fs::path absolute_log_path = fs::absolute(validated_log_dir);
 
-    // Base file name pattern
-    auto base_path = std::filesystem::path(log_dir_path) / process_identifier;
-    std::string base_pattern = (base_path / "%Y-%m-%d_%H-%M-%S_%N").string();
+        std::string process_identifier = GetProcessIdentifier();
+        std::filesystem::create_directories(absolute_log_path);
 
-    // Helper to create and add a sink
-    auto create_sink = [&](const std::string& suffix, log::trivial::severity_level min_sev) {
-        std::string file_pattern = base_pattern + suffix + ".log";
-        auto backend = boost::make_shared<sinks::text_file_backend>(keywords::file_name = file_pattern,
-                                                                    keywords::rotation_size = LOG_SIZE_ROTATION,
-                                                                    keywords::time_based_rotation = LOG_TIME_ROTATION,
-                                                                    keywords::auto_flush = true);
+        // Base file name pattern
+        auto base_path = absolute_log_path / process_identifier;
+        std::string base_pattern = (base_path / "%Y-%m-%d_%H-%M-%S_%N").string();
 
-        auto sink = boost::make_shared<async_synk>(backend);
-        sink->set_filter(log::trivial::severity >= min_sev);
-        sink->set_formatter(&LogFormatter);
+        // Helper to create and add a sink
+        auto create_file_sink = [&](const std::string& suffix, log::trivial::severity_level min_sev) {
+            std::string file_pattern = base_pattern + suffix + ".log";
+            auto backend =
+                boost::make_shared<sinks::text_file_backend>(keywords::file_name = file_pattern,
+                                                             keywords::rotation_size = LOG_SIZE_ROTATION,
+                                                             keywords::time_based_rotation = LOG_TIME_ROTATION,
+                                                             keywords::auto_flush = true);
+
+            auto sink = boost::make_shared<async_synk>(backend);
+            sink->set_filter(log::trivial::severity >= min_sev);
+            sink->set_formatter(CustomLogFormatter(log_format));
+
+            sinks_.push_back(sink);
+            log::core::get()->add_sink(sink);
+        };
+
+        // Main log – always INFO and above
+        create_file_sink("", main_log_level);
+
+        // Debug log – only when config level is "debug"
+        if (config_log_level == "debug") {
+            create_file_sink("_debug", log::trivial::debug);
+            std::clog << "[Logger] Info: Debug logging enabled – separate debug file will be written." << std::endl;
+        }
+    } else {
+        auto console_backend = boost::make_shared<sinks::text_ostream_backend>();
+
+        boost::shared_ptr<std::ostream> stream(&std::clog, boost::null_deleter());
+        console_backend->add_stream(stream);
+
+        using console_sink_t = sinks::asynchronous_sink<sinks::text_ostream_backend>;
+        auto sink = boost::make_shared<console_sink_t>(console_backend);
+
+        sink->set_filter(log::trivial::severity >= main_log_level);
+        sink->set_formatter(CustomLogFormatter(log_format));
 
         sinks_.push_back(sink);
         log::core::get()->add_sink(sink);
-
-        return sink;
-    };
-
-    // Main log – always INFO and above
-    create_sink("", main_log_level);
-
-    // Debug log – only when config level is "debug"
-    if (config_log_level == "debug") {
-        create_sink("_debug", log::trivial::debug);
-        std::cout << "[Logger] Info: Debug logging enabled – separate debug file will be written." << std::endl;
     }
 }
 
-Logger::Logger() {
-    try {
-        Initialize();
-    } catch (const std::exception& e) {
-        std::cerr << "[Logger] Warning: initialization failed: " << e.what() << std::endl;
-        throw;
-    }
-}
-
-Logger& Logger::Instance() {
-    static Logger logger;
-    return logger;
-}
-
-Logger::~Logger() {
-    Shutdown();
-}
-
-void Logger::Shutdown() {
-    try {
-        auto core = log::core::get();
-        for (auto& sink : sinks_) {
-            if (sink) {
-                // 1. Remove the sink from the core to stop dispatching new log records to it
-                core->remove_sink(sink);
-
-                // 2. Stop the sink's internal thread to prevent it from accepting new entries into its queue
-                sink->stop();
-
-                // 3. Flush the buffer to ensure all remaining queued log entries are written to disk
-                sink->flush();
-
-                // 4. Release the smart pointer resources
-                sink.reset();
-            }
-        }
-    } catch (const std::exception& e) {
-        std::cerr << "[Logger] Warning: exceptions in Logger destructor: " << e.what() << std::endl;
-    }
+std::string Logger::GetProcessIdentifier() {
+    static std::string process_identifier = []() {
+        boost::uuids::random_generator gen;
+        boost::uuids::uuid process_id = gen();
+        return boost::uuids::to_string(process_id);
+    }();
+    return process_identifier;
 }
 
 #define DEFINE_LOG_METHOD(MethodName, BoostLevel)                                            \
