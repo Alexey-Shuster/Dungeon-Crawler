@@ -1,7 +1,7 @@
 #pragma once
 
-#include "domain/entity/entity.h"
-#include "domain/map/game_map.h"
+#include "../entity/entity.h"
+#include "../map/game_map.h"
 #include "entity_manager.h"
 
 namespace dungeon {

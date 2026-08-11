@@ -1,7 +1,7 @@
 #pragma once
 
 #include <random>
-#include "common/direction.h"
+#include "../common/direction.h"
 
 namespace dungeon {
 

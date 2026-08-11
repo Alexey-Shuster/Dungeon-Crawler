@@ -2,8 +2,8 @@
 
 #include <format>
 
+#include "../common/logger.h"
 #include "collision_check.h"
-#include "common/logger.h"
 #include "entity_manager.h"
 #include "position_gen.h"
 

@@ -1,118 +1,107 @@
 #include "dungeon.h"
 
-#include <random>
 #include <ranges>
 #include <vector>
 
-#include "../../common/logger.h"
+#include "../../common/config.h"
 
-void dungeon::Dungeon::updateMonstersCounterDistributions() {
-    dist_monsters_counter_ =
-        std::uniform_int_distribution<size_t>{0, monsters_entities_.size() == 0 ? 0 : monsters_entities_.size() - 1};
-}
+namespace dungeon {
 
-map::Position dungeon::Dungeon::makeRandomPosition() const noexcept {
-    return map::Position{dist_x_(gen_), dist_y_(gen_)};
-}
+void Dungeon::addPlayerAttackCommand(PlayerId player_id, uint32_t damage) {
+    command_queue_.push([self = weak_from_this(), player_id, damage]() {
+        auto shared = self.lock();
+        if (!shared)
+            return;
+        std::lock_guard lock(shared->entities_mutex_);
 
-Direction dungeon::Dungeon::makeRandomDirection() const noexcept {
-    return static_cast<Direction>(dist_direction_(gen_));
-}
+        auto* player = shared->players_.getEntity(player_id);
+        if (!player || !player->isAlive())
+            return;
 
-void dungeon::Dungeon::moveRandomMonsters() {
-    if (monsters_entities_.empty()) {
-        return;
-    }
-    size_t monsters_counters = dist_monsters_counter_(gen_);
-    for (size_t i = 0; i < monsters_counters; ++i) {
-        size_t monster_number = dist_monsters_counter_(gen_);
-        auto it = std::next(monsters_entities_.begin(), monster_number);
-        if (!(it->second.isAlive())) {
-            continue;
+        auto targetId =
+            shared->players_.findClosestTarget(player->GetPosition(), player->getRadiusAttack(), shared->monsters_);
+        if (targetId) {
+            auto* monster = shared->monsters_.getEntity(*targetId);
+            if (monster)
+                monster->damage(damage);
         }
-        auto direction = makeRandomDirection();
-        moveEntity(monsters_entities_, it->first, direction);
-    }
-}
-
-void dungeon::Dungeon::monstersRandomAttack() {
-    if (monsters_entities_.empty()) {
-        return;
-    }
-    size_t monsters_counters = dist_monsters_counter_(gen_);
-    static auto attack = config::getSettings().gameplay.monster_default_attack;
-    for (size_t i = 0; i < monsters_counters; ++i) {
-        size_t monster_number = dist_monsters_counter_(gen_);
-        auto it = std::next(monsters_entities_.begin(), monster_number);
-        attackByEntity(monsters_entities_, it->first, players_entities_, attack);
-    }
-}
-
-void dungeon::Dungeon::addPlayerAttackCommand(PlayerId player_id, uint32_t damage) {
-    std::lock_guard<std::mutex> guard(players_action_mtx_);
-    commands_.push([self = weak_from_this(), player_id, damage]() {
-        auto shared_self = self.lock();
-        shared_self->attackByEntity(shared_self->players_entities_, player_id, shared_self->monsters_entities_, damage);
     });
 }
 
-void dungeon::Dungeon::addMovePlayerCommand(PlayerId player_id, Direction direction) {
-    std::lock_guard<std::mutex> guard(players_action_mtx_);
-    commands_.push([self = weak_from_this(), player_id, direction]() {
-        auto shared_self = self.lock();
-        shared_self->moveEntity(shared_self->players_entities_, player_id, direction);
+void Dungeon::addMovePlayerCommand(PlayerId player_id, Direction direction) {
+    command_queue_.push([self = weak_from_this(), player_id, direction]() {
+        auto shared = self.lock();
+        if (!shared)
+            return;
+        std::lock_guard lock(shared->entities_mutex_);
+
+        auto* player = shared->players_.getEntity(player_id);
+        if (!player || !player->isAlive())
+            return;
+
+        map::Position newPos = player->GetPosition() + map::positionOffsetFromDirection(direction);
+        if (shared->collision_checker_.isAvailable(newPos)) {
+            shared->players_.moveEntity(player_id, direction, newPos);
+        }
     });
 }
 
-std::optional<dungeon::DungeonState> dungeon::Dungeon::processTick(
-    [[maybe_unused]] std::chrono::milliseconds time_delta) {
-    std::queue<std::function<void()>> local_commands;
+std::optional<DungeonState> Dungeon::processTick(std::chrono::milliseconds /*time_delta*/) {
+    // Process player commands
+    auto commands = command_queue_.popAll();
+    while (!commands.empty()) {
+        commands.front()();
+        commands.pop();
+    }
+
+    // AI: monster movement and attack
     {
-        std::lock_guard<std::mutex> guard(players_action_mtx_);
-        local_commands.swap(commands_);
-    }
-    std::lock_guard<std::mutex> guard(entities_container_mtx_);
-    while (!local_commands.empty()) {
-        local_commands.front()();
-        local_commands.pop();
-    }
-    moveRandomMonsters();
-    monstersRandomAttack();
+        std::lock_guard<std::mutex> lock(entities_mutex_);
 
+        // Determine how many monsters to move/attack (randomly between 0 and size-1)
+        size_t monsterCount = monsters_.getEntities().size();
+        if (monsterCount > 0) {
+            static std::random_device rd;
+            static std::mt19937 gen(rd());
+            std::uniform_int_distribution<size_t> dist(0, monsterCount - 1);
+            size_t moveCount = dist(gen);
+            size_t attackCount = dist(gen);
+
+            monster_ai_.moveRandomMonsters(moveCount);
+            uint32_t attackPower = config::getSettings().gameplay.monster_default_attack;
+            monster_ai_.performRandomAttacks(attackPower, attackCount);
+        }
+    }
+
+    // Check game over
     if (isGameOver()) {
         return std::nullopt;
     }
 
-    auto dungeon_state = DungeonState{game_map_, players_entities_, monsters_entities_};
-    return std::optional<DungeonState>{std::move(dungeon_state)};
+    // Build state
+    DungeonState state;
+    state.game_map = game_map_;
+    state.players = players_.getEntities();
+    state.monsters = monsters_.getEntities();
+
+    return state;
 }
 
-std::vector<PlayerId> dungeon::Dungeon::getPlayers() const {
-    std::vector<PlayerId> player_ids;
-    for (const auto& id : players_entities_ | std::views::keys) {
-        player_ids.push_back(id);
+std::vector<PlayerId> Dungeon::getPlayers() const {
+    std::vector<PlayerId> ids;
+    for (const auto& id : players_.getEntities() | std::views::keys) {
+        ids.push_back(id);
     }
-    return player_ids;
+    return ids;
 }
 
-bool dungeon::Dungeon::addPlayerEntity(PlayerId player_id) {
-    return addEntity(players_entities_, player_id);
-}
-
-bool dungeon::Dungeon::addMonsterEntity(MobId mob_id) {
-    return addEntity(monsters_entities_, mob_id);
-}
-
-bool dungeon::Dungeon::isAvailable(const map::Position& position) const noexcept {
-    return game_map_.isAvailable(position) && !isOccupiedByEntity(players_entities_, position) &&
-           !isOccupiedByEntity(monsters_entities_, position);
-}
-
-bool dungeon::Dungeon::isGameOver() const noexcept {
-    for (const auto& player_entity : players_entities_ | std::views::values) {
-        if (player_entity.isAlive()) {
+bool Dungeon::isGameOver() const {
+    for (const auto& player : players_.getEntities() | std::views::values) {
+        if (player.isAlive()) {
             return false;
         }
     }
     return true;
 }
+
+}  // namespace dungeon

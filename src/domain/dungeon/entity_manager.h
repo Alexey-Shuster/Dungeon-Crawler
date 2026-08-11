@@ -3,9 +3,8 @@
 #include <optional>
 #include <unordered_map>
 
-#include "common/types.h"
-#include "domain/entity/entity.h"
-#include "domain/map/position.h"
+#include "../common/types.h"
+#include "../map/position.h"
 
 namespace dungeon {
 
