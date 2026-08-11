@@ -26,7 +26,7 @@ int main(int argc, char* argv[]) {
     try {
         config::Settings::initialize("config.json");
         const auto& cfg = config::getSettings();
-        utils::Logger::Instance();
+        utils::Logger::Initialize({cfg.logger.output_dir, cfg.logger.level, cfg.logger.format});
 
         LOG_INFO("Starting Dungeon Crawler Server ...");
         auto event_bus = events::EventBus::create();
@@ -50,7 +50,6 @@ int main(int argc, char* argv[]) {
         server->start();
         game_loop->start();
 
-        std::cout << "Server is running" << std::flush;
         LOG_INFO(std::format("Server started on port {}", cfg.server.port));
 
         signal_set signals(io_context, SIGINT, SIGTERM);

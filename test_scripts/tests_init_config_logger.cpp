@@ -9,11 +9,12 @@ public:
 
     void SetUp() override {
         config::Settings::initialize("");
+        utils::Logger::Initialize();
         utils::Logger::Instance();
     }
 
     void TearDown() override {
-        utils::Logger::Instance().Shutdown();
+        utils::Logger::Reset();
     }
 };
 

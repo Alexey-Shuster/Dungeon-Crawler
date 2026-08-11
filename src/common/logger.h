@@ -4,10 +4,17 @@
 #include <boost/log/sinks/text_file_backend.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/log/utility/manipulators/add_value.hpp>
+#include <mutex>
 #include <string>
 #include <vector>
 
 namespace utils {
+
+struct LogConfig {
+    std::string log_dir = "./logs";
+    std::string log_level = "info";
+    std::string log_format = "json";
+};
 
 struct LogSrcInfo {
     const char* file;
@@ -29,8 +36,9 @@ struct LogSrcInfo {
 class Logger {
 public:
     static Logger& Instance();
+    static void Initialize(const LogConfig& config = LogConfig{});
+    static void Reset();
 
-    ~Logger();
     Logger(const Logger&) = delete;
     Logger& operator=(const Logger&) = delete;
 
@@ -39,21 +47,23 @@ public:
     void LogDebug(std::string_view message, LogSrcInfo src = LogSrcInfo{});
     void LogWarn(std::string_view message, LogSrcInfo src = LogSrcInfo{});
 
-    void Shutdown();
-
 private:
-    Logger();
-    void Initialize();
+    Logger(const LogConfig& config);
+    ~Logger();
+    friend struct std::default_delete<Logger>;
 
-    std::string GetLogDirPath();
-    std::string GetProcessIdentifier();
+    void Shutdown();
+    static std::string GetProcessIdentifier();
 
     template <typename LogStream>
     void LogWithSource(LogStream&& stream, const LogSrcInfo& source_info, std::string_view message);
 
 private:
+    static std::unique_ptr<Logger> instance_;
+    static std::mutex init_mutex_;
+
     using async_synk = boost::log::sinks::asynchronous_sink<boost::log::sinks::text_file_backend>;
-    std::vector<boost::shared_ptr<async_synk>> sinks_{};
+    std::vector<boost::shared_ptr<boost::log::sinks::sink>> sinks_{};
 };
 
 template <typename LogStream>
