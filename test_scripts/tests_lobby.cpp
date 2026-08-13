@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "../src/domain/lobby.h"
+#include "../src/server/lobby/lobby.h"
 #include "config.h"
 
 using namespace lobby;

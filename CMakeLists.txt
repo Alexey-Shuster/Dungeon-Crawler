@@ -39,15 +39,12 @@ file(GENERATE
 # -----------------------------------------------------------------------------
 #   Add subprojects
 # -----------------------------------------------------------------------------
-add_subdirectory(src/app)
-add_subdirectory(src/client)
+#add_subdirectory(src/client)
 add_subdirectory(src/common)
-add_subdirectory(src/domain)
-add_subdirectory(src/infra)
 add_subdirectory(src/server)
 
 option(BUILD_TESTS "Build tests" ON)
 if (BUILD_TESTS)
     enable_testing()
-    add_subdirectory(test_scripts)
+    #    add_subdirectory(test_scripts)
 endif ()

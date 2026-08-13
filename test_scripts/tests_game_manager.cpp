@@ -8,10 +8,10 @@
 #include <optional>
 #include <thread>
 
-#include "../src/app/game_manager.h"
-#include "../src/app/lobby_registry.h"
 #include "../src/common/events.h"
-#include "../src/infra/eventbus.h"
+#include "../src/server/core/event_bus.h"
+#include "../src/server/domain/game_manager.h"
+#include "../src/server/domain/lobby/lobby_registry.h"
 #include "config.h"
 
 using namespace game;

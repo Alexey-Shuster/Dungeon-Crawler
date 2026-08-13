@@ -6,10 +6,10 @@
 
 #include "../common/serialization.h"
 #include "../common/types.h"
-#include "../infra/eventbus.h"
 #include "../server/response_sender.h"
 #include "../server/session.h"
-#include "../server/session_registry.h"
+#include "core/event_bus.h"
+#include "network/session_registry.h"
 
 using namespace network;
 using namespace events;

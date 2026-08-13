@@ -3,7 +3,7 @@
 #include <thread>
 #include <vector>
 
-#include "../infra/eventbus.h"
+#include "../src/server/core/event_bus.h"
 
 // Простые типы событий для тестирования
 struct TestEvent : events::Event {

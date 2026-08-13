@@ -91,7 +91,7 @@ std::optional<GameMapSnapshot> deserialize(cbor_item_t* item, GameMapSnapshot*) 
                            .barriers = std::move(*barriers)};
 }
 
-std::optional<network::Message> serializeGameState(const DungeonSnapshot& snapshot) {
+std::optional<ByteBuffer> serializeGameState(const DungeonSnapshot& snapshot) {
     auto root = CborPtr(cbor_new_definite_map(kBarrierArraySize));
     if (!root) {
         LOG_ERROR("Failed to create CBOR map");
@@ -118,9 +118,9 @@ std::optional<network::Message> serializeGameState(const DungeonSnapshot& snapsh
 
     return cborToMessage(std::move(root));
 }
-std::optional<DungeonSnapshot> deserializeGameState(const network::Message& message) {
+std::optional<DungeonSnapshot> deserializeGameState(const ByteBuffer& message) {
     cbor_load_result load_result{};
-    auto root = messageToCbor(message, &load_result);
+    auto root = bufferToCbor(message, &load_result);
 
     if (!root || load_result.error.code != CBOR_ERR_NONE || !cbor_isa_map(root.get())) {
         LOG_ERROR("Failed to load CBOR data or not a map");

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "console_output.h"
-#include "message.h"
+#include "network/raw_message.h"
 
 namespace network { namespace message_router {
 

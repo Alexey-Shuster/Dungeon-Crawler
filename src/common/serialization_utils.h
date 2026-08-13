@@ -5,8 +5,8 @@
 #include <optional>
 #include <vector>
 
+#include "byte_buffer.h"
 #include "logger.h"
-#include "message.h"
 
 namespace serialization {
 
@@ -90,14 +90,14 @@ CborPtr buildArray(Args&&... args) {
 }
 
 /**
- * @brief Serializes a CBOR item to a network::Message (binary).
+ * @brief Serializes a CBOR item to a ByteBuffer (binary).
  * @param root The CBOR root item (ownership is moved into the function).
- * @return std::optional<network::Message> The binary message, or std::nullopt on error.
+ * @return std::optional<ByteBuffer> The binary byte-buffer, or std::nullopt on error.
  *
- * @details Calls cbor_serialize_alloc and wraps the result into a network::Message.
+ * @details Calls cbor_serialize_alloc and wraps the result into a ByteBuffer.
  *          Logs errors internally.
  */
-inline std::optional<network::Message> cborToMessage(CborPtr root) {
+inline std::optional<ByteBuffer> cborToMessage(CborPtr root) {
     if (!root) {
         LOG_ERROR("Cannot serialize null CBOR item");
         return std::nullopt;
@@ -112,25 +112,25 @@ inline std::optional<network::Message> cborToMessage(CborPtr root) {
     std::unique_ptr<uint8_t, decltype(&free)> buffer_guard(buffer, &free);
     std::vector<uint8_t> data(buffer_guard.get(), buffer_guard.get() + buffer_size);
 
-    return network::Message{network::MessageData{std::move(data)}};
+    return ByteBuffer{std::move(data)};
 }
 
 /**
- * @brief Loads a network::Message into a CBOR item.
- * @param message The binary message.
+ * @brief Loads a ByteBuffer into a CBOR item.
+ * @param buffer The binary byte-buffer.
  * @param out_result Optional pointer to store the load result (error code, etc.).
  * @return CborPtr The loaded CBOR item, or nullptr on failure.
  *
  * @details Calls cbor_load and checks for errors. The load result can be inspected
  *          via out_result if provided.
  */
-inline CborPtr messageToCbor(const network::Message& message, cbor_load_result* out_result = nullptr) {
+inline CborPtr bufferToCbor(const ByteBuffer& buffer, cbor_load_result* out_result = nullptr) {
     cbor_load_result result;
-    CborPtr root(cbor_load(message.message_data.data(), message.message_data.size(), &result));
+    CborPtr root(cbor_load(buffer.data(), buffer.size(), &result));
     if (out_result) {
         *out_result = result;
     }
-    if (!root || result.error.code != CBOR_ERR_NONE || result.read != message.message_data.size()) {
+    if (!root || result.error.code != CBOR_ERR_NONE || result.read != buffer.size()) {
         return nullptr;
         // result.error.code can be checked by caller if needed.
     }

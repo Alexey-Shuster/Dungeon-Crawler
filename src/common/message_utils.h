@@ -1,13 +1,9 @@
 #pragma once
 
-#include <cstdint>
-#include <format>
 #include <optional>
 #include <type_traits>
-#include <vector>
 
 #include "logger.h"
-#include "message.h"
 #include "message_types.h"
 
 namespace message {
@@ -84,6 +80,7 @@ template <typename>
 struct always_false : std::false_type {};
 
 [[nodiscard]] inline std::optional<LevelId> getLevelId(const MessageTypeVariant& v) noexcept {
+    using namespace message;
     return std::visit(
         []<typename T0>(T0&& arg) -> std::optional<LevelId> {
             using T = std::decay_t<T0>;
@@ -107,6 +104,7 @@ struct always_false : std::false_type {};
 // Reconstruct MessageTypeVariant from (Level, id)
 // -----------------------------------------------------------------------------
 [[nodiscard]] inline std::optional<MessageTypeVariant> makeVariantFromLevelId(Level level, uint8_t id) noexcept {
+    using namespace message;
     switch (level) {
         case Level::kNetwork:
             if (id >= static_cast<uint8_t>(NetworkMessageType::kMax)) {
@@ -221,45 +219,6 @@ inline void appendPackedType(uint16_t packed, std::vector<uint8_t>& out) {
     if (offset + kPackedTypeSize > buffer.size())
         return std::nullopt;
     return (static_cast<uint16_t>(buffer[offset]) << 8) | static_cast<uint16_t>(buffer[offset + 1]);
-}
-
-// -----------------------------------------------------------------------------
-// Build / parse the original network::Message with embedded header
-// -----------------------------------------------------------------------------
-[[nodiscard]] inline network::Message makeMessage(const MessageTypeVariant& type, std::vector<uint8_t>&& payload) {
-    auto packed = packMessageType(type);
-    if (!packed) {
-        LOG_ERROR("Failed to pack message type – returning empty");
-        return network::Message{std::vector<uint8_t>{}};
-    }
-    std::vector<uint8_t> data;
-    data.reserve(kPackedTypeSize + payload.size());
-    appendPackedType(*packed, data);
-    data.insert(data.end(), payload.begin(), payload.end());  // simple copy
-    return network::Message{std::move(data)};
-}
-
-[[nodiscard]] inline std::optional<std::pair<MessageTypeVariant, std::vector<uint8_t>>> parseMessage(
-    const network::Message& msg) {
-    const auto& data = msg.message_data;
-    if (data.size() < kPackedTypeSize) {
-        LOG_ERROR("Message too short to contain header");
-        return std::nullopt;
-    }
-
-    auto packed = readPackedType(data, 0);
-    if (!packed)
-        return std::nullopt;
-
-    auto type = unpackMessageType(*packed);
-    if (!type) {
-        LOG_ERROR(std::format("Failed to unpack type from code {:#04x}", *packed));
-        return std::nullopt;
-    }
-
-    // Copy payload (excluding the header) into a new vector
-    std::vector<uint8_t> payload(data.begin() + kPackedTypeSize, data.end());
-    return std::pair{*type, std::move(payload)};
 }
 
 }  // namespace message

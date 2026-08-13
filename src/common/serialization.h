@@ -8,7 +8,7 @@
  *
  * @author DRUsmanov
  * @author Alexey-Shuster
- * @version 1.1 (адаптировано под message::MessageTypeVariant)
+ * @version 1.1 (адаптировано под message::MessageTypeVariant & ByteBuffer)
  */
 
 #include <cbor.h>
@@ -17,8 +17,8 @@
 #include <optional>
 #include <vector>
 
+#include "byte_buffer.h"
 #include "logger.h"
-#include "message.h"
 #include "message_types.h"
 #include "message_utils.h"
 #include "serialization_utils.h"
@@ -159,7 +159,7 @@ inline CborPtr createMessageArray(const message::MessageTypeVariant& msg_type, s
  * @note On error, logs internally and returns nullopt.
  */
 template <typename... Args>
-std::optional<network::Message> serializeMessage(const message::MessageTypeVariant& msg_type, Args... args) {
+std::optional<ByteBuffer> serializeMessage(const message::MessageTypeVariant& msg_type, Args... args) {
     static_assert((std::is_convertible_v<Args, uint64_t> && ...), "All arguments must be convertible to uint64_t");
 
     auto msg_array = createMessageArray(msg_type, sizeof...(args));
@@ -191,8 +191,8 @@ std::optional<network::Message> serializeMessage(const message::MessageTypeVaria
  *
  * @see serializeMessage (variadic version)
  */
-inline std::optional<network::Message> serializeMessage(const message::MessageTypeVariant& msg_type,
-                                                        const std::vector<uint64_t>& args) {
+inline std::optional<ByteBuffer> serializeMessage(const message::MessageTypeVariant& msg_type,
+                                                  const std::vector<uint64_t>& args) {
     auto msg_array = createMessageArray(msg_type, args.size());
     if (!msg_array) {
         LOG_ERROR("Failed to create CBOR array for provided message");
@@ -234,9 +234,9 @@ struct DeserializedMessage {
 };
 
 // TODO: validate message protocol (args number, args type?)
-inline std::optional<DeserializedMessage> deserializeMessageRaw(const network::Message& message) {
+inline std::optional<DeserializedMessage> deserializeMessageRaw(const ByteBuffer& buffer) {
     cbor_load_result load_result{};
-    auto msg_array = messageToCbor(message, &load_result);
+    auto msg_array = bufferToCbor(buffer, &load_result);
 
     if (!msg_array || load_result.error.code != CBOR_ERR_NONE) {
         LOG_ERROR("Failed to load CBOR data");
