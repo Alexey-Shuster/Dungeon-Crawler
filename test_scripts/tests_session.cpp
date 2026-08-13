@@ -1,22 +1,23 @@
 #include <boost/asio.hpp>
 #include <chrono>
 #include <gtest/gtest.h>
-
-#include "../common/types.h"
-#include "../infra/eventbus.h"
-#include "../server/session.h"
+#include <server/core/event_bus.h>
+#include <server/network/session.h>
 
 using namespace boost::asio;
+using namespace dungeons::server;
+using namespace dungeons::server::network;
 
 struct DummySession {
     io_context io;
     ip::tcp::socket dummy_socket;
-    std::shared_ptr<events::EventBus> bus;
+    std::shared_ptr<core::EventBus> bus;
     std::shared_ptr<network::Session> session;
 
-    DummySession() :
-        dummy_socket(io), bus(events::EventBus::create()),
-        session(network::Session::create(std::move(dummy_socket), *bus, SessionId{0})) {}
+    DummySession()
+        : dummy_socket(io)
+        , bus(core::EventBus::create())
+        , session(network::Session::create(std::move(dummy_socket), *bus, SessionId{0})) {}
 };
 
 // ---------------------------------------------------------------------
@@ -31,7 +32,7 @@ TEST(SessionSimpleTest, DefaultSessionIdIsZero) {
 TEST(SessionSimpleTest, SessionIdCanBeSpecified) {
     io_context io;
     ip::tcp::socket sock(io);
-    auto bus = events::EventBus::create();
+    auto bus = core::EventBus::create();
     auto sess = network::Session::create(std::move(sock), *bus, SessionId{123});
     EXPECT_EQ(sess->getSessionId(), SessionId{123});
 }

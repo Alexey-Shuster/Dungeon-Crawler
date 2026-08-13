@@ -1,9 +1,7 @@
 #include <gtest/gtest.h>
+#include <server/domain/lobby/lobby.h>
 
-#include "../src/server/lobby/lobby.h"
-#include "config.h"
-
-using namespace lobby;
+using namespace dungeons::server::domain;
 
 class LobbyTest : public ::testing::Test {
 protected:

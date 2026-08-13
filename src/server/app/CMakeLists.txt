@@ -1,7 +1,7 @@
 
 set(SERVER_APP_LIB server_app)
 
-add_library(${SERVER_APP_LIB} STATIC)
+add_library(server_app STATIC)
 
 target_sources(${SERVER_APP_LIB} PRIVATE
         events.h

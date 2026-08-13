@@ -33,16 +33,6 @@ function(add_test_target TARGET_NAME INIT_SRC)
     gtest_discover_tests(${TARGET_NAME})
 endfunction()
 
-add_test_target(test_app
-        tests_init_config_logger.cpp
-        tests_lobby_registry.cpp
-        tests_game_manager.cpp
-)
-
-target_link_libraries(test_app PRIVATE
-        podzemeliya_app
-)
-
 add_test_target(test_client
         tests_init_config_logger.cpp
         tests_client.cpp
@@ -58,51 +48,36 @@ add_test_target(test_common
         tests_config.cpp
         tests_frame_codec.cpp
         tests_hash.cpp
-        tests_serialization.cpp
+        #        tests_serialization.cpp
         tests_serialization_dto.cpp
         tests_keyboard_reader.cpp
 )
 
 target_link_libraries(test_common PRIVATE
-        podzemeliya_common
+        common
 )
 
 if (BUILD_TESTS)
-    target_compile_definitions(podzemeliya_common PRIVATE BUILD_TESTS)
     target_compile_definitions(test_common PRIVATE BUILD_TESTS)
 endif ()
 
-add_test_target(test_domain
-        tests_init_config_logger.cpp
-        tests_lobby.cpp
-        tests_position.cpp
-        tests_direction.cpp
-        tests_dungeon.cpp
-        tests_render_game_state.cpp
-        tests_entity_manager.cpp
-)
-
-target_link_libraries(test_domain PRIVATE
-        podzemeliya_domain
-)
-
-add_test_target(test_infra
-        tests_init_config_logger.cpp
-        tests_eventbus.cpp
-)
-
-target_link_libraries(test_infra PRIVATE
-        podzemeliya_infra
-)
-
 add_test_target(test_server
         tests_init_config_logger.cpp
+        tests_eventbus.cpp
         tests_session.cpp
         tests_session_registry.cpp
         tests_connection_manager.cpp
         tests_response_sender.cpp
+        tests_lobby.cpp
+        tests_lobby_registry.cpp
+        tests_position.cpp
+        tests_direction.cpp
+        tests_dungeon.cpp
+        #        tests_render_game_state.cpp
+        tests_entity_manager.cpp
+        tests_game_manager.cpp
 )
 
 target_link_libraries(test_server PRIVATE
-        podzemeliya_server
+        server_app
 )

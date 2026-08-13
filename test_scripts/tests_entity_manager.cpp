@@ -1,17 +1,16 @@
 #include <gtest/gtest.h>
 #include <optional>
 
-#include "../common/direction.h"
-#include "../domain/dungeon/entity_manager.h"
-#include "../domain/map/position.h"
+#include <server/domain/dungeon/entity_manager.h>
+#include <server/domain/map/position.h>
+#include <common/strong_id.h>
 
-using namespace dungeon;
-using namespace map;
+using namespace dungeons::server::domain;
 
 // Specialize StrongIdHash for int so unordered_map works with int keys.
 // This is only for testing; production uses StrongId types.
 template <>
-struct StrongIdHash<int> {
+struct dungeons::common::StrongIdIdentityHash<int> {
     size_t operator()(const int& id) const noexcept {
         return std::hash<int>{}(id);
     }

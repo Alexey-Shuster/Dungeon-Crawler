@@ -1,7 +1,6 @@
+#include <common/game_state_dto.h>
+#include <common/serialization_game_state.h>
 #include <gtest/gtest.h>
-
-#include "../domain/game_state_dto.h"
-#include "serialization_game_state.h"
 
 using namespace serialization;
 
@@ -214,7 +213,7 @@ TEST(SerializationGameStateTest, CborToMessageRoundTrip) {
     ASSERT_TRUE(msg_opt.has_value());
 
     cbor_load_result result;
-    auto loaded = messageToCbor(*msg_opt, &result);
+    auto loaded = bufferToCbor(*msg_opt, &result);
     ASSERT_NE(loaded, nullptr);
     EXPECT_EQ(result.error.code, CBOR_ERR_NONE);
     EXPECT_TRUE(cbor_isa_uint(loaded.get()));
@@ -222,13 +221,13 @@ TEST(SerializationGameStateTest, CborToMessageRoundTrip) {
 }
 
 TEST(SerializationGameStateTest, MessageToCborInvalid) {
-    network::Message invalid{network::MessageData{0x01, 0x02, 0x03}};
-    auto loaded = messageToCbor(invalid);
+    ByteBuffer invalid{ByteBuffer{0x01, 0x02, 0x03}};
+    auto loaded = bufferToCbor(invalid);
     EXPECT_EQ(loaded, nullptr);
 }
 
 TEST(SerializationGameStateTest, MessageToCborTrulyInvalid) {
-    network::Message invalid{network::MessageData{0xFF, 0xFF}};  // not a valid CBOR item
-    auto loaded = messageToCbor(invalid);
+    ByteBuffer invalid{ByteBuffer{0xFF, 0xFF}};  // not a valid CBOR item
+    auto loaded = bufferToCbor(invalid);
     EXPECT_EQ(loaded, nullptr);
 }

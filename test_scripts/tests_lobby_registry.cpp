@@ -1,10 +1,9 @@
 #include <gtest/gtest.h>
+#include <server/domain/lobby/lobby.h>
+#include <server/domain/lobby/lobby_registry.h>
 
-#include "../common/types.h"
-#include "../domain/lobby.h"
-#include "../src/app/lobby_registry.h"
+using namespace dungeons::server::domain;
 
-namespace lobby {
 class LobbyRegistryTest : public ::testing::Test {
 protected:
     void SetUp() override {
@@ -27,4 +26,3 @@ TEST_F(LobbyRegistryTest, FindLobbyNotExists) {
     auto found = registry->findLobby(LobbyId(999));
     EXPECT_EQ(found, nullptr);
 }
-}  // namespace lobby

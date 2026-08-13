@@ -1,9 +1,8 @@
 #include <gtest/gtest.h>
 #include <limits>
+#include <server/domain/map/position.h>
 
-#include "../src/domain/map/position.h"
-
-using map::Position;
+using dungeons::server::domain::Position;
 
 // ============================================================================
 // Position tests

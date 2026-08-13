@@ -1,8 +1,9 @@
 
-add_library(common STATIC
-        message_utils.h)
+set(COMMON_LIB common)
 
-target_sources(common PRIVATE
+add_library(common STATIC)
+
+target_sources(${COMMON_LIB} PRIVATE
         win_defs.h
         config.h
         config.cpp
@@ -28,14 +29,14 @@ target_sources(common PRIVATE
         terminal_guard.h
 )
 
-target_include_directories(common PUBLIC
+target_include_directories(${COMMON_LIB} PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
 
 # Cbor for serialization
 find_package(libcbor REQUIRED)
 
-target_link_libraries(common PUBLIC
+target_link_libraries(${COMMON_LIB} PUBLIC
         platform_deps
         boost_deps
         libcbor::libcbor
@@ -44,7 +45,11 @@ target_link_libraries(common PUBLIC
 # X11 for KeyboardReader on Linux
 if (NOT WIN32)
     find_package(X11 REQUIRED)
-    target_link_libraries(common PUBLIC
+    target_link_libraries(${COMMON_LIB} PUBLIC
             X11::X11
     )
+endif ()
+
+if (BUILD_TESTS)
+    target_compile_definitions(${COMMON_LIB} PRIVATE BUILD_TESTS)
 endif ()

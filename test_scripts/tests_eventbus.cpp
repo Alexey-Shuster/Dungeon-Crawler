@@ -1,41 +1,45 @@
 #include <atomic>
 #include <gtest/gtest.h>
+#include <server/core/event_bus.h>
 #include <thread>
 #include <vector>
 
-#include "../src/server/core/event_bus.h"
+using namespace dungeons::server::core;
 
 // Простые типы событий для тестирования
-struct TestEvent : events::Event {
+struct TestEvent : Event {
     int value;
 
-    TestEvent() : value(0) {}
-    explicit TestEvent(int v) : value(v) {}
+    TestEvent()
+        : value(0) {}
+    explicit TestEvent(int v)
+        : value(v) {}
 
-    events::EventType getType() const override {
-        return events::EventType::Ping;  // getType not used here
+    EventType getType() const override {
+        return EventType::Ping;  // getType not used here
     }
 };
 
-struct PolymorphicTestEvent : events::Event {
-    explicit PolymorphicTestEvent(int value) : value(value) {}
+struct PolymorphicTestEvent : Event {
+    explicit PolymorphicTestEvent(int value)
+        : value(value) {}
 
     int value;
 
-    events::EventType getType() const override {
-        return events::EventType::Ping;  // getType not used here
+    EventType getType() const override {
+        return EventType::Ping;  // getType not used here
     }
 };
 
-struct AnotherEvent : events::Event {
-    events::EventType getType() const override {
-        return events::EventType::Ping;  // getType not used here
+struct AnotherEvent : Event {
+    EventType getType() const override {
+        return EventType::Ping;  // getType not used here
     }
 };
 
 // 1. Одиночная подписка – колбэк вызывается ровно один раз
 TEST(EventBusTest, PublishTriggersCallback) {
-    auto bus = events::EventBus::create();
+    auto bus = EventBus::create();
     bool called = false;
     auto conn = bus->subscribe<TestEvent>([&](const TestEvent&) {
         called = true;
@@ -46,7 +50,7 @@ TEST(EventBusTest, PublishTriggersCallback) {
 
 // 2. Несколько подписчиков на один тип – вызываются все
 TEST(EventBusTest, MultipleSubscribersAllCalled) {
-    auto bus = events::EventBus::create();
+    auto bus = EventBus::create();
     int count = 0;
     auto conn1 = bus->subscribe<TestEvent>([&](const TestEvent&) {
         ++count;
@@ -60,7 +64,7 @@ TEST(EventBusTest, MultipleSubscribersAllCalled) {
 
 // 3. Разные типы событий не пересекаются
 TEST(EventBusTest, DifferentEventTypesAreSeparate) {
-    auto bus = events::EventBus::create();
+    auto bus = EventBus::create();
     bool testCalled = false;
     bool anotherCalled = false;
     bus->subscribe<TestEvent>([&](const TestEvent&) {
@@ -76,7 +80,7 @@ TEST(EventBusTest, DifferentEventTypesAreSeparate) {
 
 // 4. Отписка через connection – колбэк больше не вызывается
 TEST(EventBusTest, DisconnectPreventsCallback) {
-    auto bus = events::EventBus::create();
+    auto bus = EventBus::create();
     int count = 0;
     auto conn = bus->subscribe<TestEvent>([&](const TestEvent&) {
         ++count;
@@ -90,14 +94,14 @@ TEST(EventBusTest, DisconnectPreventsCallback) {
 
 // 5. Публикация без подписчиков не приводит к ошибкам
 TEST(EventBusTest, NoSubscribersNoCrash) {
-    auto bus = events::EventBus::create();
+    auto bus = EventBus::create();
     bus->publish(TestEvent{});
     SUCCEED();
 }
 
 // 6. Безопасность реентерабельности: подписка из колбэка не вызывает дедлок
 TEST(EventBusTest, SubscribeDuringPublishIsSafe) {
-    auto bus = events::EventBus::create();
+    auto bus = EventBus::create();
     bool secondCalled = false;
     boost::signals2::connection conn2;
     auto conn1 = bus->subscribe<TestEvent>([&](const TestEvent& e) {
@@ -114,7 +118,7 @@ TEST(EventBusTest, SubscribeDuringPublishIsSafe) {
 
 // 7. Потокобезопасность: параллельная публикация из нескольких потоков
 TEST(EventBusTest, ConcurrentPublishAndSubscribe) {
-    auto bus = events::EventBus::create();
+    auto bus = EventBus::create();
     std::atomic<int> counter{0};
     const int numPublishers = 4;
     const int eventsPerPublisher = 1000;
@@ -140,7 +144,7 @@ TEST(EventBusTest, ConcurrentPublishAndSubscribe) {
 
 // 8. Потокобезопасность: Разрушение EventBus во время обработки события
 TEST(EventBusTest, DestroyingBusDuringPublishIsSafeWithSharedPtr) {
-    auto bus = events::EventBus::create();
+    auto bus = EventBus::create();
 
     std::atomic<bool> insideCallback{false};
     std::mutex mtx;
@@ -179,7 +183,7 @@ TEST(EventBusTest, DestroyingBusDuringPublishIsSafeWithSharedPtr) {
 
 // 9. Параллельные подписка и публикация на одном типе с проверкой доставки
 TEST(EventBusTest, ConcurrentSubscribeAndPublishSameType) {
-    auto bus = events::EventBus::create();
+    auto bus = EventBus::create();
 
     constexpr int numThreads = 8;
     constexpr int roundsPerThread = 10;
@@ -231,14 +235,14 @@ TEST(EventBusTest, ConcurrentSubscribeAndPublishSameType) {
 
 // 10. Полиморфная публикация через ссылку на базовый класс
 TEST(EventBusTest, PolymorphicPublishTriggersTypedCallback) {
-    auto bus = events::EventBus::create();
+    auto bus = EventBus::create();
     int receivedValue = 0;
 
     auto connection = bus->subscribe<PolymorphicTestEvent>([&](const PolymorphicTestEvent& event) {
         receivedValue = event.value;
     });
 
-    std::shared_ptr<events::Event> event = std::make_shared<PolymorphicTestEvent>(42);
+    std::shared_ptr<Event> event = std::make_shared<PolymorphicTestEvent>(42);
 
     bus->publish(*event);
 

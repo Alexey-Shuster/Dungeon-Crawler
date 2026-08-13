@@ -5,24 +5,23 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <optional>
+#include <server/app/connection_manager.h>
+#include <server/app/session_registry.h>
+#include <server/core/event_bus.h>
+#include <server/network/session.h>
 #include <thread>
 
-#include "../src/common/events.h"
-#include "../src/common/types.h"
-#include "../src/infra/eventbus.h"
-#include "../src/server/connection_manager.h"
-#include "../src/server/session.h"
-#include "../src/server/session_registry.h"
-
-using namespace connection_manager;
-using namespace events;
-using namespace network;
 using ::testing::_;
+
+using namespace dungeons::server;
+using namespace dungeons::server::app;
+using namespace dungeons::server::domain;
+using namespace dungeons::server::network;
 
 class ConnectionManagerTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        event_bus_ = EventBus::create();
+        event_bus_ = core::EventBus::create();
         registry_ = std::make_shared<SessionRegistry>();
         cm_ = ConnectionManager::Create(event_bus_, registry_);
     }
@@ -35,7 +34,7 @@ protected:
     }
 
     boost::asio::io_context io_;
-    std::shared_ptr<EventBus> event_bus_;
+    std::shared_ptr<core::EventBus> event_bus_;
     std::shared_ptr<SessionRegistry> registry_;
     std::shared_ptr<ConnectionManager> cm_;
 };

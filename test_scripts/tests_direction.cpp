@@ -1,9 +1,8 @@
 #include <gtest/gtest.h>
+#include <server/domain/map/direction.h>
+#include <server/domain/map/position.h>
 
-#include "../src/common/direction.h"
-#include "../src/domain/map/position.h"
-
-using namespace map;
+using namespace dungeons::server::domain;
 
 TEST(DirectionTest, PositionOffsetFromDirection) {
     Position up = positionOffsetFromDirection(Direction::kUp);

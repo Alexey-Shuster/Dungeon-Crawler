@@ -1,23 +1,24 @@
 #include <boost/asio.hpp>
 #include <gtest/gtest.h>
+#include <server/app/session_registry.h>
+#include <server/core/event_bus.h>
+#include <server/network/session.h>
 
-#include "../common/types.h"
-#include "../infra/eventbus.h"
-#include "../server/session.h"
-#include "../server/session_registry.h"
+using namespace dungeons::server;
+using namespace dungeons::server::app;
+using namespace dungeons::server::domain;
+using namespace dungeons::server::network;
 
 // Вспомогательная фабрика для создания сессий в тестах
-static std::shared_ptr<network::Session> makeSession(boost::asio::io_context& io,
-                                                     events::EventBus& bus,
-                                                     SessionId sid) {
-    return network::Session::create(boost::asio::ip::tcp::socket(io), bus, sid);
+static std::shared_ptr<Session> makeSession(boost::asio::io_context& io, core::EventBus& bus, SessionId sid) {
+    return Session::create(boost::asio::ip::tcp::socket(io), bus, sid);
 }
 
 class SessionRegistryTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        registry = std::make_shared<network::SessionRegistry>();
-        bus = events::EventBus::create();
+        registry = std::make_shared<app::SessionRegistry>();
+        bus = core::EventBus::create();
     }
 
     void TearDown() override {
@@ -25,8 +26,8 @@ protected:
     }
 
     boost::asio::io_context io;
-    std::shared_ptr<events::EventBus> bus;
-    std::shared_ptr<network::SessionRegistry> registry;
+    std::shared_ptr<core::EventBus> bus;
+    std::shared_ptr<app::SessionRegistry> registry;
 };
 
 TEST_F(SessionRegistryTest, AddAndFind) {
@@ -186,7 +187,7 @@ TEST_F(SessionRegistryTest, AddAfterRemoveWithSameId) {
 }
 
 TEST_F(SessionRegistryTest, MultipleOperations) {
-    std::vector<std::shared_ptr<network::Session>> sessions;
+    std::vector<std::shared_ptr<Session>> sessions;
     for (int i = 0; i < 10; ++i) {
         SessionId sid(i + 1000);
         auto s = makeSession(io, *bus, sid);

@@ -1,7 +1,7 @@
 
 set(SERVER_DOMAIN_LIB server_domain)
 
-add_library(${SERVER_DOMAIN_LIB} STATIC)
+add_library(server_domain STATIC)
 
 target_sources(${SERVER_DOMAIN_LIB} PRIVATE
         event_base.h
