@@ -1,10 +1,9 @@
+#include <common/config.h>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <gtest/gtest.h>
 #include <stdexcept>
-
-#include "config.h"
 
 #ifdef _WIN32
 inline void setenv(const char* name, const char* value, int overwrite) {

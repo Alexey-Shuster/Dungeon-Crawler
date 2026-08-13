@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "../common/config.h"
-#include "../common/logger.h"
+#include <common/config.h>
+#include <common/logger.h>
 
 class GlobalSetupEnvironment : public ::testing::Environment {
 public:

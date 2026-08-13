@@ -3,7 +3,7 @@
 #include <cbor.h>
 #include <optional>
 
-#include "../domain/game_state_dto.h"
+#include "game_state_dto.h"
 #include "serialization_utils.h"
 #include "serialization_vector.h"  // IWYU pragma: keep // serialize & deserialize
 
@@ -25,8 +25,8 @@ CborPtr serialize(const GameMapSnapshot& map);
 std::optional<GameMapSnapshot> deserialize(cbor_item_t* item, GameMapSnapshot*);
 
 // Top‑level DungeonSnapshot
-std::optional<network::Message> serializeGameState(const DungeonSnapshot& snapshot);
+std::optional<ByteBuffer> serializeGameState(const DungeonSnapshot& snapshot);
 
-std::optional<DungeonSnapshot> deserializeGameState(const network::Message& message);
+std::optional<DungeonSnapshot> deserializeGameState(const ByteBuffer& message);
 
 }  // namespace serialization

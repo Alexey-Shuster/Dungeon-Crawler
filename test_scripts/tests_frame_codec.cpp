@@ -1,8 +1,7 @@
 #include <boost/asio.hpp>
+#include <common/frame_codec.h>
 #include <cstring>
 #include <gtest/gtest.h>
-
-#include "../common/frame_codec.h"
 
 using namespace network;
 

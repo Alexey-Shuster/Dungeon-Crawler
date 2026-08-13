@@ -1,6 +1,5 @@
+#include <common/hash.h>
 #include <gtest/gtest.h>
-
-#include "../common/hash.h"
 
 using namespace hash;
 

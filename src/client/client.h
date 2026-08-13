@@ -7,7 +7,7 @@
 #include <memory>
 #include <string>
 
-#include "../common/message.h"
+#include "../server/network/raw_message.h"
 
 namespace network {
 

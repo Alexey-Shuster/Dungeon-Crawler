@@ -1,54 +1,55 @@
 
-set(COMMON_SOURCES
+set(COMMON_LIB common)
+
+add_library(common STATIC)
+
+target_sources(${COMMON_LIB} PRIVATE
+        win_defs.h
         config.h
         config.cpp
-        events.h
-        frame_codec.h
-        hash.h
         logger.h
         logger.cpp
+        byte_buffer.h
+        frame_codec.h
+        hash.h
+        strong_id.h
+        string_utils.h
+        number_utils.h
         serialization.h
-        types.h
-        message.h
         message_types.h
         message_utils.h
-        message_dispatcher.h
         stdin_reader.h
-        event_type.h
-        direction.h
-        string_utils.h
         serialization_vector.h
         serialization_game_state.h
         serialization_utils.h
         keyboard_reader.h
         keyboard_reader.cpp
-        number_utils.h
+        game_state_dto.h
         serialization_game_state.cpp
         terminal_guard.h
-        win_defs.h
 )
 
-add_library(podzemeliya_common STATIC
-        ${COMMON_SOURCES}
-)
-
-target_include_directories(podzemeliya_common PUBLIC
-        ${PROJECT_ROOT}/src/common
+target_include_directories(${COMMON_LIB} PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
 
 # Cbor for serialization
 find_package(libcbor REQUIRED)
 
-target_link_libraries(podzemeliya_common PUBLIC
+target_link_libraries(${COMMON_LIB} PUBLIC
         platform_deps
         boost_deps
         libcbor::libcbor
 )
 
-# need for KeyboardReader on Linux
+# X11 for KeyboardReader on Linux
 if (NOT WIN32)
     find_package(X11 REQUIRED)
-    target_link_libraries(podzemeliya_common PUBLIC
+    target_link_libraries(${COMMON_LIB} PUBLIC
             X11::X11
     )
+endif ()
+
+if (BUILD_TESTS)
+    target_compile_definitions(${COMMON_LIB} PRIVATE BUILD_TESTS)
 endif ()

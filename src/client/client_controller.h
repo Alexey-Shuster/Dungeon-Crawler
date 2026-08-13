@@ -4,8 +4,8 @@
 #include <memory>
 #include <string>
 
+#include "../server/network/raw_message.h"
 #include "command_router.h"
-#include "message.h"
 
 namespace network {
 

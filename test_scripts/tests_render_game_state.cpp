@@ -1,7 +1,6 @@
+#include <common/game_state_dto.h>
+#include <common/ren>
 #include <gtest/gtest.h>
-
-#include "game_state_dto.h"
-#include "render_game_state.h"
 
 using namespace serialization;
 

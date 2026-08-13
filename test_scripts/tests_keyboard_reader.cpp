@@ -1,10 +1,9 @@
 #include <boost/asio.hpp>
 #include <chrono>
+#include <common/keyboard_reader.h>
 #include <gtest/gtest.h>
 #include <thread>
 #include <unordered_map>
-
-#include "keyboard_reader.h"
 
 using namespace utility;
 

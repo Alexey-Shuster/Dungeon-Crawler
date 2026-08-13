@@ -1,22 +1,20 @@
-#include <atomic>
 #include <boost/asio/io_context.hpp>
 #include <chrono>
 #include <condition_variable>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <memory>
-#include <optional>
+#include <server/app/game_manager.h>
+#include <server/core/event_bus.h>
+#include <server/domain/lobby/lobby_registry.h>
 #include <thread>
 
-#include "../src/app/game_manager.h"
-#include "../src/app/lobby_registry.h"
-#include "../src/common/events.h"
-#include "../src/infra/eventbus.h"
-#include "config.h"
-
-using namespace game;
-using namespace events;
 using namespace testing;
+
+using namespace dungeons::server;
+using namespace dungeons::server::app;
+using namespace dungeons::server::core;
+using namespace dungeons::server::domain;
 
 // ============================================================================
 // Test Fixture
@@ -27,7 +25,7 @@ protected:
     void SetUp() override {
         io_context_ = std::make_unique<boost::asio::io_context>();
         event_bus_ = EventBus::create();
-        lobby_registry_ = std::make_shared<lobby::LobbyRegistry>();
+        lobby_registry_ = std::make_shared<LobbyRegistry>();
         game_manager_ = GameManager::create(*io_context_, event_bus_, lobby_registry_);
 
         // Запускаем io_context в отдельном потоке
@@ -73,7 +71,7 @@ protected:
                                   const std::vector<PlayerId>& players,
                                   bool all_ready = true) {
         // Создаем лобби без игроков
-        auto lobby = std::make_shared<lobby::Lobby>(lobby_id, leader_id);
+        auto lobby = std::make_shared<Lobby>(lobby_id, leader_id);
         lobby_registry_->addLobby(lobby);
 
         // Добавляем игроков через реестр
@@ -102,7 +100,7 @@ protected:
     std::thread io_thread_;
 
     std::shared_ptr<EventBus> event_bus_;
-    std::shared_ptr<lobby::LobbyRegistry> lobby_registry_;
+    std::shared_ptr<LobbyRegistry> lobby_registry_;
     std::shared_ptr<GameManager> game_manager_;
 
     PlayerId player_id_{1};
@@ -503,7 +501,7 @@ TEST_F(GameManagerTest, ConcurrentEvents_NoDataRaces) {
 
 TEST_F(GameManagerTest, StartGameRequest_EmptyLobby_NoGameStarted) {
     // Arrange - Лобби без игроков
-    auto lobby = std::make_shared<lobby::Lobby>(lobby_id_, player_id_);
+    auto lobby = std::make_shared<Lobby>(lobby_id_, player_id_);
     lobby_registry_->addLobby(lobby);
 
     StartGameRequestEvent event{player_id_};

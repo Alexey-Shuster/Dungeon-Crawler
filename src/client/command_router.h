@@ -3,8 +3,8 @@
 #include <optional>
 #include <string>
 
+#include "../server/network/raw_message.h"
 #include "console_output.h"
-#include "message.h"
 
 namespace network {
 

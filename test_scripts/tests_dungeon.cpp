@@ -1,25 +1,15 @@
 #include <chrono>
 #include <gtest/gtest.h>
 #include <memory>
+#include <server/domain/dungeon/dungeon.h>
 
-#include "../src/common/config.h"
-#include "../src/common/logger.h"
-#include "../src/domain/dungeon/dungeon.h"
-#include "../src/domain/map/game_map.h"
-
-using namespace dungeon;
-using namespace map;
+using namespace dungeons::server::domain;
 
 // Helper to get the current dungeon state after processing an empty tick.
 // This is used to inspect entity positions and health.
 static std::optional<DungeonState> tickAndGetState(Dungeon& d,
                                                    std::chrono::milliseconds dt = std::chrono::milliseconds{1}) {
     return d.processTick(dt);
-}
-
-// Helper to compute Manhattan distance.
-static uint64_t distance(const Position& a, const Position& b) {
-    return a.manhattanDistance(b);
 }
 
 TEST(DungeonTest, ConstructorCreatesPlayersAndMonsters) {
