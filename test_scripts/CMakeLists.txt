@@ -35,22 +35,24 @@ endfunction()
 
 add_test_target(test_client
         tests_init_config_logger.cpp
-        tests_client.cpp
-        tests_keyboard_controller.cpp
+        client/tests_client.cpp
+        client/tests_keyboard_controller.cpp
+        client/tests_render_game_state.cpp
 )
 
 target_link_libraries(test_client PRIVATE
-        podzemeliya_client
+        client_app
 )
 
 add_test_target(test_common
         tests_init_config_logger.cpp
-        tests_config.cpp
-        tests_frame_codec.cpp
-        tests_hash.cpp
-        #        tests_serialization.cpp
-        tests_serialization_dto.cpp
-        tests_keyboard_reader.cpp
+        common/tests_config.cpp
+        common/tests_frame_codec.cpp
+        common/tests_hash.cpp
+        common/tests_direction.cpp
+        common/tests_serialization.cpp
+        common/tests_serialization_dto.cpp
+        common/tests_keyboard_reader.cpp
 )
 
 target_link_libraries(test_common PRIVATE
@@ -63,19 +65,18 @@ endif ()
 
 add_test_target(test_server
         tests_init_config_logger.cpp
-        tests_eventbus.cpp
-        tests_session.cpp
-        tests_session_registry.cpp
-        tests_connection_manager.cpp
-        tests_response_sender.cpp
-        tests_lobby.cpp
-        tests_lobby_registry.cpp
-        tests_position.cpp
-        tests_direction.cpp
-        tests_dungeon.cpp
-        #        tests_render_game_state.cpp
-        tests_entity_manager.cpp
-        tests_game_manager.cpp
+        server/tests_eventbus.cpp
+        server/tests_session.cpp
+        server/tests_session_registry.cpp
+        server/tests_connection_manager.cpp
+        server/tests_response_sender.cpp
+        server/tests_message_dispatcher.cpp
+        server/tests_lobby.cpp
+        server/tests_lobby_registry.cpp
+        server/tests_position.cpp
+        server/tests_dungeon.cpp
+        server/tests_entity_manager.cpp
+        server/tests_game_manager.cpp
 )
 
 target_link_libraries(test_server PRIVATE

@@ -1,6 +1,6 @@
+#include <C:/Users/qt96334/.conan2/p/b/gtestfde03c87b0d12/p/include/gtest/gtest.h>
 #include <common/game_state_dto.h>
 #include <common/serialization_game_state.h>
-#include <gtest/gtest.h>
 
 using namespace network;
 

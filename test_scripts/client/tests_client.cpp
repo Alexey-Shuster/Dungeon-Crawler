@@ -1,17 +1,14 @@
+#include <C:/Users/qt96334/.conan2/p/b/gtestfde03c87b0d12/p/include/gtest/gtest.h>
 #include <boost/asio.hpp>
 #include <chrono>
 #include <cstring>
-#include <gtest/gtest.h>
 #include <memory>
+#include <network/client.h>
 #include <string>
 #include <thread>
 #include <vector>
 
-#include "../client/client.h"
-#include "../common/config.h"
-#include "../common/logger.h"
-
-using namespace network;
+using namespace dungeons::client::network;
 using boost::asio::ip::tcp;
 
 // Helper: Simple echo server for testing
@@ -69,10 +66,16 @@ public:
 
 private:
     boost::asio::io_context& io_;
-    boost::asio::ip::tcp::acceptor acceptor_;
-    boost::asio::ip::tcp::socket socket_;
+    tcp::acceptor acceptor_;
+    tcp::socket socket_;
     bool is_running_;
 };
+
+// Helper to convert string to MessageData
+static network::Message toMessageData(const std::string& str) {
+    network::ByteBuffer buf{str.begin(), str.end()};
+    return network::Message(std::move(buf));
+}
 
 class ClientTest : public ::testing::Test {
 protected:
@@ -82,13 +85,8 @@ protected:
         // Ensure no lingering operations
     }
 
-    // Helper to convert string to MessageData
-    MessageData toMessageData(const std::string& str) {
-        return MessageData(str.begin(), str.end());
-    }
-
     // Helper to run IO with timeout and proper cleanup
-    void runIO(boost::asio::io_context& io, int milliseconds = 100) {
+    static void runIO(boost::asio::io_context& io, int milliseconds = 100) {
         // Run for specified time
         io.run_for(std::chrono::milliseconds(milliseconds));
 
@@ -100,7 +98,7 @@ protected:
     }
 
     // Helper to run IO until work is done or timeout
-    void runIOUntil(boost::asio::io_context& io, int maxMilliseconds = 1000) {
+    static void runIOUntil(boost::asio::io_context& io, int maxMilliseconds = 1000) {
         auto start = std::chrono::steady_clock::now();
         while (std::chrono::steady_clock::now() - start < std::chrono::milliseconds(maxMilliseconds)) {
             if (io.run_one_for(std::chrono::milliseconds(10)) == 0) {
@@ -224,7 +222,7 @@ TEST_F(ClientTest, SendEmptyMessage) {
     client->startConnect("127.0.0.1", port);
     runIO(io, 200);
 
-    EXPECT_NO_THROW(client->send(MessageData{}));  // Empty message
+    EXPECT_NO_THROW(client->send(network::Message{network::ByteBuffer{}}));
     runIO(io, 200);
     server.stop();
 }
@@ -265,7 +263,7 @@ TEST_F(ClientTest, SendFromMultipleThreads) {
         senders.emplace_back([client, i]() {
             for (int j = 0; j < 10; ++j) {
                 std::string msg = "Thread " + std::to_string(i) + " - " + std::to_string(j);
-                client->send(MessageData(msg.begin(), msg.end()));
+                client->send(toMessageData(msg));
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));
             }
         });
@@ -289,7 +287,7 @@ public:
 
     void sendAndTrack(const std::string& message) {
         sent_count_++;
-        client_->send(MessageData(message.begin(), message.end()));
+        client_->send(toMessageData(message));
     }
 
     int getSentCount() const {
@@ -377,8 +375,7 @@ TEST_F(ClientTest, SendNullTerminatedString) {
 
     std::string message = "Hello\0World";
     // MessageData with embedded null
-    MessageData data(message.begin(), message.end());
-    EXPECT_NO_THROW(client->send(data));
+    EXPECT_NO_THROW(client->send(toMessageData(message)));
     runIO(io, 200);
     server.stop();
 }
@@ -483,8 +480,8 @@ TEST_F(ClientTest, SendBinaryData) {
     runIO(io, 200);
 
     // Send binary data
-    MessageData binaryData = {0x01, 0x02, 0x03, 0xFF, 0x00, 0x7F, 0x80, 0xDE, 0xAD, 0xBE, 0xEF};
-    EXPECT_NO_THROW(client->send(binaryData));
+    network::ByteBuffer binaryData = {0x01, 0x02, 0x03, 0xFF, 0x00, 0x7F, 0x80, 0xDE, 0xAD, 0xBE, 0xEF};
+    EXPECT_NO_THROW(client->send(network::Message(std::move(binaryData))));
     runIO(io, 200);
     server.stop();
 }
@@ -498,8 +495,8 @@ TEST_F(ClientTest, SendMessageDataDirectly) {
     client->startConnect("127.0.0.1", port);
     runIO(io, 200);
 
-    MessageData data = {0x48, 0x65, 0x6C, 0x6C, 0x6F};  // "Hello"
-    EXPECT_NO_THROW(client->send(data));
+    network::ByteBuffer data = {0x48, 0x65, 0x6C, 0x6C, 0x6F};  // "Hello"
+    EXPECT_NO_THROW(client->send(network::Message(std::move(data))));
     runIO(io, 200);
     server.stop();
 }

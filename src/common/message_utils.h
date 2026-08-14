@@ -1,5 +1,6 @@
 #pragma once
 
+#include <format>
 #include <optional>
 #include <type_traits>
 
@@ -244,8 +245,7 @@ struct DeserializedBuffer {
     network::ByteBuffer payload;
 };
 
-[[nodiscard]] inline std::optional<DeserializedBuffer> parseMessage(
-    const network::Message& msg) {
+[[nodiscard]] inline std::optional<DeserializedBuffer> parseMessage(const network::Message& msg) {
     const auto& data = msg.buffer;
     if (data.size() < kPackedTypeSize) {
         LOG_ERROR("Message too short to contain header");

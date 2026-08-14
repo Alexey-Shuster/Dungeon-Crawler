@@ -1,5 +1,5 @@
+#include <C:/Users/qt96334/.conan2/p/b/gtestfde03c87b0d12/p/include/gtest/gtest.h>
 #include <chrono>
-#include <gtest/gtest.h>
 #include <memory>
 #include <server/domain/dungeon/dungeon.h>
 
@@ -37,6 +37,7 @@ TEST(DungeonTest, CollisionPreventsOverlap) {
     auto pos1 = state->players.at(p1).GetPosition();
     auto pos2 = state->players.at(p2).GetPosition();
 
+    using namespace types;
     // Move p1 towards p2
     Direction dir;
     if (pos2.x > pos1.x)

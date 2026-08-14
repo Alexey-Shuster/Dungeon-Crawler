@@ -9,9 +9,5 @@ add_executable(dungeons_server
 )
 
 target_link_libraries(dungeons_server PRIVATE
-        common
         server_app
-        server_core
-        server_domain
-        server_network
 )
