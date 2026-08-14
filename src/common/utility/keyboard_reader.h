@@ -8,14 +8,14 @@
 #include <mutex>
 #include <unordered_map>
 
-#include "win_defs.h"  // IWYU pragma: keep // windows.h
+#include "utility/win_defs.h"  // IWYU pragma: keep // windows.h
 
 #ifndef _WIN32
     #include <X11/Xlib.h>
     #include <X11/keysym.h>
 #endif
 
-namespace utility {
+namespace dungeons::common::utility {
 
 /**
  * Asynchronous keyboard reader using Boost.Asio timers.
@@ -69,4 +69,4 @@ private:
 #endif
 };
 
-}  // namespace utility
+}  // namespace dungeons::common::utility

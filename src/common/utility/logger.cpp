@@ -20,10 +20,9 @@
 #include <string_view>
 #include <system_error>
 
-namespace utils {
+namespace dungeons::common::utility {
 
 namespace {
-
 namespace fs = std::filesystem;
 
 bool IsLogDirValid(const std::string& path_str) {
@@ -304,4 +303,4 @@ DEFINE_LOG_METHOD(LogWarn, warning)
 
 #undef DEFINE_LOG_METHOD
 
-}  // namespace utils
+}  // namespace dungeons::common::utility

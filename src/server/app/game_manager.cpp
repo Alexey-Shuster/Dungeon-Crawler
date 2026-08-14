@@ -2,7 +2,7 @@
 
 #include <format>
 
-#include "../../common/logger.h"
+#include "../../common/utility/logger.h"
 
 namespace dungeons::server::app {
 

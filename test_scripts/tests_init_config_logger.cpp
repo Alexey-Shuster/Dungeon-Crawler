@@ -1,20 +1,20 @@
 #include <gtest/gtest.h>
-
-#include <common/config.h>
-#include <common/logger.h>
+#include <common/utility/config.h>
+#include <common/utility/logger.h>
 
 class GlobalSetupEnvironment : public ::testing::Environment {
 public:
     ~GlobalSetupEnvironment() override = default;
 
     void SetUp() override {
-        config::Settings::initialize("");
-        utils::Logger::Initialize();
-        utils::Logger::Instance();
+        using namespace dungeons::common::utility;
+        Settings::initialize("");
+        Logger::Initialize();
+        Logger::Instance();
     }
 
     void TearDown() override {
-        utils::Logger::Reset();
+        dungeons::common::utility::Logger::Reset();
     }
 };
 

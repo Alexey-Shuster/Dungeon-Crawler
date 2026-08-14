@@ -12,10 +12,10 @@
 
 #pragma once
 
-#include <common/logger.h>
-#include <common/message.h>
 #include <common/direction.h>
+#include <common/logger.h>
 #include <common/message_utils.h>
+#include <common/network/raw_message.h>
 #include <common/serialization.h>
 #include <functional>
 #include <memory>

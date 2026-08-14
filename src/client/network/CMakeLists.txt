@@ -1,10 +1,10 @@
 
-add_library(client_network STATIC
-        client_fwd.h)
+add_library(client_network STATIC)
 
 set(CLIENT_NETWORK_LIB client_network)
 
 target_sources(${CLIENT_NETWORK_LIB} PRIVATE
+        client_fwd.h
         client.h
         client.cpp
 )

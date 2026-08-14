@@ -1,0 +1,14 @@
+#pragma once
+
+#include "serder_vector.h"  // IWYU pragma: keep // serialize & deserialize
+
+namespace dungeons::common::wire {
+
+inline const char* kMap = "map";
+inline const char* kEntities = "entities";
+
+std::optional<network::ByteBuffer> serializeGameState(const network::DungeonSnapshot& snapshot);
+
+std::optional<network::DungeonSnapshot> deserializeGameState(const network::ByteBuffer& message);
+
+}  // namespace dungeons::common::wire

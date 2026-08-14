@@ -2,7 +2,7 @@
 
 #include <boost/signals2/connection.hpp>
 #include <common/logger.h>
-#include <common/message.h>
+#include <common/network/raw_message.h>
 #include <common/serialization.h>
 #include <memory>
 #include <vector>

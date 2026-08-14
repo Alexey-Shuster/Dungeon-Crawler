@@ -13,7 +13,7 @@
 #include <boost/asio/posix/stream_descriptor.hpp>
 #endif
 
-namespace utility {
+namespace dungeons::common::utility {
 
 class StdinReader : public std::enable_shared_from_this<StdinReader> {
 public:
@@ -117,4 +117,4 @@ private:
     std::string prompt_;
 };
 
-}  // namespace utility
+}  // namespace dungeons::common::utility

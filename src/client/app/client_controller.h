@@ -1,6 +1,6 @@
 #pragma once
 
-#include <common/message.h>
+#include <common/network/raw_message.h>
 #include <memory>
 #include <string>
 

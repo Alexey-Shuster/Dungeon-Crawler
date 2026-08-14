@@ -6,7 +6,8 @@
 #include <string>
 #include <string_view>
 
-namespace hash {
+namespace dungeons::common::utility {
+
 // Allowed characters (alphanumeric)
 static constexpr std::string_view kCharset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
@@ -89,4 +90,5 @@ struct Int64Hasher {
         return static_cast<std::size_t>(x);
     }
 };
-}  // namespace hash
+
+}  // namespace dungeons::common::utility

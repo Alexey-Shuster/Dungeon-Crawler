@@ -5,10 +5,10 @@
 #include <optional>
 #include <vector>
 
-#include "byte_buffer.h"
-#include "logger.h"
+#include "network/byte_buffer.h"
+#include "utility/logger.h"
 
-namespace network {
+namespace dungeons::common::wire {
 
 /**
  * @brief Делегатор для освобождения CBOR-объектов
@@ -97,7 +97,7 @@ CborPtr buildArray(Args&&... args) {
  * @details Calls cbor_serialize_alloc and wraps the result into a ByteBuffer.
  *          Logs errors internally.
  */
-inline std::optional<ByteBuffer> cborToMessage(CborPtr root) {
+inline std::optional<network::ByteBuffer> cborToMessage(CborPtr root) {
     if (!root) {
         LOG_ERROR("Cannot serialize null CBOR item");
         return std::nullopt;
@@ -112,7 +112,7 @@ inline std::optional<ByteBuffer> cborToMessage(CborPtr root) {
     std::unique_ptr<uint8_t, decltype(&free)> buffer_guard(buffer, &free);
     std::vector<uint8_t> data(buffer_guard.get(), buffer_guard.get() + buffer_size);
 
-    return ByteBuffer{std::move(data)};
+    return network::ByteBuffer{std::move(data)};
 }
 
 /**
@@ -124,7 +124,7 @@ inline std::optional<ByteBuffer> cborToMessage(CborPtr root) {
  * @details Calls cbor_load and checks for errors. The load result can be inspected
  *          via out_result if provided.
  */
-inline CborPtr bufferToCbor(const ByteBuffer& buffer, cbor_load_result* out_result = nullptr) {
+inline CborPtr bufferToCbor(network::ByteBuffer buffer, cbor_load_result* out_result = nullptr) {
     cbor_load_result result;
     CborPtr root(cbor_load(buffer.data(), buffer.size(), &result));
     if (out_result) {
@@ -179,4 +179,4 @@ inline CborPtr cborMapGet(cbor_item_t* map, const char* key) {
     return nullptr;
 }
 
-}  // namespace serialization
+}  // namespace dungeons::common::wire

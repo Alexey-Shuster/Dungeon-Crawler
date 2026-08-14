@@ -4,7 +4,7 @@
 #include <cstring>         // std::memcpy
 #include <vector>
 
-#include "byte_buffer.h"
+#include "network/byte_buffer.h"
 
 #ifdef _WIN32
     #include <winsock2.h>  // htonl / ntohl on Windows
@@ -12,9 +12,9 @@
     #include <arpa/inet.h>  // htonl / ntohl on Unix/Linux
 #endif
 
-#include "logger.h"
+#include "utility/logger.h"
 
-namespace network {
+namespace dungeons::common::network {
 /**
  * @brief Utility class for message framing over stream protocols (e.g., TCP).
  *
@@ -184,4 +184,4 @@ public:
         return messages;
     }
 };
-}  // namespace network
+}  // namespace dungeons::common::network

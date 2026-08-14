@@ -1,6 +1,6 @@
 #include <C:/Users/qt96334/.conan2/p/b/gtestfde03c87b0d12/p/include/gtest/gtest.h>
 #include <cbor.h>
-#include <common/message.h>
+#include <common/network/raw_message.h>
 #include <common/serialization.h>
 #include <common/serialization_utils.h>
 #include <server/app/message_dispatcher.h>

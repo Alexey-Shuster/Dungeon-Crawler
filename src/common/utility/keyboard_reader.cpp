@@ -4,7 +4,7 @@
 #include <cctype>
 #include <iostream>
 
-namespace utility {
+namespace dungeons::common::utility {
 
 // Platform‑independent constants for key‑state queries
 #ifdef _WIN32
@@ -188,4 +188,4 @@ bool KeyboardReader::isKeyDown(char key) const {  // NOLINT (silence use-static)
 #endif
 }
 
-}  // namespace utility
+}  // namespace dungeons::common::utility

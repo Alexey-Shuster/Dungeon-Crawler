@@ -1,7 +1,7 @@
 #include "message_router.h"
 
 #include <common/hash.h>
-#include <common/message.h>
+#include <common/network/raw_message.h>
 #include <common/serialization.h>
 #include <common/serialization_game_state.h>
 #include <common/string_utils.h>

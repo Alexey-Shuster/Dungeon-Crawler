@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <variant>
 
-namespace message {
+namespace dungeons::common::types {
 
 enum class Level : uint8_t {
     kNetwork = 0,
@@ -70,4 +70,4 @@ using MessageTypeVariant = std::variant<std::monostate,  // unknown / invalid
                                         AppMessageType,
                                         DomainMessageType>;
 
-}  // namespace message
+}  // namespace dungeons::common::types

@@ -3,9 +3,9 @@
 #include <optional>
 #include <vector>
 
-#include "serialization_utils.h"
+#include "serder_vector_base.h"
 
-namespace network {
+namespace dungeons::common::wire {
 
 // Define a concept to check if a type can be serialized/deserialized
 template <typename T>
@@ -66,4 +66,4 @@ std::optional<std::vector<T>> deserializeVector(cbor_item_t* array) {
     return result;
 }
 
-}  // namespace serialization
+}  // namespace dungeons::common::wire

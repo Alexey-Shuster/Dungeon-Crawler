@@ -17,13 +17,12 @@
 #include <optional>
 #include <vector>
 
-#include "byte_buffer.h"
-#include "logger.h"
-#include "message_types.h"
 #include "message_utils.h"
-#include "serialization_utils.h"
+#include "network/byte_buffer.h"
+#include "serialization_base.h"
+#include "types/message_types.h"
 
-namespace network {
+namespace dungeons::common::wire {
 
 /**
  * @brief Добавление 64-битного беззнакового аргумента в CBOR-массив
@@ -114,13 +113,13 @@ inline MessageArgs getMsgArgsFromCborArray(cbor_item_t* array) {
  *
  * @note Logs all errors internally; caller only needs to check for nullptr.
  */
-inline CborPtr createMessageArray(const message::MessageTypeVariant& msg_type, size_t numArgs) {
+inline CborPtr createMessageArray(const types::MessageTypeVariant& msg_type, size_t numArgs) {
     if (std::holds_alternative<std::monostate>(msg_type)) {
         LOG_ERROR("Cannot serialize message with unknown type");
         return nullptr;
     }
 
-    auto packed = message::packMessageType(msg_type);
+    auto packed = packMessageType(msg_type);
     if (!packed) {
         LOG_ERROR("Failed to pack message type");
         return nullptr;
@@ -159,7 +158,7 @@ inline CborPtr createMessageArray(const message::MessageTypeVariant& msg_type, s
  * @note On error, logs internally and returns nullopt.
  */
 template <typename... Args>
-std::optional<ByteBuffer> serializeMessage(const message::MessageTypeVariant& msg_type, Args... args) {
+std::optional<network::ByteBuffer> serializeMessage(const types::MessageTypeVariant& msg_type, Args... args) {
     static_assert((std::is_convertible_v<Args, uint64_t> && ...), "All arguments must be convertible to uint64_t");
 
     auto msg_array = createMessageArray(msg_type, sizeof...(args));
@@ -191,7 +190,7 @@ std::optional<ByteBuffer> serializeMessage(const message::MessageTypeVariant& ms
  *
  * @see serializeMessage (variadic version)
  */
-inline std::optional<ByteBuffer> serializeMessage(const message::MessageTypeVariant& msg_type,
+inline std::optional<network::ByteBuffer> serializeMessage(const types::MessageTypeVariant& msg_type,
                                                   const std::vector<uint64_t>& args) {
     auto msg_array = createMessageArray(msg_type, args.size());
     if (!msg_array) {
@@ -229,14 +228,14 @@ inline std::optional<ByteBuffer> serializeMessage(const message::MessageTypeVari
  * @see serializeMessage
  */
 struct DeserializedMessage {
-    message::MessageTypeVariant type;
+    types::MessageTypeVariant type;
     std::vector<uint64_t> args;
 };
 
 // TODO: validate message protocol (args number, args type?)
-inline std::optional<DeserializedMessage> deserializeMessageRaw(const ByteBuffer& buffer) {
+inline std::optional<DeserializedMessage> deserializeMessageRaw(network::ByteBuffer buffer) {
     cbor_load_result load_result{};
-    auto msg_array = bufferToCbor(buffer, &load_result);
+    auto msg_array = bufferToCbor(std::move(buffer), &load_result);
 
     if (!msg_array || load_result.error.code != CBOR_ERR_NONE) {
         LOG_ERROR("Failed to load CBOR data");
@@ -267,7 +266,7 @@ inline std::optional<DeserializedMessage> deserializeMessageRaw(const ByteBuffer
     }
     auto packed_type = static_cast<uint16_t>(*packed_opt);
 
-    auto msg_type = message::unpackMessageType(packed_type);
+    auto msg_type = types::unpackMessageType(packed_type);
     if (!msg_type) {
         LOG_ERROR(std::format("Failed to unpack message type from {}", packed_type));
         return std::nullopt;
@@ -282,4 +281,4 @@ inline std::optional<DeserializedMessage> deserializeMessageRaw(const ByteBuffer
     return DeserializedMessage{*msg_type, *msg_args};
 }
 
-}  // namespace serialization
+}  // namespace dungeons::common::wire

@@ -22,7 +22,7 @@
 // Helper macro for debug dumping
 #define PRINT_VAR(x) std::cout << std::left << std::setw(35) << #x << x << "\n"
 
-namespace config {
+namespace dungeons::common::utility {
 
 // ----------------------------------------------------------------------------
 // Internal helpers
@@ -361,4 +361,4 @@ void Settings::resetForTesting() {
     s_envCache.clear();
 }
 #endif
-}  // namespace config
+}  // namespace dungeons::common::utility
