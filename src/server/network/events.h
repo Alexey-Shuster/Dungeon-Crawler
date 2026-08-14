@@ -4,7 +4,7 @@
 
 #include "core/event_base.h"
 #include "core/event_type.h"
-#include "raw_message.h"
+#include <common/message.h>
 #include "session_event.h"
 #include "session_fwd.h"
 
@@ -58,9 +58,9 @@ struct PongEvent : SessionEvent {
 // Создает: Session
 // Получает: MessageRouter
 struct RawMessageReceivedEvent : public SessionEvent {
-    RawMessage message;
+    ::network::Message message;
 
-    RawMessageReceivedEvent(SessionId sid, RawMessage msg) noexcept
+    RawMessageReceivedEvent(SessionId sid, ::network::Message msg) noexcept
         : SessionEvent(sid)
         , message(std::move(msg)) {}
 

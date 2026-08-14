@@ -33,9 +33,9 @@ void MessageRouter::OnRawMessage(const network::RawMessageReceivedEvent& event) 
     auto& sid = event.session_id.value;
     LOG_INFO(std::format("[MessageRouter: Session #{}] processing RawMessageReceivedEvent, included message size={}",
                          sid,
-                         event.message.message_data.size()));
+                         event.message.buffer.size()));
 
-    auto message = network::deserializeMessageRaw(event.message.message_data);
+    auto message = ::network::deserializeMessageRaw(std::move(event.message.buffer));
 
     if (!message) {
         LOG_ERROR("Failed to deserialize message");
@@ -45,7 +45,8 @@ void MessageRouter::OnRawMessage(const network::RawMessageReceivedEvent& event) 
     LOG_INFO(std::format("[MessageRouter: Session #{}] message deserialized with args number={}",
                          sid,
                          message->args.size()));
-    network::MessageArgs args{std::in_place};
+
+    ::network::MessageArgs args{std::in_place};
 
     if (message::isNetworkMessage(message->type)) {
         LOG_INFO(std::format("[MessageRouter: Session #{}] message received is NetworkMessage", sid));

@@ -8,7 +8,6 @@
 
 #include "collision_check.h"
 #include "command_queue.h"
-#include "common/direction.h"
 #include "direction_gen.h"
 #include "domain/entity/entity.h"
 #include "domain/map/game_map.h"
@@ -27,7 +26,7 @@ public:
     explicit Dungeon(GameMap game_map, PlayersContainer&& initial_players);
 
     void addPlayerAttackCommand(PlayerId player_id, uint32_t damage);
-    void addMovePlayerCommand(PlayerId player_id, Direction direction);
+    void addMovePlayerCommand(PlayerId player_id, types::Direction direction);
     std::optional<DungeonState> processTick(std::chrono::milliseconds time_delta);
     std::vector<PlayerId> getPlayers() const;
 

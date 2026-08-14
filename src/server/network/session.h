@@ -2,11 +2,11 @@
 
 #include <atomic>
 #include <boost/asio.hpp>
+#include <common/message.h>
 #include <deque>
 #include <memory>
 
 #include "core/event_bus.h"
-#include "raw_message.h"
 #include "types.h"
 
 namespace dungeons::server::network {
@@ -32,7 +32,7 @@ public:
      * @brief Safely sends a message to the client from any thread.
      * @note The message is encoded into a frame before queueing.
      */
-    virtual void send(RawMessageData&& raw_message);
+    virtual void send(::network::Message raw_message);
 
     SessionId getSessionId() const;
 
@@ -50,11 +50,11 @@ private:
 
     void doWrite();
 
-    void processMessage(RawMessageData&& raw_msg) const;
+    void processMessage(::network::Message raw_msg) const;
 
 private:
     boost::asio::ip::tcp::socket socket_;                       ///< Connection socket (runs in its own io_context)
-    boost::asio::strand<boost::asio::any_io_executor> strand_;  ///< Serialises all read/write operations
+    boost::asio::strand<boost::asio::any_io_executor> strand_;  ///< Serializes all read/write operations
     core::EventBus& eventBus_;
     const SessionId sessionId_;
 
@@ -62,7 +62,7 @@ private:
 
     // Synchronisation for multi‑threaded environment
     // All access to write_queue_ is performed only on strand_, so no mutex is required
-    std::deque<std::shared_ptr<RawMessageData>> write_queue_;  ///< Outgoing message queue
+    std::deque<std::shared_ptr<::network::Message>> write_queue_;  ///< Outgoing message queue
     std::atomic<bool> is_disconnected_{false};  ///< true after session is closed (ensures single event publication)
 };
 

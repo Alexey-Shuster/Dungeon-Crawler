@@ -32,7 +32,7 @@ public:
     }
 
     // Move an entity if the new position is available (checked externally)
-    bool moveEntity(IdType id, Direction dir, const Position& newPos) {
+    bool moveEntity(IdType id, types::Direction dir, const Position& newPos) {
         auto it = entities_.find(id);
         if (it == entities_.end() || !it->second.isAlive()) {
             return false;

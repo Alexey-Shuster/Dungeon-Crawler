@@ -34,19 +34,19 @@ void Session::start() {
     eventBus_.publish(ClientConnectedEvent{shared_from_this()});
 }
 
-void Session::send(RawMessageData&& raw_message) {
+void Session::send(::network::Message raw_message) {
     boost::asio::dispatch(strand_, [this, self = shared_from_this(), msg = std::move(raw_message)]() {
         if (is_disconnected_.load(std::memory_order_acquire)) {
             return;
         }
         // Encode the message into a frame
-        RawMessageData encoded = ::network::FrameCodec::encodeFrame(std::move(msg));
+        auto encoded = ::network::FrameCodec::encodeFrame(std::move(msg.buffer));
         if (encoded.empty()) {
             LOG_ERROR(std::format("[Session {}] encoding failed", sessionId_.value));
             return;
         }
 
-        auto msg_ptr = std::make_shared<RawMessageData>(std::move(encoded));
+        auto msg_ptr = std::make_shared<::network::Message>(std::move(encoded));
         const bool idle = write_queue_.empty();
         write_queue_.push_back(std::move(msg_ptr));
         if (idle) {
@@ -114,7 +114,7 @@ void Session::doRead() {
                                              sessionId_.value,
                                              n,
                                              msg.size()));
-                        processMessage(std::move(msg));
+                        processMessage(::network::Message(std::move(msg)));
                         ++n;
                     }
 
@@ -142,7 +142,7 @@ void Session::doWrite() {
 
     boost::asio::async_write(
         socket_,
-        boost::asio::buffer(*msg_ptr),
+        boost::asio::buffer((*msg_ptr).buffer),
         boost::asio::bind_executor(
             strand_,
             [this, self = shared_from_this(), msg_ptr](boost::system::error_code ec, std::size_t /*length*/) {
@@ -158,10 +158,10 @@ void Session::doWrite() {
             }));
 }
 
-void Session::processMessage(RawMessageData&& raw_msg) const {
+void Session::processMessage(::network::Message raw_msg) const {
     LOG_INFO(std::format("[Session {}] sending RawMessageReceivedEvent. Included message size={} bytes",
                          sessionId_.value,
-                         raw_msg.size()));
-    eventBus_.publish(RawMessageReceivedEvent{getSessionId(), RawMessage{std::move(raw_msg)}});
+                         raw_msg.buffer.size()));
+    eventBus_.publish(RawMessageReceivedEvent{getSessionId(), std::move(raw_msg)});
 }
 }  // namespace dungeons::server::network

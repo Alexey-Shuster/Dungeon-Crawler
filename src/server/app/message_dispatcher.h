@@ -13,11 +13,13 @@
 #pragma once
 
 #include <common/logger.h>
+#include <common/message.h>
+#include <common/direction.h>
+#include <common/message_utils.h>
 #include <common/serialization.h>
 #include <functional>
 #include <memory>
 #include <optional>
-#include <server/network/message_utils.h>
 #include <type_traits>
 #include <unordered_map>
 
@@ -38,7 +40,7 @@ struct MessageTypeVariantHash {
 // ----------------------------------------------------------------------------
 // Фабрика событий
 // ----------------------------------------------------------------------------
-using EventFactory = std::function<std::shared_ptr<core::Event>(const network::MessageArgs&)>;
+using EventFactory = std::function<std::shared_ptr<core::Event>(const ::network::MessageArgs&)>;
 
 ///@brief Вспомогательный хелпер
 template <typename Target, typename Source>
@@ -63,7 +65,7 @@ constexpr std::optional<Target> safe_argument_cast(Source value) {
 
 ///@brief Универсальный шаблон для создания событий с проверкой аргументов
 template <typename EventType, typename... ArgTypes>
-std::shared_ptr<core::Event> CreateEvent(const network::MessageArgs& args) {
+std::shared_ptr<core::Event> CreateEvent(const ::network::MessageArgs& args) {
     constexpr size_t ExpectedSize = sizeof...(ArgTypes);
 
     if (!args.has_value() || args->size() != ExpectedSize) {
@@ -112,7 +114,7 @@ const std::unordered_map<message::MessageTypeVariant, EventFactory, MessageTypeV
 
     {message::AppMessageType::kStartGame, CreateEvent<domain::StartGameRequestEvent, domain::PlayerId>},
 
-    {message::DomainMessageType::kMove, CreateEvent<domain::MoveRequestEvent, domain::PlayerId, domain::Direction>},
+    {message::DomainMessageType::kMove, CreateEvent<domain::MoveRequestEvent, domain::PlayerId, types::Direction>},
 
     {message::DomainMessageType::kAttack, CreateEvent<domain::AtackRequestEvent, domain::PlayerId>},
 };
@@ -133,7 +135,7 @@ const std::unordered_map<message::MessageTypeVariant, EventFactory, MessageTypeV
  *       - Фабрика вернула nullptr (невалидные аргументы)
  */
 [[nodiscard]] inline std::shared_ptr<core::Event> makeEvent(const message::MessageTypeVariant& msg_type,
-                                                            const network::MessageArgs& msg_args) {
+                                                            const ::network::MessageArgs& msg_args) {
     if (std::holds_alternative<std::monostate>(msg_type)) {
         LOG_ERROR("Cannot create event from unknown message type");
         return nullptr;
@@ -169,8 +171,8 @@ const std::unordered_map<message::MessageTypeVariant, EventFactory, MessageTypeV
  * @see serialization::deserializeMessageRaw
  * @see makeEvent
  */
-[[nodiscard]] inline std::shared_ptr<core::Event> deserializeMessage(const network::RawMessage& message) {
-    auto raw = network::deserializeMessageRaw(message.message_data);
+[[nodiscard]] inline std::shared_ptr<core::Event> deserializeMessage(::network::Message message) {
+    auto raw = ::network::deserializeMessageRaw(std::move(message.buffer));
     if (!raw) {
         LOG_ERROR("Failed to deserialize raw message");
         return nullptr;

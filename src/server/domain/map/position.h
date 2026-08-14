@@ -1,13 +1,12 @@
 #pragma once
 
 #include <cmath>
+#include <common/direction.h>
 #include <compare>  // IWYU pragma: keep // operator<=>
 #include <cstdint>  // IWYU pragma: keep // uint64_t
 #include <functional>
 #include <limits>
 #include <type_traits>
-
-#include "../../../common/direction.h"
 
 namespace dungeons::server::domain {
 
@@ -48,13 +47,13 @@ struct Position {
         return Position{sub(Dimension{0}, x), sub(Dimension{0}, y)};
     }
 
-    Distance manhattanDistance(const Position& other) const noexcept {
+    [[nodiscard]] Distance manhattanDistance(const Position& other) const noexcept {
         auto dx = delta(other.x, x);
         auto dy = delta(other.y, y);
         return add(dx, dy);
     }
 
-    Distance euclideanDistance(const Position& other) const noexcept {
+    [[nodiscard]] Distance euclideanDistance(const Position& other) const noexcept {
         auto dx = delta(other.x, x);
         auto dy = delta(other.y, y);
         return std::sqrt(add(mul(dx, dx), mul(dy, dy)));
@@ -148,7 +147,8 @@ struct PositionHash {
     }
 };
 
-[[nodiscard]] inline constexpr Position positionOffsetFromDirection(Direction direction) noexcept {
+[[nodiscard]] inline constexpr Position positionOffsetFromDirection(types::Direction direction) noexcept {
+    using namespace types;
     switch (direction) {
         case Direction::kUp:
             return Position{0, 1};

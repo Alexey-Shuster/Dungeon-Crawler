@@ -2,7 +2,7 @@
 
 namespace dungeons::server::domain {
 
-network::DungeonSnapshot createGameStateDTO(const DungeonState& state) {
+::network::DungeonSnapshot createGameStateDTO(const DungeonState& state) {
     network::DungeonSnapshot snapshot;
 
     // 1. Map snapshot
