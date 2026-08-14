@@ -5,6 +5,6 @@
 
 namespace dungeons::server::domain {
 
-serialization::DungeonSnapshot createGameStateDTO(const DungeonState& state);
+network::DungeonSnapshot createGameStateDTO(const DungeonState& state);
 
 }  // namespace dungeons::server::domain

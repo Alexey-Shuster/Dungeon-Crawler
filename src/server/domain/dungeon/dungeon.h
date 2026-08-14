@@ -8,9 +8,9 @@
 
 #include "collision_check.h"
 #include "command_queue.h"
+#include "common/direction.h"
 #include "direction_gen.h"
 #include "domain/entity/entity.h"
-#include "domain/map/direction.h"
 #include "domain/map/game_map.h"
 #include "domain/types.h"
 #include "dungeon_state.h"

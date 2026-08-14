@@ -2,7 +2,7 @@
 
 #include <random>
 
-#include "domain/map/direction.h"
+#include "common/direction.h"
 
 namespace dungeons::server::domain {
 

@@ -2,7 +2,7 @@
 #include <common/serialization_game_state.h>
 #include <gtest/gtest.h>
 
-using namespace serialization;
+using namespace network;
 
 // -----------------------------------------------------------------------------
 // Tests for BarrierSnapshot

@@ -2,10 +2,10 @@
 
 #include <vector>
 
+#include "../../common/direction.h"
 #include "core/event_type.h"
 #include "domain/dungeon/dungeon_state.h"
 #include "event_base.h"
-#include "map/direction.h"
 #include "network/session_event.h"
 
 namespace dungeons::server::domain {

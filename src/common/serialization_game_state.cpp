@@ -2,7 +2,7 @@
 
 #include <format>
 
-namespace serialization {
+namespace network {
 
 namespace {
 

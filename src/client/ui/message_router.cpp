@@ -1,15 +1,16 @@
 #include "message_router.h"
 
+#include <common/hash.h>
+#include <common/message.h>
+#include <common/serialization.h>
+#include <common/serialization_game_state.h>
+#include <common/string_utils.h>
 #include <string_view>
 #include <vector>
 
-#include "../domain/render_game_state.h"
-#include "hash.h"
-#include "serialization.h"
-#include "serialization_game_state.h"
-#include "string_utils.h"
+#include "render_game_state.h"
 
-namespace network::message_router {
+namespace dungeons::client::ui {
 
 namespace {
 
@@ -65,19 +66,17 @@ static std::string formatOutput(std::string_view prefix, const std::vector<uint6
     }
 }
 
-void route(const MessageData& data, const ConsoleOutput& output) {
-    Message msg{data};
-
-    auto game_state = serialization::deserializeGameState(msg);
+void routeMessage(::network::Message data, const ConsoleOutput& output) {
+    auto game_state = network::deserializeGameState(data.buffer);
     if (game_state.has_value()) {
-        auto game_state_view = serialization::renderGameState(*game_state);
+        auto game_state_view = renderGameState(*game_state);
         for (const auto& line : game_state_view) {
             output(line);
         }
         return;
     }
 
-    auto parsed = serialization::deserializeMessageRaw(msg);
+    auto parsed = network::deserializeMessageRaw(std::move(data.buffer));
     if (!parsed) {
         output("Failed to parse incoming message");
         return;
@@ -138,4 +137,4 @@ void route(const MessageData& data, const ConsoleOutput& output) {
     }
 }
 
-}  // namespace network::message_router
+}  // namespace dungeons::client::ui

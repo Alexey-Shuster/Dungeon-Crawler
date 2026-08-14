@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "../src/client/keyboard_controller.h"
+#include "../src/client/ui/keyboard_controller.h"
 
 TEST(KeyboardControllerTest, MoveKeysToCommands) {
     EXPECT_EQ(network::keyboard_controller::commandFromKey('w'), "MOVE UP");

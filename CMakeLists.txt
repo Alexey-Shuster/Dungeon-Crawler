@@ -39,7 +39,7 @@ file(GENERATE
 # -----------------------------------------------------------------------------
 #   Add subprojects
 # -----------------------------------------------------------------------------
-#add_subdirectory(src/client)
+add_subdirectory(src/client)
 add_subdirectory(src/common)
 add_subdirectory(src/server)
 

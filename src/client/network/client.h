@@ -2,16 +2,13 @@
 
 #include <atomic>
 #include <boost/asio.hpp>
+#include <common/message.h>
 #include <deque>
 #include <functional>
 #include <memory>
 #include <string>
 
-#include "../server/network/raw_message.h"
-
-namespace network {
-
-class ClientManager;
+namespace dungeons::client::network {
 
 class Client : public std::enable_shared_from_this<Client> {
 public:
@@ -21,11 +18,11 @@ public:
 
     bool isConnected() const;
 
-    void send(MessageData message);
+    void send(::network::Message message);
 
     using ConnectionCallback = std::function<void()>;
     using DisconnectionCallback = std::function<void()>;
-    using ReceiveMessageCallback = std::function<void(const MessageData&)>;
+    using ReceiveMessageCallback = std::function<void(::network::Message)>;
 
     void setOnConnect(ConnectionCallback cb);
     void setOnDisconnect(DisconnectionCallback cb);
@@ -58,24 +55,26 @@ private:
     boost::asio::streambuf read_buffer_{};
 
     // Outgoing message queue (encoded frames)
-    std::deque<MessageData> write_queue_;
+    std::deque<::network::Message> write_queue_;
 
     // Current message being written (kept alive during async_write)
-    MessageData current_write_message_{};
+    ::network::Message current_write_message_{::network::ByteBuffer{}};
 
     // Prevents overlapping writes
     bool writing_ = false;
 
-    enum class ConnectionState { Disconnected, Connecting, Connected };
+    enum class ConnectionState {
+        Disconnected,
+        Connecting,
+        Connected
+    };
 
     std::atomic<ConnectionState> state_{ConnectionState::Disconnected};
 
 private:
-    friend class ClientManager;  // allows manager to set callbacks
-
     ConnectionCallback on_connect_;
     DisconnectionCallback on_disconnect_;
     ReceiveMessageCallback on_message_;
 };
 
-}  // namespace network
+}  // namespace dungeons::client::network

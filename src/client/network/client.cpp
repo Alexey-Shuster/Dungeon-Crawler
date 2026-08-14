@@ -1,10 +1,11 @@
 #include "client.h"
 
+#include <common/frame_codec.h>
+#include <common/logger.h>
 #include <format>
-#include <string>
+#include <string_view>
 
-#include "../common/frame_codec.h"
-#include "../common/logger.h"
+namespace dungeons::client::network {
 
 namespace {
 // Maximum number of pending outgoing messages
@@ -12,8 +13,6 @@ constexpr size_t kMaxQueueSize = 1000;
 
 constexpr size_t kBufferChunkSize = 16 * 1024;
 }  // namespace
-
-namespace network {
 
 std::shared_ptr<Client> Client::create(boost::asio::io_context& io) {
     return std::shared_ptr<Client>(new Client(io));
@@ -83,13 +82,15 @@ void Client::doRead() {
                 read_buffer_.commit(length);
 
                 // Extract complete frames
-                auto messages = FrameCodec::extractFrames(read_buffer_);
+                auto messages = ::network::FrameCodec::extractFrames(read_buffer_);
                 for (auto& msg : messages) {
-                    // Process raw message – just log
-                    LOG_INFO(std::format("[Client] received: {}", std::string(msg.begin(), msg.end())));
-
-                    if (on_message_)
-                        on_message_(msg);
+                    std::string_view msg_view(reinterpret_cast<const char*>(msg.data()), msg.size());
+                    if (on_message_) {
+                        LOG_INFO(std::format("[Client] received: {}", msg_view));
+                        on_message_(::network::Message(std::move(msg)));
+                    } else {
+                        LOG_INFO(std::format("[Client] message dropped: {}", msg_view));
+                    }
                 }
 
                 // Continue reading
@@ -101,7 +102,7 @@ void Client::doRead() {
         }));
 }
 
-void Client::send(MessageData message) {
+void Client::send(::network::Message message) {
     boost::asio::post(strand_, [this, message = std::move(message)]() {
         if (!isConnected() || !socket_.is_open()) {
             LOG_ERROR(std::format("[Client] cannot send – socket closed or disconnected"));
@@ -109,7 +110,7 @@ void Client::send(MessageData message) {
         }
 
         // Encode the raw message into a frame
-        MessageData encoded = FrameCodec::encodeFrame(message);
+        auto encoded = ::network::FrameCodec::encodeFrame(message.buffer);
         if (encoded.empty()) {
             LOG_ERROR(std::format("[Client] encoding failed"));
             return;
@@ -121,7 +122,7 @@ void Client::send(MessageData message) {
             return;
         }
 
-        write_queue_.push_back(std::move(encoded));
+        write_queue_.push_back(::network::Message(std::move(encoded)));
 
         // Start writing if not already in progress
         if (!writing_) {
@@ -139,7 +140,10 @@ void Client::setOnReceiveMessage(ReceiveMessageCallback cb) {
     on_message_ = std::move(cb);
 }
 
-Client::Client(boost::asio::io_context& io) : strand_(boost::asio::make_strand(io)), resolver_(io), socket_(io) {}
+Client::Client(boost::asio::io_context& io)
+    : strand_(boost::asio::make_strand(io))
+    , resolver_(io)
+    , socket_(io) {}
 
 void Client::doWrite() {
     if (write_queue_.empty() || writing_ || !isConnected()) {
@@ -154,11 +158,11 @@ void Client::doWrite() {
 
     boost::asio::async_write(
         socket_,
-        boost::asio::buffer(current_write_message_),
+        boost::asio::buffer(current_write_message_.buffer),
         boost::asio::bind_executor(strand_, [this, self](boost::system::error_code err, std::size_t /*bytes*/) {
             writing_ = false;
             if (!err) {
-                LOG_INFO(std::format("[Client] sent bytes: {}", current_write_message_.size()));
+                LOG_INFO(std::format("[Client] sent bytes: {}", current_write_message_.buffer.size()));
                 if (!write_queue_.empty()) {
                     doWrite();
                 }
@@ -172,7 +176,7 @@ void Client::doWrite() {
 void Client::resetState() {
     write_queue_.clear();
     writing_ = false;
-    current_write_message_.clear();
+    current_write_message_.buffer.clear();
     read_buffer_.consume(read_buffer_.size());
 }
 
@@ -208,4 +212,4 @@ void Client::handleDisconnect() {
         on_disconnect_();
 }
 
-}  // namespace network
+}  // namespace dungeons::client::network

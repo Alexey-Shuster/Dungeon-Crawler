@@ -4,7 +4,7 @@
 #include <cstdint> // IWYU pragma: keep // uint
 #include <vector>
 
-namespace serialization {
+namespace network {
 
 struct EntitySnapshot {
     uint8_t type;

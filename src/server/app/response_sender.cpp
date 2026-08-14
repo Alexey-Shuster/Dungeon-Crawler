@@ -90,7 +90,7 @@ void ResponseSender::onGameStateUpdate(const domain::GameStateUpdateEvent& event
         return;
     }
     auto game_state = domain::createGameStateDTO(event.dungeon_state);
-    auto game_state_msg = serialization::serializeGameState(game_state);
+    auto game_state_msg = network::serializeGameState(game_state);
     if (game_state_msg.has_value()) {
         // TODO: send to players in dungeon
         for (const auto& session : session_registry_->getAllSessions()) {

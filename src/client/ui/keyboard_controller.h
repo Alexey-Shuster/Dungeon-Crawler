@@ -3,8 +3,8 @@
 #include <optional>
 #include <string>
 
-namespace network::keyboard_controller {
+namespace dungeons::client::ui {
 
 [[nodiscard]] std::optional<std::string> commandFromKey(char key);
 
-}
+}  // namespace dungeons::client::ui

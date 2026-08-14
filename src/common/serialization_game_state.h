@@ -7,7 +7,7 @@
 #include "serialization_utils.h"
 #include "serialization_vector.h"  // IWYU pragma: keep // serialize & deserialize
 
-namespace serialization {
+namespace network {
 
 inline const char* kMap = "map";
 inline const char* kEntities = "entities";

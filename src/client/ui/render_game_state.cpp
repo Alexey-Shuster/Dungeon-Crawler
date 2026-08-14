@@ -1,5 +1,8 @@
 #include "render_game_state.h"
 
+#include <common/logger.h>
+#include <common/number_utils.h>
+#include <common/string_utils.h>
 #include <cstdint>  // IWYU pragma: keep // uint64_t
 #include <format>
 #include <limits>
@@ -7,12 +10,7 @@
 #include <utility>
 #include <vector>
 
-#include "../../common/logger.h"
-#include "../../common/number_utils.h"
-#include "../../common/string_utils.h"
-#include "../../domain/game_state_dto.h"
-
-namespace serialization {
+namespace dungeons::client::ui {
 
 namespace {
 
@@ -45,7 +43,7 @@ constexpr size_t kMaxMapCells = 200 * 200;
 
 }  // namespace
 
-std::vector<std::string> renderGameState(const DungeonSnapshot& snapshot) {
+std::vector<std::string> renderGameState(const network::DungeonSnapshot& snapshot) {
     const auto& map = snapshot.game_map;
 
     uint64_t minX = map.blc_x;
@@ -151,4 +149,4 @@ std::vector<std::string> renderGameState(const DungeonSnapshot& snapshot) {
     return lines;
 }
 
-}  // namespace serialization
+}  // namespace dungeons::client::ui

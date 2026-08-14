@@ -103,7 +103,7 @@ void ResponseSender::sendResponse(const EventType& event, MsgType msg_type, Args
         return;
     }
 
-    auto opt_msg = serialization::serializeMessage(msg_type, std::forward<Args>(args)...);
+    auto opt_msg = network::serializeMessage(msg_type, std::forward<Args>(args)...);
     if (opt_msg.has_value()) {
         LOG_INFO(std::format("Queued {}", event_type));
         session->send(std::move(*opt_msg));
@@ -122,7 +122,7 @@ void ResponseSender::sendResponse(const EventType& event, MsgType msg_type, cons
         return;
     }
 
-    auto opt_msg = serialization::serializeMessage(msg_type, args);
+    auto opt_msg = network::serializeMessage(msg_type, args);
     if (opt_msg.has_value()) {
         LOG_INFO(std::format("Queued {}", event_type));
         session->send(MessageData(std::move(opt_msg.value().message_data)));

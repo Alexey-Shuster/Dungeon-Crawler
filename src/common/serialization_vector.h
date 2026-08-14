@@ -5,7 +5,7 @@
 
 #include "serialization_utils.h"
 
-namespace serialization {
+namespace network {
 
 // Define a concept to check if a type can be serialized/deserialized
 template <typename T>

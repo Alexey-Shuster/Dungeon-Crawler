@@ -23,7 +23,7 @@
 #include "message_utils.h"
 #include "serialization_utils.h"
 
-namespace serialization {
+namespace network {
 
 /**
  * @brief Добавление 64-битного беззнакового аргумента в CBOR-массив

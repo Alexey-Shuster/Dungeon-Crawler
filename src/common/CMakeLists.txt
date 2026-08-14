@@ -1,7 +1,8 @@
 
 set(COMMON_LIB common)
 
-add_library(common STATIC)
+add_library(common STATIC
+        message.h)
 
 target_sources(${COMMON_LIB} PRIVATE
         win_defs.h
@@ -15,6 +16,7 @@ target_sources(${COMMON_LIB} PRIVATE
         strong_id.h
         string_utils.h
         number_utils.h
+        direction.h
         serialization.h
         message_types.h
         message_utils.h

@@ -3,8 +3,8 @@
 #include <cstdint>
 #include <vector>
 
-namespace serialization {
+namespace network {
 
 using ByteBuffer = std::vector<uint8_t>;
 
-}  // namespace serialization
+}  // namespace network

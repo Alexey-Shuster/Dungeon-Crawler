@@ -1,7 +1,8 @@
 #include "keyboard_controller.h"
 
-namespace network::keyboard_controller {
+namespace dungeons::client::ui {
 
+// TODO: handle all commands
 [[nodiscard]] std::optional<std::string> commandFromKey(char key) {
     const char lowerKey = static_cast<char>(std::tolower(static_cast<unsigned char>(key)));
 
@@ -36,4 +37,4 @@ namespace network::keyboard_controller {
     }
 }
 
-}  // namespace network::keyboard_controller
+}  // namespace dungeons::client::ui

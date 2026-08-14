@@ -7,7 +7,7 @@
 #include <limits>
 #include <type_traits>
 
-#include "direction.h"
+#include "../../../common/direction.h"
 
 namespace dungeons::server::domain {
 
