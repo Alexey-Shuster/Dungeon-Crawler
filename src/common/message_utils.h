@@ -1,9 +1,11 @@
 #pragma once
 
+#include <format>
 #include <optional>
 #include <type_traits>
 
 #include "logger.h"
+#include "message.h"
 #include "message_types.h"
 
 namespace message {
@@ -219,6 +221,50 @@ inline void appendPackedType(uint16_t packed, std::vector<uint8_t>& out) {
     if (offset + kPackedTypeSize > buffer.size())
         return std::nullopt;
     return (static_cast<uint16_t>(buffer[offset]) << 8) | static_cast<uint16_t>(buffer[offset + 1]);
+}
+
+// -----------------------------------------------------------------------------
+// makeMessage & parseMessage
+// -----------------------------------------------------------------------------
+
+[[nodiscard]] inline network::Message makeMessage(const MessageTypeVariant& type, network::ByteBuffer payload) {
+    auto packed = packMessageType(type);
+    if (!packed) {
+        LOG_ERROR("Failed to pack message type – returning empty");
+        return network::Message{std::vector<uint8_t>{}};
+    }
+    std::vector<uint8_t> data;
+    data.reserve(kPackedTypeSize + payload.size());
+    appendPackedType(*packed, data);
+    data.insert(data.end(), payload.begin(), payload.end());
+    return network::Message{std::move(data)};
+}
+
+struct DeserializedBuffer {
+    MessageTypeVariant type;
+    network::ByteBuffer payload;
+};
+
+[[nodiscard]] inline std::optional<DeserializedBuffer> parseMessage(const network::Message& msg) {
+    const auto& data = msg.buffer;
+    if (data.size() < kPackedTypeSize) {
+        LOG_ERROR("Message too short to contain header");
+        return std::nullopt;
+    }
+
+    auto packed = readPackedType(data, 0);
+    if (!packed)
+        return std::nullopt;
+
+    auto type = unpackMessageType(*packed);
+    if (!type) {
+        LOG_ERROR(std::format("Failed to unpack type from code {:#04x}", *packed));
+        return std::nullopt;
+    }
+
+    // Copy payload (excluding the header) into a new vector
+    network::ByteBuffer payload(data.begin() + kPackedTypeSize, data.end());
+    return DeserializedBuffer{*type, std::move(payload)};
 }
 
 }  // namespace message

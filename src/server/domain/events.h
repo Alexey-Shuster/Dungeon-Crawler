@@ -1,12 +1,11 @@
 #pragma once
 
+#include <common/direction.h>
 #include <vector>
 
 #include "core/event_type.h"
 #include "domain/dungeon/dungeon_state.h"
 #include "event_base.h"
-#include "map/direction.h"
-#include "network/session_event.h"
 
 namespace dungeons::server::domain {
 
@@ -290,9 +289,9 @@ struct StartGameNotTheLeaderResponseEvent : PlayerEvent {
 // Создает: MessageRouter
 // Получает: GameManager
 struct MoveRequestEvent : PlayerEvent {
-    Direction direction;
+    types::Direction direction;
 
-    explicit MoveRequestEvent(PlayerId pid, Direction dir) noexcept
+    explicit MoveRequestEvent(PlayerId pid, types::Direction dir) noexcept
         : PlayerEvent(pid)
         , direction(dir) {}
 

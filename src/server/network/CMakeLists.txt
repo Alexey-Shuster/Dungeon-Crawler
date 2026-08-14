@@ -6,8 +6,6 @@ add_library(server_network STATIC)
 target_sources(${SERVER_NETWORK_LIB} PRIVATE
         types.h
         events.h
-        raw_message.h
-        message_utils.h
         session_event.h
         tcp_server.h
         tcp_server.cpp

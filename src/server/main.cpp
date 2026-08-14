@@ -45,7 +45,7 @@ int main(int argc, char* argv[]) {
         auto message_router = app::MessageRouter::create(event_bus, session_registry);
         auto response_sender = app::ResponseSender::create(event_bus, session_registry);
 
-        auto server = std::make_shared<network::TcpServer>(io_context, event_bus);
+        auto server = std::make_shared<dungeons::server::network::TcpServer>(io_context, event_bus);
         auto game_loop = std::make_shared<core::GameLoop>(io_context, event_bus, cfg.server.tick_rate);
 
         server->start();

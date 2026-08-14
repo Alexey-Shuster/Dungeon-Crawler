@@ -2,8 +2,8 @@
 
 namespace dungeons::server::domain {
 
-serialization::DungeonSnapshot createGameStateDTO(const DungeonState& state) {
-    serialization::DungeonSnapshot snapshot;
+::network::DungeonSnapshot createGameStateDTO(const DungeonState& state) {
+    network::DungeonSnapshot snapshot;
 
     // 1. Map snapshot
     const auto& map_size = state.game_map.size();

@@ -1,15 +1,15 @@
 #pragma once
 
-#include <algorithm>
 #include <boost/asio.hpp>  // asio::streambuf, asio::buffer, etc.
-#include <cstdint>
-#include <cstring>  // std::memcpy
+#include <cstring>         // std::memcpy
 #include <vector>
 
+#include "byte_buffer.h"
+
 #ifdef _WIN32
-#include <winsock2.h>  // htonl / ntohl on Windows
+    #include <winsock2.h>  // htonl / ntohl on Windows
 #else
-#include <arpa/inet.h>  // htonl / ntohl on Unix/Linux
+    #include <arpa/inet.h>  // htonl / ntohl on Unix/Linux
 #endif
 
 #include "logger.h"
@@ -34,7 +34,8 @@ namespace network {
  *   and the search continues from the next byte, so valid data after corruption
  *   is not lost.
  */
-/* TODO: zero-copy
+// TODO: zero-copy
+/*
 - asio::streambuf --> boost::beast::flat_buffer
 - rework without buffer_copy()
 - return std::span instead of vector
@@ -61,7 +62,7 @@ public:
      * @return std::vector<uint8_t> Frame with magic + length prefix + payload.
      *         Returns an empty vector if payload exceeds kMaxMessageSize.
      */
-    static std::vector<uint8_t> encodeFrame(const std::vector<uint8_t>& payload) {
+    static ByteBuffer encodeFrame(const ByteBuffer& payload) {
         if (payload.size() > kMaxMessageSize) {
             LOG_INFO("[FrameCodec::encodeFrame] payload.size() > kMaxMessageSize");
             return {};
@@ -102,7 +103,7 @@ public:
      * @return std::vector<std::vector<uint8_t>> Vector of extracted payloads
      *         (without magic or length prefixes). Each element is a complete message.
      */
-    static std::vector<std::vector<uint8_t>> extractFrames(boost::asio::streambuf& buffer) {
+    static std::vector<ByteBuffer> extractFrames(boost::asio::streambuf& buffer) {
         std::vector<std::vector<uint8_t>> messages;
 
         // Get current buffer size and copy data into a contiguous vector

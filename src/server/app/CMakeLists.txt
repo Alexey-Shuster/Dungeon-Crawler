@@ -23,6 +23,7 @@ target_include_directories(${SERVER_APP_LIB} PUBLIC
 )
 
 target_link_libraries(${SERVER_APP_LIB} PUBLIC
+        common
         server_core
         server_domain
         server_network

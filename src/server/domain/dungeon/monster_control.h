@@ -38,7 +38,7 @@ public:
             if (!it->second.isAlive())
                 continue;
 
-            Direction dir = dir_gen_.generate();
+            types::Direction dir = dir_gen_.generate();
             Position newPos = it->second.GetPosition() + positionOffsetFromDirection(dir);
             if (checker_.isAvailable(newPos)) {
                 monsters_.moveEntity(it->first, dir, newPos);

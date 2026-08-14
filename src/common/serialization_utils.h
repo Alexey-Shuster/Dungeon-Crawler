@@ -8,7 +8,7 @@
 #include "byte_buffer.h"
 #include "logger.h"
 
-namespace serialization {
+namespace network {
 
 /**
  * @brief Делегатор для освобождения CBOR-объектов

@@ -27,7 +27,7 @@ void Dungeon::addPlayerAttackCommand(PlayerId player_id, uint32_t damage) {
     });
 }
 
-void Dungeon::addMovePlayerCommand(PlayerId player_id, Direction direction) {
+void Dungeon::addMovePlayerCommand(PlayerId player_id, types::Direction direction) {
     command_queue_.push([self = weak_from_this(), player_id, direction]() {
         auto shared = self.lock();
         if (!shared)

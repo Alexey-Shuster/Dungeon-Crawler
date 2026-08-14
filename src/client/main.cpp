@@ -1,15 +1,17 @@
 #include <boost/asio/io_context.hpp>
+#include <common/config.h>
+#include <common/keyboard_reader.h>
+#include <common/logger.h>
+#include <common/stdin_reader.h>
+#include <common/terminal_guard.h>
 #include <exception>
 #include <format>
 #include <iostream>
 
-#include "../common/config.h"
-#include "../common/keyboard_reader.h"
-#include "../common/logger.h"
-#include "../common/stdin_reader.h"
-#include "../common/terminal_guard.h"
-#include "client.h"
-#include "client_controller.h"
+#include "app/client_controller.h"
+#include "network/client.h"
+
+using namespace dungeons::client;
 
 int main() {
     try {
@@ -20,8 +22,8 @@ int main() {
         boost::asio::io_context io_context;
         boost::asio::signal_set signals(io_context, SIGINT, SIGTERM);
 
-        auto client = network::Client::create(io_context);
-        auto client_controller = network::ClientController::create(client);
+        auto client = dungeons::client::network::Client::create(io_context);
+        auto client_controller = app::ClientController::create(client);
 
         auto terminal_guard = std::make_shared<utility::TerminalGuard>();
         auto stdin_reader = std::make_shared<utility::StdinReader>(io_context);
@@ -41,8 +43,8 @@ int main() {
             });
 
         // Connect callback: forward incoming frames to dispatcher
-        client->setOnReceiveMessage([client_controller](const network::MessageData& data) {
-            client_controller->onMessageReceived(data);
+        client->setOnReceiveMessage([client_controller](::network::Message data) {
+            client_controller->onMessageReceived(std::move(data));
         });
 
         // Stdin reader (manual commands)

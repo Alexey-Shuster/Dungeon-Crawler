@@ -2,6 +2,7 @@
 
 #include <boost/signals2/connection.hpp>
 #include <common/logger.h>
+#include <common/message.h>
 #include <common/serialization.h>
 #include <memory>
 #include <vector>
@@ -103,13 +104,12 @@ void ResponseSender::sendResponse(const EventType& event, MsgType msg_type, Args
         return;
     }
 
-    auto opt_msg = serialization::serializeMessage(msg_type, std::forward<Args>(args)...);
-    if (opt_msg.has_value()) {
+    auto opt_buf = ::network::serializeMessage(msg_type, std::forward<Args>(args)...);
+    if (opt_buf.has_value()) {
         LOG_INFO(std::format("Queued {}", event_type));
-        session->send(std::move(*opt_msg));
+        session->send(::network::Message(std::move(*opt_buf)));
     } else {
         LOG_ERROR(std::format("Failed to serialize message for event {}", event_type));
-        return;
     }
 }
 
@@ -122,10 +122,10 @@ void ResponseSender::sendResponse(const EventType& event, MsgType msg_type, cons
         return;
     }
 
-    auto opt_msg = serialization::serializeMessage(msg_type, args);
-    if (opt_msg.has_value()) {
+    auto opt_buf = ::network::serializeMessage(msg_type, std::move(args));
+    if (opt_buf.has_value()) {
         LOG_INFO(std::format("Queued {}", event_type));
-        session->send(MessageData(std::move(opt_msg.value().message_data)));
+        session->send(::network::Message(std::move(*opt_buf)));
     } else {
         LOG_ERROR(std::format("Failed to serialize message for event {}", event_type));
     }
