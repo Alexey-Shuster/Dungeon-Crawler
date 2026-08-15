@@ -5,7 +5,7 @@
 #include <format>
 #include <server/app/message_dispatcher.h>
 
-#include "wire/serialization.h"
+#include "wire/serder.h"
 
 namespace dungeons::server::app {
 
@@ -38,7 +38,7 @@ void MessageRouter::OnRawMessage(const network::RawMessageReceivedEvent& event) 
                          sid,
                          event.message.buffer.size()));
 
-    auto message = common::wire::deserializeMessageRaw(std::move(event.message.buffer));
+    auto message = common::wire::deserializeRawMessage(std::move(event.message.buffer));
 
     if (!message) {
         LOG_ERROR("Failed to deserialize message");

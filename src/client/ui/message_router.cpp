@@ -1,10 +1,11 @@
 #include "message_router.h"
 
 #include <common/network/raw_message.h>
+#include <common/types/message_utils.h>
 #include <common/utility/hash.h>
 #include <common/utility/string_utils.h>
-#include <common/wire/serialization.h>
-#include <common/wire/serialization_game_state.h>
+#include <common/wire/serder.h>
+#include <common/wire/serder_game_state.h>
 #include <string_view>
 #include <vector>
 
@@ -78,7 +79,7 @@ void routeMessage(common::network::RawMessage data, const ConsoleOutput& output)
         return;
     }
 
-    auto parsed = common::wire::deserializeMessageRaw(std::move(data.buffer));
+    auto parsed = common::wire::deserializeRawMessage(std::move(data.buffer));
     if (!parsed) {
         output("Failed to parse incoming message");
         return;

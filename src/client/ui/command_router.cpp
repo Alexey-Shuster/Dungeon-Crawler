@@ -2,8 +2,8 @@
 
 #include <common/types/direction.h>
 #include <common/utility/hash.h>
-#include <common/wire/serialization.h>
 #include <common/utility/string_utils.h>
+#include <common/wire/serder.h>
 #include <format>
 #include <sstream>
 #include <string_view>

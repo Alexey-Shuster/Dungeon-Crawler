@@ -1,6 +1,7 @@
-#include "serialization_game_state.h"
-
 #include <format>
+#include <utility/logger.h>
+
+#include "serder_game_state.h"
 
 namespace dungeons::common::wire {
 
@@ -13,6 +14,8 @@ inline constexpr size_t kEntityArraySize = 6;
 inline constexpr size_t kGameMapArraySize = 5;
 
 }  // namespace
+
+namespace detail {
 
 CborPtr serialize(const BarrierSnapshot& barrier) {
     return buildArray(cbor_build_uint64(barrier.pos_x), cbor_build_uint64(barrier.pos_y));
@@ -93,36 +96,39 @@ std::optional<GameMapSnapshot> deserialize(cbor_item_t* item, GameMapSnapshot*) 
                            .barriers = std::move(*barriers)};
 }
 
+}  // namespace detail
+
 std::optional<ByteBuffer> serializeGameState(const DungeonSnapshot& snapshot) {
-    auto root = CborPtr(cbor_new_definite_map(kBarrierArraySize));
+    auto root = detail::CborPtr(cbor_new_definite_map(kBarrierArraySize));
     if (!root) {
         LOG_ERROR("Failed to create CBOR map");
         return std::nullopt;
     }
 
     // Map
-    auto map_cbor = serialize(snapshot.game_map);
+    auto map_cbor = detail::serialize(snapshot.game_map);
     if (!map_cbor)
         return std::nullopt;
-    auto key_map = CborPtr(cbor_build_string(kMap));
+    auto key_map = detail::CborPtr(cbor_build_string(kMap));
     if (!key_map || !cbor_map_add(root.get(), {.key = key_map.get(), .value = map_cbor.get()})) {
         return std::nullopt;
     }
 
     // Entities
-    auto entities_cbor = serializeVector(snapshot.entities);
+    auto entities_cbor = detail::serializeVector(snapshot.entities);
     if (!entities_cbor)
         return std::nullopt;
-    auto key_entities = CborPtr(cbor_build_string(kEntities));
+    auto key_entities = detail::CborPtr(cbor_build_string(kEntities));
     if (!key_entities || !cbor_map_add(root.get(), {.key = key_entities.get(), .value = entities_cbor.get()})) {
         return std::nullopt;
     }
 
     return cborToMessage(std::move(root));
 }
+
 std::optional<DungeonSnapshot> deserializeGameState(const ByteBuffer& message) {
     cbor_load_result load_result{};
-    auto root = bufferToCbor(message, &load_result);
+    auto root = detail::bufferToCbor(message, &load_result);
 
     if (!root || load_result.error.code != CBOR_ERR_NONE || !cbor_isa_map(root.get())) {
         LOG_ERROR("Failed to load CBOR data or not a map");
@@ -132,12 +138,12 @@ std::optional<DungeonSnapshot> deserializeGameState(const ByteBuffer& message) {
     DungeonSnapshot snapshot;
 
     // Map
-    auto map_item = CborPtr(cborMapGet(root.get(), kMap));
+    auto map_item = detail::CborPtr(detail::cborMapGet(root.get(), kMap));
     if (!map_item) {
         LOG_ERROR(std::format("Missing {} key in game state", std::string_view(kMap)));
         return std::nullopt;
     }
-    auto map_opt = deserialize<GameMapSnapshot>(map_item.get());
+    auto map_opt = detail::deserialize<GameMapSnapshot>(map_item.get());
     if (!map_opt) {
         LOG_ERROR("Failed to deserialize game map");
         return std::nullopt;
@@ -145,13 +151,13 @@ std::optional<DungeonSnapshot> deserializeGameState(const ByteBuffer& message) {
     snapshot.game_map = std::move(*map_opt);
 
     // Entities
-    auto entities_item = CborPtr(cborMapGet(root.get(), kEntities));
+    auto entities_item = detail::CborPtr(detail::cborMapGet(root.get(), kEntities));
     if (!entities_item) {
         LOG_ERROR(std::format("Missing {} key in game state", std::string_view(kEntities)));
         return std::nullopt;
     }
 
-    auto entities_opt = deserializeVector<EntitySnapshot>(entities_item.get());
+    auto entities_opt = detail::deserializeVector<EntitySnapshot>(entities_item.get());
     if (!entities_opt) {
         LOG_ERROR("Failed to deserialize entities");
         return std::nullopt;

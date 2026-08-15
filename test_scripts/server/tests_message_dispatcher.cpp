@@ -1,7 +1,7 @@
 #include <cbor.h>
 #include <common/network/raw_message.h>
-#include <common/wire/serialization.h>
-#include <common/wire/serialization_base.h>
+#include <common/wire/serder.h>
+#include <common/wire/serder_base.h>
 #include <gtest/gtest.h>
 #include <server/app/message_dispatcher.h>
 #include <server/domain/dungeon/dungeon.h>
@@ -257,7 +257,7 @@ TEST(DeserializeRawTest, ValidMessage) {
     auto msg_opt = serializeMessage(NetworkMessageType::kJoin, SessionId{123}.get(), PlayerId{456}.get());
     ASSERT_TRUE(msg_opt.has_value());
 
-    auto raw = deserializeMessageRaw(*msg_opt);
+    auto raw = deserializeRawMessage(*msg_opt);
     ASSERT_TRUE(raw.has_value());
     ASSERT_TRUE(std::holds_alternative<NetworkMessageType>(raw->type));
     EXPECT_EQ(std::get<NetworkMessageType>(raw->type), NetworkMessageType::kJoin);
@@ -269,7 +269,7 @@ TEST(DeserializeRawTest, ValidMessage) {
 TEST(DeserializeRawTest, InvalidDataReturnsNullopt) {
     std::vector<uint8_t> invalid = {0xFF, 0xFF};
     RawMessage msg = createMessage(invalid);
-    auto raw = deserializeMessageRaw(msg.buffer);
+    auto raw = deserializeRawMessage(msg.buffer);
     EXPECT_FALSE(raw.has_value());
 }
 

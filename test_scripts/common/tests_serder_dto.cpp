@@ -1,6 +1,6 @@
-#include <gtest/gtest.h>
 #include <common/network/game_state_dto.h>
-#include <common/wire/serialization_game_state.h>
+#include <common/wire/serder_game_state.h>
+#include <gtest/gtest.h>
 
 using namespace dungeons::common::network;
 using namespace dungeons::common::wire;
@@ -11,25 +11,25 @@ using namespace dungeons::common::wire;
 
 TEST(SerializationGameStateTest, BarrierSnapshotRoundTrip) {
     BarrierSnapshot original{10, 20};
-    auto cbor = serialize(original);
+    auto cbor = detail::serialize(original);
     ASSERT_NE(cbor, nullptr);
 
-    auto deserialized = deserialize(cbor.get(), static_cast<BarrierSnapshot*>(nullptr));
+    auto deserialized = detail::deserialize(cbor.get(), static_cast<BarrierSnapshot*>(nullptr));
     ASSERT_TRUE(deserialized.has_value());
     EXPECT_EQ(original, *deserialized);
 }
 
 TEST(SerializationGameStateTest, BarrierSnapshotDeserializeInvalid) {
     // Not an array => nullopt
-    auto item = CborPtr(cbor_build_uint64(42));
-    auto result = deserialize(item.get(), static_cast<BarrierSnapshot*>(nullptr));
+    auto item = detail::CborPtr(cbor_build_uint64(42));
+    auto result = detail::deserialize(item.get(), static_cast<BarrierSnapshot*>(nullptr));
     EXPECT_FALSE(result.has_value());
 
     // Array with wrong size (1 instead of 2)
-    auto arr = CborPtr(cbor_new_definite_array(1));
-    auto val = CborPtr(cbor_build_uint64(5));
+    auto arr = detail::CborPtr(cbor_new_definite_array(1));
+    auto val = detail::CborPtr(cbor_build_uint64(5));
     cbor_array_push(arr.get(), val.get());
-    result = deserialize(arr.get(), static_cast<BarrierSnapshot*>(nullptr));
+    result = detail::deserialize(arr.get(), static_cast<BarrierSnapshot*>(nullptr));
     EXPECT_FALSE(result.has_value());
 }
 
@@ -39,27 +39,27 @@ TEST(SerializationGameStateTest, BarrierSnapshotDeserializeInvalid) {
 
 TEST(SerializationGameStateTest, EntitySnapshotRoundTrip) {
     EntitySnapshot original{.type = 1, .state = 2, .id = 12345, .pos_x = 100, .pos_y = 200, .hp = 50};
-    auto cbor = serialize(original);
+    auto cbor = detail::serialize(original);
     ASSERT_NE(cbor, nullptr);
 
-    auto deserialized = deserialize(cbor.get(), static_cast<EntitySnapshot*>(nullptr));
+    auto deserialized = detail::deserialize(cbor.get(), static_cast<EntitySnapshot*>(nullptr));
     ASSERT_TRUE(deserialized.has_value());
     EXPECT_EQ(original, *deserialized);
 }
 
 TEST(SerializationGameStateTest, EntitySnapshotDeserializeInvalid) {
     // Not an array
-    auto item = CborPtr(cbor_build_uint64(42));
-    auto result = deserialize(item.get(), static_cast<EntitySnapshot*>(nullptr));
+    auto item = detail::CborPtr(cbor_build_uint64(42));
+    auto result = detail::deserialize(item.get(), static_cast<EntitySnapshot*>(nullptr));
     EXPECT_FALSE(result.has_value());
 
     // Array with wrong size (5 instead of 6)
-    auto arr = CborPtr(cbor_new_definite_array(5));
+    auto arr = detail::CborPtr(cbor_new_definite_array(5));
     for (int i = 0; i < 5; ++i) {
-        auto val = CborPtr(cbor_build_uint64(i));
+        auto val = detail::CborPtr(cbor_build_uint64(i));
         cbor_array_push(arr.get(), val.get());
     }
-    result = deserialize(arr.get(), static_cast<EntitySnapshot*>(nullptr));
+    result = detail::deserialize(arr.get(), static_cast<EntitySnapshot*>(nullptr));
     EXPECT_FALSE(result.has_value());
 }
 
@@ -75,10 +75,10 @@ TEST(SerializationGameStateTest, GameMapSnapshotRoundTrip) {
     original.trc_y = 10;
     original.barriers = {{2, 3}, {5, 6}, {8, 9}};
 
-    auto cbor = serialize(original);
+    auto cbor = detail::serialize(original);
     ASSERT_NE(cbor, nullptr);
 
-    auto deserialized = deserialize(cbor.get(), static_cast<GameMapSnapshot*>(nullptr));
+    auto deserialized = detail::deserialize(cbor.get(), static_cast<GameMapSnapshot*>(nullptr));
     ASSERT_TRUE(deserialized.has_value());
     EXPECT_EQ(original, *deserialized);
 }
@@ -91,10 +91,10 @@ TEST(SerializationGameStateTest, GameMapSnapshotEmptyBarriers) {
     original.trc_y = 5;
     // barriers empty
 
-    auto cbor = serialize(original);
+    auto cbor = detail::serialize(original);
     ASSERT_NE(cbor, nullptr);
 
-    auto deserialized = deserialize(cbor.get(), static_cast<GameMapSnapshot*>(nullptr));
+    auto deserialized = detail::deserialize(cbor.get(), static_cast<GameMapSnapshot*>(nullptr));
     ASSERT_TRUE(deserialized.has_value());
     EXPECT_TRUE(deserialized->barriers.empty());
     EXPECT_EQ(original.blc_x, deserialized->blc_x);
@@ -103,28 +103,28 @@ TEST(SerializationGameStateTest, GameMapSnapshotEmptyBarriers) {
 
 TEST(SerializationGameStateTest, GameMapSnapshotDeserializeInvalid) {
     // Not an array
-    auto item = CborPtr(cbor_build_uint64(42));
-    auto result = deserialize(item.get(), static_cast<GameMapSnapshot*>(nullptr));
+    auto item = detail::CborPtr(cbor_build_uint64(42));
+    auto result = detail::deserialize(item.get(), static_cast<GameMapSnapshot*>(nullptr));
     EXPECT_FALSE(result.has_value());
 
     // Array with wrong size (4 instead of 5)
-    auto arr = CborPtr(cbor_new_definite_array(4));
+    auto arr = detail::CborPtr(cbor_new_definite_array(4));
     for (int i = 0; i < 4; ++i) {
-        auto val = CborPtr(cbor_build_uint64(i));
+        auto val = detail::CborPtr(cbor_build_uint64(i));
         cbor_array_push(arr.get(), val.get());
     }
-    result = deserialize(arr.get(), static_cast<GameMapSnapshot*>(nullptr));
+    result = detail::deserialize(arr.get(), static_cast<GameMapSnapshot*>(nullptr));
     EXPECT_FALSE(result.has_value());
 
     // 5th element is not an array (barriers)
-    auto arr2 = CborPtr(cbor_new_definite_array(5));
+    auto arr2 = detail::CborPtr(cbor_new_definite_array(5));
     for (int i = 0; i < 4; ++i) {
-        auto val = CborPtr(cbor_build_uint64(i));
+        auto val = detail::CborPtr(cbor_build_uint64(i));
         cbor_array_push(arr2.get(), val.get());
     }
-    auto bad = CborPtr(cbor_build_uint64(99));  // not an array
+    auto bad = detail::CborPtr(cbor_build_uint64(99));  // not an array
     cbor_array_push(arr2.get(), bad.get());
-    result = deserialize(arr2.get(), static_cast<GameMapSnapshot*>(nullptr));
+    result = detail::deserialize(arr2.get(), static_cast<GameMapSnapshot*>(nullptr));
     EXPECT_FALSE(result.has_value());
 }
 
@@ -170,6 +170,7 @@ TEST(SerializationGameStateTest, DungeonSnapshotEmptyEntities) {
 }
 
 TEST(SerializationGameStateTest, DeserializeGameStateInvalid) {
+    using namespace dungeons::common::wire::detail;
     // 1. Not a map (array)
     auto arr_msg = []() {
         auto arr = CborPtr(cbor_new_definite_array(1));
@@ -209,12 +210,12 @@ TEST(SerializationGameStateTest, DeserializeGameStateInvalid) {
 // -----------------------------------------------------------------------------
 
 TEST(SerializationGameStateTest, CborToMessageRoundTrip) {
-    auto item = CborPtr(cbor_build_uint64(123456));
+    auto item = detail::CborPtr(cbor_build_uint64(123456));
     auto msg_opt = cborToMessage(std::move(item));
     ASSERT_TRUE(msg_opt.has_value());
 
     cbor_load_result result;
-    auto loaded = bufferToCbor(*msg_opt, &result);
+    auto loaded = detail::bufferToCbor(*msg_opt, &result);
     ASSERT_NE(loaded, nullptr);
     EXPECT_EQ(result.error.code, CBOR_ERR_NONE);
     EXPECT_TRUE(cbor_isa_uint(loaded.get()));
@@ -223,12 +224,12 @@ TEST(SerializationGameStateTest, CborToMessageRoundTrip) {
 
 TEST(SerializationGameStateTest, MessageToCborInvalid) {
     ByteBuffer invalid{ByteBuffer{0x01, 0x02, 0x03}};
-    auto loaded = bufferToCbor(invalid);
+    auto loaded = detail::bufferToCbor(invalid);
     EXPECT_EQ(loaded, nullptr);
 }
 
 TEST(SerializationGameStateTest, MessageToCborTrulyInvalid) {
     ByteBuffer invalid{ByteBuffer{0xFF, 0xFF}};  // not a valid CBOR item
-    auto loaded = bufferToCbor(invalid);
+    auto loaded = detail::bufferToCbor(invalid);
     EXPECT_EQ(loaded, nullptr);
 }

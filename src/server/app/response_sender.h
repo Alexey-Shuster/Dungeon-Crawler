@@ -3,7 +3,7 @@
 #include <boost/signals2/connection.hpp>
 #include <common/network/raw_message.h>
 #include <common/utility/logger.h>
-#include <common/wire/serialization.h>
+#include <common/wire/serder.h>
 #include <core/event_bus.h>
 #include <domain/events.h>
 #include <memory>

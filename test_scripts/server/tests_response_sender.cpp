@@ -1,5 +1,5 @@
 #include <boost/asio.hpp>
-#include <common/wire/serialization.h>
+#include <common/wire/serder.h>
 #include <gtest/gtest.h>
 #include <memory>
 #include <server/app/events.h>
@@ -68,7 +68,7 @@ TEST_F(ResponseSenderTest, AuthSendsWelcome) {
     bus_->publish(auth_event);
 
     EXPECT_TRUE(session->call_);
-    auto decoded = deserializeMessageRaw(ByteBuffer(std::move(session->captured_data_)));
+    auto decoded = deserializeRawMessage(ByteBuffer(std::move(session->captured_data_)));
     ASSERT_TRUE(decoded.has_value());
     ASSERT_TRUE(std::holds_alternative<NetworkMessageType>(decoded->type));
     EXPECT_EQ(std::get<NetworkMessageType>(decoded->type), NetworkMessageType::kWelcome);
@@ -81,7 +81,7 @@ TEST_F(ResponseSenderTest, AuthWelcomeWorksForAnyPlayer) {
     bus_->publish(auth_event);
 
     EXPECT_TRUE(session->call_);
-    auto decoded = deserializeMessageRaw(ByteBuffer(std::move(session->captured_data_)));
+    auto decoded = deserializeRawMessage(ByteBuffer(std::move(session->captured_data_)));
     ASSERT_TRUE(decoded.has_value());
     ASSERT_TRUE(std::holds_alternative<NetworkMessageType>(decoded->type));
     EXPECT_EQ(std::get<NetworkMessageType>(decoded->type), NetworkMessageType::kWelcome);
@@ -100,7 +100,7 @@ TEST_F(ResponseSenderTest, AuthHandlesMultiplePlayers) {
     PlayerAuthenticatedEvent auth_event1(SessionId{300}, PlayerId{1408});
     bus_->publish(auth_event1);
     EXPECT_TRUE(session1->call_);
-    auto decoded1 = deserializeMessageRaw(ByteBuffer(std::move(session1->captured_data_)));
+    auto decoded1 = deserializeRawMessage(ByteBuffer(std::move(session1->captured_data_)));
     ASSERT_TRUE(decoded1.has_value());
     ASSERT_TRUE(std::holds_alternative<NetworkMessageType>(decoded1->type));
     EXPECT_EQ(std::get<NetworkMessageType>(decoded1->type), NetworkMessageType::kWelcome);
@@ -109,7 +109,7 @@ TEST_F(ResponseSenderTest, AuthHandlesMultiplePlayers) {
     PlayerAuthenticatedEvent auth_event2(SessionId{600}, PlayerId{13});
     bus_->publish(auth_event2);
     EXPECT_TRUE(session2->call_);
-    auto decoded2 = deserializeMessageRaw(ByteBuffer(std::move(session2->captured_data_)));
+    auto decoded2 = deserializeRawMessage(ByteBuffer(std::move(session2->captured_data_)));
     ASSERT_TRUE(decoded2.has_value());
     ASSERT_TRUE(std::holds_alternative<NetworkMessageType>(decoded2->type));
     EXPECT_EQ(std::get<NetworkMessageType>(decoded2->type), NetworkMessageType::kWelcome);
@@ -125,7 +125,7 @@ TEST_F(ResponseSenderTest, ReconnectedSendsSerializedMessage) {
     bus_->publish(reconn_event);
 
     EXPECT_TRUE(session->call_);
-    auto decoded = deserializeMessageRaw(ByteBuffer(std::move(session->captured_data_)));
+    auto decoded = deserializeRawMessage(ByteBuffer(std::move(session->captured_data_)));
     ASSERT_TRUE(decoded.has_value());
     ASSERT_TRUE(std::holds_alternative<NetworkMessageType>(decoded->type));
     EXPECT_EQ(std::get<NetworkMessageType>(decoded->type), NetworkMessageType::kReconnected);

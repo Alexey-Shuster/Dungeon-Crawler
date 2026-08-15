@@ -50,8 +50,8 @@ add_test_target(test_common
         common/tests_frame_codec.cpp
         common/tests_hash.cpp
         common/tests_direction.cpp
-        common/tests_serialization.cpp
-        common/tests_serialization_dto.cpp
+        common/tests_serder.cpp
+        common/tests_serder_dto.cpp
         common/tests_keyboard_reader.cpp
 )
 
