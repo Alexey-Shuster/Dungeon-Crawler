@@ -1,11 +1,10 @@
-#include <C:/Users/qt96334/.conan2/p/b/gtestfde03c87b0d12/p/include/gtest/gtest.h>
 #include <boost/asio.hpp>
 #include <chrono>
-#include <common/keyboard_reader.h>
-#include <thread>
+#include <common/utility/keyboard_reader.h>
+#include <gtest/gtest.h>
 #include <unordered_map>
 
-using namespace utility;
+using namespace dungeons::common::utility;
 
 class TestableKeyboardReader : public KeyboardReader {
 public:

@@ -14,13 +14,13 @@
 #include <cbor.h>
 #include <format>
 #include <memory>
+#include <network/byte_buffer.h>
 #include <optional>
+#include <types/message_types.h>
 #include <vector>
 
 #include "message_utils.h"
-#include "network/byte_buffer.h"
 #include "serialization_base.h"
-#include "types/message_types.h"
 
 namespace dungeons::common::wire {
 
@@ -191,7 +191,7 @@ std::optional<network::ByteBuffer> serializeMessage(const types::MessageTypeVari
  * @see serializeMessage (variadic version)
  */
 inline std::optional<network::ByteBuffer> serializeMessage(const types::MessageTypeVariant& msg_type,
-                                                  const std::vector<uint64_t>& args) {
+                                                           const std::vector<uint64_t>& args) {
     auto msg_array = createMessageArray(msg_type, args.size());
     if (!msg_array) {
         LOG_ERROR("Failed to create CBOR array for provided message");

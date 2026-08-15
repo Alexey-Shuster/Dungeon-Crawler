@@ -2,11 +2,10 @@
 
 #include <cbor.h>
 #include <memory>
+#include <network/byte_buffer.h>
 #include <optional>
+#include <utility/logger.h>
 #include <vector>
-
-#include "network/byte_buffer.h"
-#include "utility/logger.h"
 
 namespace dungeons::common::wire {
 

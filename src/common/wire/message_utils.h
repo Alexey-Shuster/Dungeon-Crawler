@@ -4,9 +4,8 @@
 #include <network/raw_message.h>
 #include <optional>
 #include <types/message_types.h>
+#include <types/message_utils.h>
 #include <utility/logger.h>
-
-#include "types/message_utils.h"
 
 namespace dungeons::common::wire {
 

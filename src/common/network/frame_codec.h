@@ -4,15 +4,13 @@
 #include <cstring>         // std::memcpy
 #include <vector>
 
-#include "network/byte_buffer.h"
+#include "byte_buffer.h"
 
 #ifdef _WIN32
     #include <winsock2.h>  // htonl / ntohl on Windows
 #else
     #include <arpa/inet.h>  // htonl / ntohl on Unix/Linux
 #endif
-
-#include "utility/logger.h"
 
 namespace dungeons::common::network {
 /**
@@ -64,7 +62,6 @@ public:
      */
     static ByteBuffer encodeFrame(const ByteBuffer& payload) {
         if (payload.size() > kMaxMessageSize) {
-            LOG_INFO("[FrameCodec::encodeFrame] payload.size() > kMaxMessageSize");
             return {};
         }
 

@@ -8,7 +8,7 @@
 #include <mutex>
 #include <unordered_map>
 
-#include "utility/win_defs.h"  // IWYU pragma: keep // windows.h
+#include "win_defs.h"  // IWYU pragma: keep // windows.h
 
 #ifndef _WIN32
     #include <X11/Xlib.h>
