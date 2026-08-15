@@ -1,13 +1,13 @@
-#include <C:/Users/qt96334/.conan2/p/b/gtestfde03c87b0d12/p/include/gtest/gtest.h>
-#include <common/hash.h>
+#include <gtest/gtest.h>
+#include <common/utility/hash.h>
 
-using namespace hash;
+using namespace dungeons::common::utility;
 
 // Helper: generate all valid strings of a given length
 static std::vector<std::string> all_strings_of_length(size_t len) {
     std::vector<std::string> result;
     if (len == 0) {
-        result.push_back("");
+        result.emplace_back("");
         return result;
     }
     std::string s(len, ' ');
@@ -147,7 +147,7 @@ TEST(DecodeTest, ValidCodesWithMaxLength) {
 // Test suite for hash::Int64Hasher (splitmix64)
 
 TEST(Int64HasherTest, SameValueYieldsSameHash) {
-    hash::Int64Hasher hasher;
+    Int64Hasher hasher;
     const uint64_t kValue = 0xdeadbeefcafebabeULL;
     const std::size_t kHash1 = hasher(kValue);
     const std::size_t kHash2 = hasher(kValue);
@@ -155,7 +155,7 @@ TEST(Int64HasherTest, SameValueYieldsSameHash) {
 }
 
 TEST(Int64HasherTest, DifferentValuesYieldDifferentHashes) {
-    hash::Int64Hasher hasher;
+    Int64Hasher hasher;
     const std::size_t kHash0 = hasher(0);
     const std::size_t kHash1 = hasher(1);
     const std::size_t kHashMax = hasher(std::numeric_limits<uint64_t>::max());
@@ -166,21 +166,21 @@ TEST(Int64HasherTest, DifferentValuesYieldDifferentHashes) {
 }
 
 TEST(Int64HasherTest, ZeroInputIsProcessed) {
-    hash::Int64Hasher hasher;
+    Int64Hasher hasher;
     const std::size_t kHashZero = hasher(0);
     // No specific value expected, just ensure it's callable and deterministic.
     EXPECT_EQ(kHashZero, hasher(0));
 }
 
 TEST(Int64HasherTest, LargeInputIsHandled) {
-    hash::Int64Hasher hasher;
+    Int64Hasher hasher;
     const uint64_t kLarge = 0xFFFFFFFFFFFFFFFFULL;
     const std::size_t kHashLarge = hasher(kLarge);
     EXPECT_EQ(kHashLarge, hasher(kLarge));
 }
 
 TEST(Int64HasherTest, ConsecutiveValuesAreWellDistributed) {
-    hash::Int64Hasher hasher;
+    Int64Hasher hasher;
     const std::size_t kPrev = hasher(1000);
     const std::size_t kCurr = hasher(1001);
     // Not a strict requirement, but high probability they differ.

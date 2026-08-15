@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cmath>
-#include <common/direction.h>
+#include <common/types/direction.h>
 #include <compare>  // IWYU pragma: keep // operator<=>
 #include <cstdint>  // IWYU pragma: keep // uint64_t
 #include <functional>
@@ -56,7 +56,7 @@ struct Position {
     [[nodiscard]] Distance euclideanDistance(const Position& other) const noexcept {
         auto dx = delta(other.x, x);
         auto dy = delta(other.y, y);
-        return std::sqrt(add(mul(dx, dx), mul(dy, dy)));
+        return static_cast<Distance>(std::round(std::sqrt(add(mul(dx, dx), mul(dy, dy)))));
     }
 
     Dimension x{};
@@ -84,7 +84,7 @@ constexpr std::make_unsigned_t<T> Position::delta(T a, T b) noexcept {
 
 template <typename T>
 constexpr T Position::add(T a, T b) noexcept {
-    static_assert(std::is_integral<T>::value, "T must be integral type");
+    static_assert(std::is_integral_v<T>, "T must be integral type");
     if (b > 0 && a > std::numeric_limits<T>::max() - b) {
         return std::numeric_limits<T>::max();
     }
@@ -96,7 +96,7 @@ constexpr T Position::add(T a, T b) noexcept {
 
 template <typename T>
 constexpr T Position::sub(T a, T b) noexcept {
-    static_assert(std::is_integral<T>::value, "T must be integral type");
+    static_assert(std::is_integral_v<T>, "T must be integral type");
     if (b > 0 && a < std::numeric_limits<T>::min() + b) {
         return std::numeric_limits<T>::min();
     }
@@ -108,11 +108,11 @@ constexpr T Position::sub(T a, T b) noexcept {
 
 template <typename T>
 constexpr T Position::mul(T a, T b) noexcept {
-    static_assert(std::is_integral<T>::value, "T must be integral type");
+    static_assert(std::is_integral_v<T>, "T must be integral type");
     if (a == 0 || b == 0) {
         return 0;
     }
-    if constexpr (std::is_unsigned<T>::value) {
+    if constexpr (std::is_unsigned_v<T>) {
         if (a > std::numeric_limits<T>::max() / b) {
             return std::numeric_limits<T>::max();
         }
@@ -147,8 +147,8 @@ struct PositionHash {
     }
 };
 
-[[nodiscard]] inline constexpr Position positionOffsetFromDirection(types::Direction direction) noexcept {
-    using namespace types;
+[[nodiscard]] inline constexpr Position positionOffsetFromDirection(common::types::Direction direction) noexcept {
+    using namespace common::types;
     switch (direction) {
         case Direction::kUp:
             return Position{0, 1};

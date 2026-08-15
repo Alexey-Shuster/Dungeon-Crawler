@@ -1,7 +1,7 @@
 #include "dungeon_registry.h"
 
-#include <common/config.h>
-#include <common/logger.h>
+#include <common/utility/config.h>
+#include <common/utility/logger.h>
 #include <format>
 #include <ranges>
 #include <unordered_set>
@@ -15,7 +15,7 @@ bool DungeonRegistry::addDungeon(GameMap game_map, std::vector<PlayerId> player_
     }
 
     // Check for duplicates in the input list
-    std::unordered_set<PlayerId, common::StrongIdIdentityHash<PlayerId>> unique_check(player_ids.begin(),
+    std::unordered_set<PlayerId, PlayerHash> unique_check(player_ids.begin(),
                                                                                       player_ids.end());
     if (unique_check.size() != player_ids.size()) {
         LOG_ERROR("Duplicate player IDs in the input list");
@@ -94,7 +94,7 @@ std::optional<GameId> DungeonRegistry::findPlayerDungeon(PlayerId player_id) con
     return it->second;
 }
 
-const std::unordered_map<GameId, std::shared_ptr<Dungeon>, common::StrongIdIdentityHash<GameId>>&
+const std::unordered_map<GameId, std::shared_ptr<Dungeon>, GameHash>&
 DungeonRegistry::getAllDungeons() {
     return dungeons_;
 }

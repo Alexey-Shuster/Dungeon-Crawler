@@ -1,32 +1,22 @@
 #pragma once
 
-#include <format>
+#include <common/utility/config.h>
 #include <unordered_set>
 
-#include "common/config.h"
-#include "common/logger.h"
 #include "map_size.h"
 #include "position.h"
 
 namespace dungeons::server::domain {
 
 inline MapSize getCfgMapSize() {
-    const auto& cfg = config::getSettings();
-    return MapSize{
-        Position(cfg.gameplay.default_map_blc_x, cfg.gameplay.default_map_blc_y),
-        Position(cfg.gameplay.default_map_trc_x, cfg.gameplay.default_map_trc_y)
-    };
+    const auto& cfg = common::utility::getSettings();
+    return MapSize{Position(cfg.gameplay.default_map_blc_x, cfg.gameplay.default_map_blc_y),
+                   Position(cfg.gameplay.default_map_trc_x, cfg.gameplay.default_map_trc_y)};
 }
 
 class GameMap {
 public:
-    explicit GameMap(MapSize map_size = getCfgMapSize()) : map_size_{map_size} {
-        LOG_INFO(std::format("GameMap created with bottom_left_corner ({}, {}), top_right_corner ({}, {})",
-                             map_size_.getBottomLeftCorner().x,
-                             map_size_.getBottomLeftCorner().y,
-                             map_size_.getTopRightCorner().x,
-                             map_size_.getTopRightCorner().y));
-    }
+    explicit GameMap(MapSize map_size = getCfgMapSize());
 
     [[nodiscard]] bool addBarrier(const Position& position);
 

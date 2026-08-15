@@ -6,7 +6,8 @@
 #include <string>
 #include <string_view>
 
-namespace hash {
+namespace dungeons::common::utility {
+
 // Allowed characters (alphanumeric)
 static constexpr std::string_view kCharset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
@@ -25,7 +26,7 @@ static constexpr uint64_t kCharMask = 0x3FULL;   // 6 bits per character
         return std::nullopt;
     }
 
-    uint64_t code = static_cast<uint64_t>(str.length()) << kLengthShift;
+    uint64_t code = (str.length()) << kLengthShift;
     size_t pos = 0;
     for (char c : str) {
         // Find character index in charset (linear search, fine for 62 chars)
@@ -33,7 +34,7 @@ static constexpr uint64_t kCharMask = 0x3FULL;   // 6 bits per character
         if (idx == std::string_view::npos) {
             return std::nullopt;
         }
-        code |= static_cast<uint64_t>(idx) << (6 * pos);
+        code |= idx << (6 * pos);
         ++pos;
     }
     return code;
@@ -43,7 +44,7 @@ static constexpr uint64_t kCharMask = 0x3FULL;   // 6 bits per character
 /// @param code The 64‑bit packed value.
 /// @return The original string, or std::nullopt if the code is malformed.
 [[nodiscard]] inline constexpr std::optional<std::string> DecodeString(uint64_t code) noexcept {
-    auto len = static_cast<size_t>((code >> kLengthShift) & kLengthMask);
+    auto len = ((code >> kLengthShift) & kLengthMask);
     if (len > kMaxPackedLen) {
         return std::nullopt;
     }
@@ -57,7 +58,7 @@ static constexpr uint64_t kCharMask = 0x3FULL;   // 6 bits per character
             // idx out of range (0..61)
             return std::nullopt;
         }
-        result.push_back(kCharset[static_cast<size_t>(idx)]);
+        result.push_back(kCharset[idx]);
     }
 
     // Optional: verify that all higher bits (above len*6) are zero,
@@ -86,7 +87,8 @@ struct Int64Hasher {
         x *= kMixerConstant2;
         x ^= x >> 31;
 
-        return static_cast<std::size_t>(x);
+        return x;
     }
 };
-}  // namespace hash
+
+}  // namespace dungeons::common::utility

@@ -15,7 +15,7 @@
     #include <X11/keysym.h>
 #endif
 
-namespace utility {
+namespace dungeons::common::utility {
 
 /**
  * Asynchronous keyboard reader using Boost.Asio timers.
@@ -69,4 +69,4 @@ private:
 #endif
 };
 
-}  // namespace utility
+}  // namespace dungeons::common::utility

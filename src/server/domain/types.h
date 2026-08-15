@@ -1,6 +1,6 @@
 #pragma once
 
-#include <common/strong_id.h>
+#include <common/types/strong_id.h>
 
 namespace dungeons::server::domain {
 
@@ -11,18 +11,18 @@ struct PartyIdTag {};
 struct GameIdTag {};
 struct EntityIdTag {};
 
-using PlayerId = common::StrongId<PlayerIdTag>;
-using MobId = common::StrongId<MobIdTag>;
-using LobbyId = common::StrongId<LobbyIdTag>;
-using PartyId = common::StrongId<PartyIdTag>;
-using GameId = common::StrongId<GameIdTag>;
-using EntityId = common::StrongId<EntityIdTag>;
+using PlayerId = common::types::StrongId<PlayerIdTag>;
+using MobId = common::types::StrongId<MobIdTag>;
+using LobbyId = common::types::StrongId<LobbyIdTag>;
+using PartyId = common::types::StrongId<PartyIdTag>;
+using GameId = common::types::StrongId<GameIdTag>;
+using EntityId = common::types::StrongId<EntityIdTag>;
 
-using PlayerHash = common::StrongIdIdentityHash<domain::PlayerId>;
-using MobHash = common::StrongIdIdentityHash<MobId>;
-using LobbyHash = common::StrongIdIdentityHash<LobbyId>;
-using PartyHash = common::StrongIdIdentityHash<PartyId>;
-using GameHash = common::StrongIdIdentityHash<GameId>;
-using EntityHash = common::StrongIdIdentityHash<EntityId>;
+using PlayerHash = common::types::StrongIdIdentityHash<domain::PlayerId>;
+using MobHash = common::types::StrongIdIdentityHash<MobId>;
+using LobbyHash = common::types::StrongIdIdentityHash<LobbyId>;
+using PartyHash = common::types::StrongIdIdentityHash<PartyId>;
+using GameHash = common::types::StrongIdIdentityHash<GameId>;
+using EntityHash = common::types::StrongIdIdentityHash<EntityId>;
 
 }  // namespace dungeons::server::domain

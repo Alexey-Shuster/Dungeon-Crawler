@@ -2,9 +2,9 @@
 #include <csignal>
 #include <iostream>
 
-#include "../common/config.h"
-#include "../common/logger.h"
 #include "client_manager.h"
+#include "utility/config.h"
+#include "utility/logger.h"
 
 int main(int argc, char* argv[]) {
     config::Settings::initialize("config.json");

@@ -1,8 +1,8 @@
 #include "game_manager.h"
 
+#include <common/utility/logger.h>
+#include <common/utility/config.h>
 #include <format>
-
-#include "../../common/logger.h"
 
 namespace dungeons::server::app {
 
@@ -105,7 +105,7 @@ void GameManager::onMoveRequestEvent(const domain::MoveRequestEvent& event) {
 
 void GameManager::onAttackRequestEvent(const domain::AtackRequestEvent& event) {
     auto player_id = event.player_id;
-    static auto attack = config::getSettings().gameplay.player_default_attack;
+    static auto attack = common::utility::getSettings().gameplay.player_default_attack;
     if (auto game_id_opt = dungeon_registry_.findPlayerDungeon(player_id); game_id_opt.has_value()) {
         auto game_id = game_id_opt.value();
         if (auto dungeon = dungeon_registry_.findDungeon(game_id); dungeon) {

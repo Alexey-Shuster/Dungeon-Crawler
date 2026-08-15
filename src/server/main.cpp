@@ -1,33 +1,33 @@
 #include <boost/asio.hpp>
 #include <boost/asio/signal_set.hpp>
-#include <common/config.h>
-#include <common/logger.h>
+#include <common/utility/config.h>
+#include <common/utility/logger.h>
 #include <csignal>
 #include <format>
 #include <iostream>
 #include <memory>
+#include <server/app/connection_manager.h>
+#include <server/app/game_manager.h>
+#include <server/app/message_router.h>
+#include <server/app/response_sender.h>
+#include <server/app/session_registry.h>
+#include <server/core/event_bus.h>
+#include <server/core/game_loop.h>
+#include <server/domain/dungeon/dungeon_registry.h>
+#include <server/domain/lobby/lobby_manager.h>
+#include <server/domain/lobby/lobby_registry.h>
+#include <server/network/tcp_server.h>
 #include <thread>
-
-#include "app/connection_manager.h"
-#include "app/game_manager.h"
-#include "app/message_router.h"
-#include "app/response_sender.h"
-#include "app/session_registry.h"
-#include "core/event_bus.h"
-#include "core/game_loop.h"
-#include "domain/dungeon/dungeon_registry.h"
-#include "domain/lobby/lobby_manager.h"
-#include "domain/lobby/lobby_registry.h"
-#include "network/tcp_server.h"
 
 using namespace boost::asio;
 using namespace dungeons::server;
+using namespace dungeons::common;
 
 int main(int argc, char* argv[]) {
     try {
-        config::Settings::initialize("config.json");
-        const auto& cfg = config::getSettings();
-        utils::Logger::Initialize({cfg.logger.output_dir, cfg.logger.level, cfg.logger.format});
+        utility::Settings::initialize("config.json");
+        const auto& cfg = utility::getSettings();
+        utility::Logger::Initialize({cfg.logger.output_dir, cfg.logger.level, cfg.logger.format});
 
         LOG_INFO("Starting Dungeon Crawler Server ...");
         auto event_bus = core::EventBus::create();

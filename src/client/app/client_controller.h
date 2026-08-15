@@ -1,11 +1,10 @@
 #pragma once
 
-#include <common/message.h>
+#include <common/network/raw_message.h>
 #include <memory>
+#include <network/client_fwd.h>
 #include <string>
-
-#include "network/client_fwd.h"
-#include "ui/command_router.h"
+#include <ui/command_router.h>
 
 namespace dungeons::client::app {
 
@@ -14,9 +13,9 @@ public:
     static std::shared_ptr<ClientController> create(std::shared_ptr<network::Client> client, ui::ConsoleOutput output);
     static std::shared_ptr<ClientController> create(std::shared_ptr<network::Client> client);
 
-    void onMessageReceived(::network::Message data) const;
-    void onKeyPressed(char key);
-    void onStdinLine(const std::string& line);
+    void onMessageReceived(common::network::RawMessage msg) const;
+    void onKeyPressed(char key) const;
+    void onStdinLine(const std::string& line) const;
 
 protected:
     ClientController(std::shared_ptr<network::Client> client, ui::ConsoleOutput output);

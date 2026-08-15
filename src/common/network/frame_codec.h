@@ -12,9 +12,7 @@
     #include <arpa/inet.h>  // htonl / ntohl on Unix/Linux
 #endif
 
-#include "logger.h"
-
-namespace network {
+namespace dungeons::common::network {
 /**
  * @brief Utility class for message framing over stream protocols (e.g., TCP).
  *
@@ -64,7 +62,6 @@ public:
      */
     static ByteBuffer encodeFrame(const ByteBuffer& payload) {
         if (payload.size() > kMaxMessageSize) {
-            LOG_INFO("[FrameCodec::encodeFrame] payload.size() > kMaxMessageSize");
             return {};
         }
 
@@ -184,4 +181,4 @@ public:
         return messages;
     }
 };
-}  // namespace network
+}  // namespace dungeons::common::network

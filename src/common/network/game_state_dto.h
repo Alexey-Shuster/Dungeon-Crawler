@@ -1,10 +1,10 @@
 #pragma once
 
-#include <compare> // IWYU pragma: keep // operator<=>
-#include <cstdint> // IWYU pragma: keep // uint
+#include <compare>  // IWYU pragma: keep // operator<=>
+#include <cstdint>  // IWYU pragma: keep // uint
 #include <vector>
 
-namespace network {
+namespace dungeons::common::network {
 
 struct EntitySnapshot {
     uint8_t type;
@@ -41,4 +41,4 @@ struct DungeonSnapshot {
     auto operator<=>(const DungeonSnapshot&) const = default;
 };
 
-}  // namespace serialization
+}  // namespace dungeons::common::network

@@ -1,8 +1,8 @@
-#include <C:/Users/qt96334/.conan2/p/b/gtestfde03c87b0d12/p/include/gmock/gmock.h>
-#include <C:/Users/qt96334/.conan2/p/b/gtestfde03c87b0d12/p/include/gtest/gtest.h>
 #include <boost/asio/io_context.hpp>
 #include <chrono>
 #include <condition_variable>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 #include <memory>
 #include <server/app/game_manager.h>
 #include <server/core/event_bus.h>
@@ -15,6 +15,7 @@ using namespace dungeons::server;
 using namespace dungeons::server::app;
 using namespace dungeons::server::core;
 using namespace dungeons::server::domain;
+using namespace dungeons::common::types;
 
 // ============================================================================
 // Test Fixture
@@ -284,7 +285,7 @@ TEST_F(GameManagerTest, GameTick_MultipleDungeons_AllProcessed) {
 
 TEST_F(GameManagerTest, MoveRequest_PlayerNotInDungeon_LogsError) {
     // Arrange
-    MoveRequestEvent event{player_id_, types::Direction::kUp};
+    MoveRequestEvent event{player_id_, Direction::kUp};
 
     // Act & Assert
     EXPECT_NO_THROW(event_bus_->publish(event));
@@ -302,7 +303,7 @@ TEST_F(GameManagerTest, MoveRequest_PlayerInDungeon_AddsMoveCommand) {
     runPendingEvents();
 
     // Act
-    MoveRequestEvent move_event{player_id_, types::Direction::kUp};
+    MoveRequestEvent move_event{player_id_, Direction::kUp};
 
     // Assert
     EXPECT_NO_THROW(event_bus_->publish(move_event));
@@ -319,7 +320,6 @@ TEST_F(GameManagerTest, MoveRequest_AllDirections_HandledCorrectly) {
     event_bus_->publish(start_event);
     runPendingEvents();
 
-    using namespace types;
     // Act - Тестируем все направления
     std::vector<Direction> directions = {Direction::kUp, Direction::kDown, Direction::kLeft, Direction::kRight};
 
@@ -405,7 +405,7 @@ TEST_F(GameManagerTest, FullGameFlow_SuccessfulGameSequence) {
     }
 
     // 3. Player moves
-    MoveRequestEvent move_event{player_id_, types::Direction::kUp};
+    MoveRequestEvent move_event{player_id_, Direction::kUp};
     event_bus_->publish(move_event);
     runPendingEvents();
 
@@ -462,7 +462,7 @@ TEST_F(GameManagerTest, ConcurrentEvents_NoDataRaces) {
 
     std::thread move_thread([this]() {
         for (int i = 0; i < 5; ++i) {
-            MoveRequestEvent event{player_id_, types::Direction::kUp};
+            MoveRequestEvent event{player_id_, Direction::kUp};
             event_bus_->publish(event);
             std::this_thread::sleep_for(std::chrono::milliseconds(5));
         }
@@ -525,7 +525,6 @@ TEST_F(GameManagerTest, MoveRequest_DirectionConversion_CorrectDirection) {
     event_bus_->publish(start_event);
     runPendingEvents();
 
-    using namespace types;
     // Act - Тестируем все направления из сообщений
     std::vector<Direction> message_directions = {Direction::kUp, Direction::kDown, Direction::kLeft, Direction::kRight};
 

@@ -29,7 +29,7 @@ public:
 
     [[nodiscard]] std::optional<GameId> findPlayerDungeon(PlayerId player_id) const;
 
-    [[nodiscard]] const std::unordered_map<GameId, std::shared_ptr<Dungeon>, common::StrongIdIdentityHash<GameId>>& getAllDungeons();
+    [[nodiscard]] const std::unordered_map<GameId, std::shared_ptr<Dungeon>, GameHash>& getAllDungeons();
 
 private:
     std::unordered_map<GameId, std::shared_ptr<Dungeon>, GameHash> dungeons_;

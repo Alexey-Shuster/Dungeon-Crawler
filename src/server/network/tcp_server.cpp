@@ -1,7 +1,7 @@
 #include "tcp_server.h"
 
-#include <common/config.h>
-#include <common/logger.h>
+#include <common/utility/config.h>
+#include <common/utility/logger.h>
 #include <format>
 #include <iostream>
 
@@ -18,7 +18,7 @@ TcpServer::TcpServer(boost::asio::io_context& io, std::shared_ptr<core::EventBus
     : io_context_(io)
     , acceptor_(io)
     , event_bus_(std::move(event_bus)) {
-    auto& cfg = config::getSettings();
+    auto& cfg = common::utility::getSettings();
     std::string ip = cfg.server.host;
     uint16_t port = cfg.server.port;
 

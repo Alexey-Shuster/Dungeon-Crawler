@@ -1,6 +1,6 @@
 #pragma once
 
-#include <common/message.h>
+#include <common/network/raw_message.h>
 #include <optional>
 #include <string>
 
@@ -10,6 +10,6 @@ namespace dungeons::client::ui {
 
 class Client;
 
-std::optional<::network::Message> routeCommand(const std::string& line, const ConsoleOutput& output);
+std::optional<common::network::RawMessage> routeCommand(const std::string& line, const ConsoleOutput& output);
 
 }  // namespace dungeons::client::ui

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <common/types/direction.h>
 #include <random>
 
 #include "collision_check.h"
@@ -38,7 +39,7 @@ public:
             if (!it->second.isAlive())
                 continue;
 
-            types::Direction dir = dir_gen_.generate();
+            common::types::Direction dir = dir_gen_.generate();
             Position newPos = it->second.GetPosition() + positionOffsetFromDirection(dir);
             if (checker_.isAvailable(newPos)) {
                 monsters_.moveEntity(it->first, dir, newPos);

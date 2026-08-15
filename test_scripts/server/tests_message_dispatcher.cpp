@@ -1,14 +1,17 @@
-#include <C:/Users/qt96334/.conan2/p/b/gtestfde03c87b0d12/p/include/gtest/gtest.h>
 #include <cbor.h>
-#include <common/message.h>
-#include <common/serialization.h>
-#include <common/serialization_utils.h>
+#include <common/network/raw_message.h>
+#include <common/wire/serialization.h>
+#include <common/wire/serialization_base.h>
+#include <gtest/gtest.h>
 #include <server/app/message_dispatcher.h>
 #include <server/domain/dungeon/dungeon.h>
 
 using namespace dungeons::server::app;
-using namespace dungeons::server::network;
 using namespace dungeons::server::domain;
+using namespace dungeons::server::network;
+using namespace dungeons::common::network;
+using namespace dungeons::common::types;
+using namespace dungeons::common::wire;
 
 #define EXPECT_SESSION_EQ(actual, expected) EXPECT_EQ(static_cast<uint64_t>(actual), static_cast<uint64_t>(expected))
 #define EXPECT_PLAYER_EQ(actual, expected) EXPECT_EQ(static_cast<uint64_t>(actual), static_cast<uint64_t>(expected))
@@ -23,8 +26,8 @@ struct CborTestDeleter {
 
 using CborTestPtr = std::unique_ptr<cbor_item_t, CborTestDeleter>;
 
-network::Message createMessage(std::vector<uint8_t> data) {
-    return network::Message{std::move(data)};
+RawMessage createMessage(std::vector<uint8_t> data) {
+    return RawMessage{std::move(data)};
 }
 
 std::vector<uint8_t> serializeCbor(cbor_item_t* item) {
@@ -43,13 +46,13 @@ std::vector<uint8_t> serializeCbor(cbor_item_t* item) {
 
 class MakeEventTest : public ::testing::Test {
 protected:
-    using MessageArgs = network::MessageArgs;
+    using MessageArgs = dungeons::common::wire::MessageArgs;
 };
 
 TEST_F(MakeEventTest, CreateAuthRequestedEvent) {
     MessageArgs args = std::vector<uint64_t>{123, 456};
 
-    auto event = makeEvent(message::NetworkMessageType::kJoin, args);
+    auto event = makeEvent(NetworkMessageType::kJoin, args);
 
     ASSERT_NE(event, nullptr);
     auto auth_event = std::dynamic_pointer_cast<AuthRequestedEvent>(event);
@@ -69,7 +72,7 @@ TEST_F(MakeEventTest, UnknownMessageTypeReturnsNull) {
 TEST_F(MakeEventTest, InvalidArgsCountReturnsNull) {
     MessageArgs args = std::vector<uint64_t>{123};
 
-    auto event = makeEvent(message::NetworkMessageType::kJoin, args);
+    auto event = makeEvent(NetworkMessageType::kJoin, args);
 
     EXPECT_EQ(event, nullptr);
 }
@@ -77,7 +80,7 @@ TEST_F(MakeEventTest, InvalidArgsCountReturnsNull) {
 TEST_F(MakeEventTest, EmptyArgsReturnsNull) {
     MessageArgs args = std::vector<uint64_t>{};
 
-    auto event = makeEvent(message::NetworkMessageType::kJoin, args);
+    auto event = makeEvent(NetworkMessageType::kJoin, args);
 
     EXPECT_EQ(event, nullptr);
 }
@@ -85,13 +88,13 @@ TEST_F(MakeEventTest, EmptyArgsReturnsNull) {
 TEST_F(MakeEventTest, NulloptArgsReturnsNull) {
     MessageArgs args = std::nullopt;
 
-    auto event = makeEvent(message::NetworkMessageType::kJoin, args);
+    auto event = makeEvent(NetworkMessageType::kJoin, args);
 
     EXPECT_EQ(event, nullptr);
 }
 
 // ============================================================================
-// Интеграционные тесты для serializeMessage / network::deserializeMessage
+// Интеграционные тесты для serializeMessage / deserializeMessage
 // ============================================================================
 
 class SerializationIntegrationTest : public ::testing::Test {
@@ -104,14 +107,13 @@ TEST_F(SerializationIntegrationTest, SerializeDeserializeJoinMessage) {
     SessionId session_id{123};
     PlayerId player_id{456};
 
-    auto msg_opt =
-        network::serializeMessage(message::NetworkMessageType::kJoin, session_id.get(), player_id.get());
+    auto msg_opt = serializeMessage(NetworkMessageType::kJoin, session_id.get(), player_id.get());
     ASSERT_TRUE(msg_opt.has_value());
 
     auto& msg = msg_opt.value();
     EXPECT_FALSE(msg.empty());
 
-    auto event = deserializeMessage(network::Message{std::move(msg)});
+    auto event = deserializeMessage(RawMessage{std::move(msg)});
     ASSERT_NE(event, nullptr);
 
     auto auth_event = std::dynamic_pointer_cast<AuthRequestedEvent>(event);
@@ -125,11 +127,10 @@ TEST_F(SerializationIntegrationTest, SerializeDeserializeWithLargeIds) {
     SessionId session_id{0xFFFFFFFFFFFFFFFF};
     PlayerId player_id{0x0123456789ABCDEF};
 
-    auto msg_opt =
-        network::serializeMessage(message::NetworkMessageType::kJoin, session_id.get(), player_id.get());
+    auto msg_opt = serializeMessage(NetworkMessageType::kJoin, session_id.get(), player_id.get());
     ASSERT_TRUE(msg_opt.has_value());
 
-    auto event = deserializeMessage(network::Message{std::move(*msg_opt)});
+    auto event = deserializeMessage(RawMessage{std::move(*msg_opt)});
     ASSERT_NE(event, nullptr);
 
     auto auth_event = std::dynamic_pointer_cast<AuthRequestedEvent>(event);
@@ -140,9 +141,7 @@ TEST_F(SerializationIntegrationTest, SerializeDeserializeWithLargeIds) {
 }
 
 TEST_F(SerializationIntegrationTest, SerializeMessageCreatesCorrectFormat) {
-    auto msg_opt = network::serializeMessage(message::NetworkMessageType::kJoin,
-                                             SessionId{123}.get(),
-                                             PlayerId{456}.get());
+    auto msg_opt = serializeMessage(NetworkMessageType::kJoin, SessionId{123}.get(), PlayerId{456}.get());
     ASSERT_TRUE(msg_opt.has_value());
 
     auto& msg = msg_opt.value();
@@ -159,22 +158,22 @@ TEST_F(SerializationIntegrationTest, SerializeMessageCreatesCorrectFormat) {
 }
 
 TEST_F(SerializationIntegrationTest, SerializeUnknownMessageTypeReturnsNullopt) {
-    auto msg_opt = network::serializeMessage(std::monostate{}, SessionId{123}.get(), PlayerId{456}.get());
+    auto msg_opt = serializeMessage(std::monostate{}, SessionId{123}.get(), PlayerId{456}.get());
     EXPECT_FALSE(msg_opt.has_value());
 }
 
 TEST_F(SerializationIntegrationTest, DeserializeInvalidDataReturnsNull) {
     std::vector<uint8_t> invalid_data = {0x00, 0x01, 0x02};
-    network::Message msg{createMessage(invalid_data)};
+    RawMessage msg{createMessage(invalid_data)};
 
-    auto event = deserializeMessage(network::Message{std::move(msg)});
+    auto event = deserializeMessage(RawMessage{std::move(msg)});
     EXPECT_EQ(event, nullptr);
 }
 
 TEST_F(SerializationIntegrationTest, DeserializeEmptyMessageReturnsNull) {
-    network::Message msg{createMessage({})};
+    RawMessage msg{createMessage({})};
 
-    auto event = deserializeMessage(network::Message{std::move(msg)});
+    auto event = deserializeMessage(RawMessage{std::move(msg)});
     EXPECT_EQ(event, nullptr);
 }
 
@@ -183,9 +182,9 @@ TEST_F(SerializationIntegrationTest, DeserializeNonArrayReturnsNull) {
     auto data = serializeCbor(item.get());
     ASSERT_FALSE(data.empty());
 
-    network::Message msg = createMessage(data);
+    RawMessage msg = createMessage(data);
 
-    auto event = deserializeMessage(network::Message{std::move(msg)});
+    auto event = deserializeMessage(RawMessage{std::move(msg)});
     EXPECT_EQ(event, nullptr);
 }
 
@@ -196,9 +195,9 @@ TEST_F(SerializationIntegrationTest, DeserializeEmptyArrayReturnsNull) {
     auto data = serializeCbor(array.get());
     ASSERT_FALSE(data.empty());
 
-    network::Message msg = createMessage(data);
+    RawMessage msg = createMessage(data);
 
-    auto event = deserializeMessage(network::Message{std::move(msg)});
+    auto event = deserializeMessage(RawMessage{std::move(msg)});
     EXPECT_EQ(event, nullptr);
 }
 
@@ -220,9 +219,9 @@ TEST_F(SerializationIntegrationTest, DeserializeInvalidMessageTypeReturnsNull) {
     auto data = serializeCbor(array.get());
     ASSERT_FALSE(data.empty());
 
-    network::Message msg = createMessage(data);
+    RawMessage msg = createMessage(data);
 
-    auto event = deserializeMessage(network::Message{std::move(msg)});
+    auto event = deserializeMessage(RawMessage{std::move(msg)});
     EXPECT_EQ(event, nullptr);
 }
 
@@ -244,26 +243,24 @@ TEST_F(SerializationIntegrationTest, DeserializeWithInvalidArgsReturnsNull) {
     auto data = serializeCbor(array.get());
     ASSERT_FALSE(data.empty());
 
-    network::Message msg = createMessage(data);
+    RawMessage msg = createMessage(data);
 
-    auto event = deserializeMessage(network::Message{std::move(msg)});
+    auto event = deserializeMessage(RawMessage{std::move(msg)});
     EXPECT_EQ(event, nullptr);
 }
 
 // ============================================================================
-// Тесты для network::deserializeMessageRaw
+// Тесты для deserializeMessageRaw
 // ============================================================================
 
 TEST(DeserializeRawTest, ValidMessage) {
-    auto msg_opt = network::serializeMessage(message::NetworkMessageType::kJoin,
-                                             SessionId{123}.get(),
-                                             PlayerId{456}.get());
+    auto msg_opt = serializeMessage(NetworkMessageType::kJoin, SessionId{123}.get(), PlayerId{456}.get());
     ASSERT_TRUE(msg_opt.has_value());
 
-    auto raw = network::deserializeMessageRaw(*msg_opt);
+    auto raw = deserializeMessageRaw(*msg_opt);
     ASSERT_TRUE(raw.has_value());
-    ASSERT_TRUE(std::holds_alternative<message::NetworkMessageType>(raw->type));
-    EXPECT_EQ(std::get<message::NetworkMessageType>(raw->type), message::NetworkMessageType::kJoin);
+    ASSERT_TRUE(std::holds_alternative<NetworkMessageType>(raw->type));
+    EXPECT_EQ(std::get<NetworkMessageType>(raw->type), NetworkMessageType::kJoin);
     ASSERT_EQ(raw->args.size(), 2);
     EXPECT_EQ(raw->args[0], 123);
     EXPECT_EQ(raw->args[1], 456);
@@ -271,8 +268,8 @@ TEST(DeserializeRawTest, ValidMessage) {
 
 TEST(DeserializeRawTest, InvalidDataReturnsNullopt) {
     std::vector<uint8_t> invalid = {0xFF, 0xFF};
-    network::Message msg = createMessage(invalid);
-    auto raw = network::deserializeMessageRaw(msg.buffer);
+    RawMessage msg = createMessage(invalid);
+    auto raw = deserializeMessageRaw(msg.buffer);
     EXPECT_FALSE(raw.has_value());
 }
 
@@ -294,12 +291,10 @@ TEST(IntegrationTest, RoundTripWithVariousValues) {
                                         {SessionId{0x0123456789ABCDEF}, PlayerId{0xFEDCBA9876543210}}};
 
     for (const auto& tc : test_cases) {
-        auto msg_opt = network::serializeMessage(message::NetworkMessageType::kJoin,
-                                                 tc.session_id.get(),
-                                                 tc.player_id.get());
+        auto msg_opt = serializeMessage(NetworkMessageType::kJoin, tc.session_id.get(), tc.player_id.get());
         ASSERT_TRUE(msg_opt.has_value());
 
-        auto event = deserializeMessage(network::Message{std::move(*msg_opt)});
+        auto event = deserializeMessage(RawMessage{std::move(*msg_opt)});
         ASSERT_NE(event, nullptr);
 
         auto auth_event = std::dynamic_pointer_cast<AuthRequestedEvent>(event);
@@ -314,22 +309,21 @@ TEST(IntegrationTest, SerializeDeserializeMultipleTimes) {
     SessionId session_id{123};
     PlayerId player_id{456};
 
-    auto msg1_opt =
-        network::serializeMessage(message::NetworkMessageType::kJoin, session_id.get(), player_id.get());
+    auto msg1_opt = serializeMessage(NetworkMessageType::kJoin, session_id.get(), player_id.get());
     ASSERT_TRUE(msg1_opt.has_value());
 
-    auto event1 = deserializeMessage(network::Message{std::move(*msg1_opt)});
+    auto event1 = deserializeMessage(RawMessage{std::move(*msg1_opt)});
     ASSERT_NE(event1, nullptr);
 
     auto auth_event1 = std::dynamic_pointer_cast<AuthRequestedEvent>(event1);
     ASSERT_NE(auth_event1, nullptr);
 
-    auto msg2_opt = network::serializeMessage(message::NetworkMessageType::kJoin,
-                                              SessionId{auth_event1->session_id}.get(),
-                                              PlayerId{auth_event1->player_id}.get());
+    auto msg2_opt = serializeMessage(NetworkMessageType::kJoin,
+                                     SessionId{auth_event1->session_id}.get(),
+                                     PlayerId{auth_event1->player_id}.get());
     ASSERT_TRUE(msg2_opt.has_value());
 
-    auto event2 = deserializeMessage(network::Message{std::move(*msg2_opt)});
+    auto event2 = deserializeMessage(RawMessage{std::move(*msg2_opt)});
     ASSERT_NE(event2, nullptr);
 
     auto auth_event2 = std::dynamic_pointer_cast<AuthRequestedEvent>(event2);
@@ -347,12 +341,12 @@ TEST(PerformanceTest, SerializeDeserialize1000Messages) {
     const int NUM_MESSAGES = 1000;
 
     for (int i = 0; i < NUM_MESSAGES; ++i) {
-        auto msg_opt = network::serializeMessage(message::NetworkMessageType::kJoin,
-                                                 SessionId{static_cast<uint64_t>(i)}.get(),
-                                                 PlayerId{static_cast<uint64_t>(i * 2)}.get());
+        auto msg_opt = serializeMessage(NetworkMessageType::kJoin,
+                                        SessionId{static_cast<uint64_t>(i)}.get(),
+                                        PlayerId{static_cast<uint64_t>(i * 2)}.get());
         ASSERT_TRUE(msg_opt.has_value());
 
-        auto event = deserializeMessage(network::Message{std::move(*msg_opt)});
+        auto event = deserializeMessage(RawMessage{std::move(*msg_opt)});
         ASSERT_NE(event, nullptr);
 
         auto auth_event = std::dynamic_pointer_cast<AuthRequestedEvent>(event);
@@ -369,20 +363,18 @@ TEST(PerformanceTest, SerializeDeserialize1000Messages) {
 
 TEST(MemoryTest, NoMemoryLeaksOnSerialization) {
     for (int i = 0; i < 100; ++i) {
-        auto msg_opt = network::serializeMessage(message::NetworkMessageType::kJoin,
-                                                 SessionId{123}.get(),
-                                                 PlayerId{456}.get());
+        auto msg_opt = serializeMessage(NetworkMessageType::kJoin, SessionId{123}.get(), PlayerId{456}.get());
         ASSERT_TRUE(msg_opt.has_value());
 
-        auto event = deserializeMessage(network::Message{std::move(*msg_opt)});
+        auto event = deserializeMessage(RawMessage{std::move(*msg_opt)});
         EXPECT_NE(event, nullptr);
     }
 }
 
 TEST(MemoryTest, NoMemoryLeaksOnFailedDeserialization) {
     std::vector<uint8_t> invalid_data = {0xFF, 0xFF, 0xFF};
-    network::Message msg = createMessage(invalid_data);
+    RawMessage msg = createMessage(invalid_data);
 
-    auto event = deserializeMessage(network::Message{std::move(msg)});
+    auto event = deserializeMessage(RawMessage{std::move(msg)});
     EXPECT_EQ(event, nullptr);
 }

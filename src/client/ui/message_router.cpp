@@ -1,10 +1,10 @@
 #include "message_router.h"
 
-#include <common/hash.h>
-#include <common/message.h>
-#include <common/serialization.h>
-#include <common/serialization_game_state.h>
-#include <common/string_utils.h>
+#include <common/network/raw_message.h>
+#include <common/utility/hash.h>
+#include <common/utility/string_utils.h>
+#include <common/wire/serialization.h>
+#include <common/wire/serialization_game_state.h>
 #include <string_view>
 #include <vector>
 
@@ -32,20 +32,22 @@ constexpr std::string_view kLobbyList = "LobbyList";
 
 // Centralized error formatter
 static std::string formatOutput(std::string_view prefix, const std::vector<uint64_t>& args, std::string_view id_type) {
+    using namespace common::utility;
+
     if (args.empty()) {
-        return utility::joinWithSpace(prefix, kMalformed);
+        return joinWithSpace(prefix, kMalformed);
     }
 
     auto success = [&](const std::string& str) -> std::string {
-        return utility::joinWithSpace(prefix, id_type, str);
+        return joinWithSpace(prefix, id_type, str);
     };
 
     auto failure = [&](std::string_view error) -> std::string {
-        return utility::joinWithSpace(prefix, error);
+        return joinWithSpace(prefix, error);
     };
 
     if (id_type == kPlayerId) {
-        if (auto name = hash::DecodeString(args[0])) {
+        if (auto name = DecodeString(args[0])) {
             return success(*name);
         } else {
             return failure(kPlayerIdDecodeError);
@@ -66,8 +68,8 @@ static std::string formatOutput(std::string_view prefix, const std::vector<uint6
     }
 }
 
-void routeMessage(::network::Message data, const ConsoleOutput& output) {
-    auto game_state = network::deserializeGameState(data.buffer);
+void routeMessage(common::network::RawMessage data, const ConsoleOutput& output) {
+    auto game_state = common::wire::deserializeGameState(data.buffer);
     if (game_state.has_value()) {
         auto game_state_view = renderGameState(*game_state);
         for (const auto& line : game_state_view) {
@@ -76,56 +78,57 @@ void routeMessage(::network::Message data, const ConsoleOutput& output) {
         return;
     }
 
-    auto parsed = network::deserializeMessageRaw(std::move(data.buffer));
+    auto parsed = common::wire::deserializeMessageRaw(std::move(data.buffer));
     if (!parsed) {
         output("Failed to parse incoming message");
         return;
     }
 
     auto opt_Type = parsed->type;
+    using namespace common::types;
 
-    if (message::isNetworkMessage(opt_Type)) {
-        switch (*message::asNetworkMessage(opt_Type)) {
-            case message::NetworkMessageType::kWelcome:
+    if (isNetworkMessage(opt_Type)) {
+        switch (*asNetworkMessage(opt_Type)) {
+            case NetworkMessageType::kWelcome:
                 output("WELCOME");
                 break;
-            case message::NetworkMessageType::kAuthFailed:
+            case NetworkMessageType::kAuthFailed:
                 output(formatOutput(kAuthFailed, parsed->args, kPlayerId));
                 break;
             default:
                 output("Unknown network message");
                 break;
         }
-    } else if (message::isAppMessage(opt_Type)) {
-        switch (*message::asAppMessage(opt_Type)) {
-            case message::AppMessageType::kPartyCreated:
+    } else if (isAppMessage(opt_Type)) {
+        switch (*asAppMessage(opt_Type)) {
+            case AppMessageType::kPartyCreated:
                 output(formatOutput(kLobbyCreated, parsed->args, kLobbyId));
                 break;
-            case message::AppMessageType::kPartyNotCreated:
+            case AppMessageType::kPartyNotCreated:
                 output("LOBBY NOT CREATED");
                 break;
-            case message::AppMessageType::kListPartiesCreated:
+            case AppMessageType::kListPartiesCreated:
                 output(formatOutput(kLobbyListCreated, parsed->args, kLobbyList));
                 break;
-            case message::AppMessageType::kListPartiesNotCreated:
+            case AppMessageType::kListPartiesNotCreated:
                 output("LOBBY LIST NOT CREATED");
                 break;
-            case message::AppMessageType::kPlayerJoinedParty:
+            case AppMessageType::kPlayerJoinedParty:
                 output("JOIN LOBBY SUCCESS");
                 break;
-            case message::AppMessageType::kPlayerNotJoinedParty:
+            case AppMessageType::kPlayerNotJoinedParty:
                 output("JOIN LOBBY FAILED");
                 break;
-            case message::AppMessageType::kPlayerNotJoinedFullParty:
+            case AppMessageType::kPlayerNotJoinedFullParty:
                 output("JOIN LOBBY FAILED - LOBBY FULL");
                 break;
-            case message::AppMessageType::kPlayerNotJoinedNotExistParty:
+            case AppMessageType::kPlayerNotJoinedNotExistParty:
                 output("JOIN LOBBY FAILED - LOBBY NOT EXIST");
                 break;
-            case message::AppMessageType::kGameStarted:
+            case AppMessageType::kGameStarted:
                 output("START GAME SUCCESS");
                 break;
-            case message::AppMessageType::kGameNotStarted:
+            case AppMessageType::kGameNotStarted:
                 output("START GAME FAILED");
                 break;
             default:

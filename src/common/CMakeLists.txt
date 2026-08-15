@@ -1,57 +1,26 @@
 
-set(COMMON_LIB common)
+add_subdirectory(network)
+add_subdirectory(types)
+add_subdirectory(utility)
+add_subdirectory(wire)
 
-add_library(common STATIC
-        message.h)
+add_library(common_deps INTERFACE)
 
-target_sources(${COMMON_LIB} PRIVATE
-        win_defs.h
-        config.h
-        config.cpp
-        logger.h
-        logger.cpp
-        byte_buffer.h
-        frame_codec.h
-        hash.h
-        strong_id.h
-        string_utils.h
-        number_utils.h
-        direction.h
-        serialization.h
-        message_types.h
-        message_utils.h
-        stdin_reader.h
-        serialization_vector.h
-        serialization_game_state.h
-        serialization_utils.h
-        keyboard_reader.h
-        keyboard_reader.cpp
-        game_state_dto.h
-        serialization_game_state.cpp
-        terminal_guard.h
+target_link_libraries(common_deps INTERFACE
+        platform_deps
+        boost_deps
 )
 
-target_include_directories(${COMMON_LIB} PUBLIC
+add_library(common INTERFACE)
+
+target_include_directories(common INTERFACE
         ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
 
-# Cbor for serialization
-find_package(libcbor REQUIRED)
-
-target_link_libraries(${COMMON_LIB} PUBLIC
-        platform_deps
-        boost_deps
-        libcbor::libcbor
+target_link_libraries(common INTERFACE
+        common_deps
+        common_network
+        common_types
+        common_utility
+        common_wire
 )
-
-# X11 for KeyboardReader on Linux
-if (NOT WIN32)
-    find_package(X11 REQUIRED)
-    target_link_libraries(${COMMON_LIB} PUBLIC
-            X11::X11
-    )
-endif ()
-
-if (BUILD_TESTS)
-    target_compile_definitions(${COMMON_LIB} PRIVATE BUILD_TESTS)
-endif ()

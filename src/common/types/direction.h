@@ -4,7 +4,7 @@
 #include <optional>
 #include <string_view>
 
-namespace types {
+namespace dungeons::common::types {
 
 enum class Direction : uint8_t {
     kUp = 0,
@@ -61,7 +61,6 @@ enum class Direction : uint8_t {
         default:
             return std::nullopt;
     }
-
 }
 
-}  // namespace types
+}  // namespace dungeons::common::types

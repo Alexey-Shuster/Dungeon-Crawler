@@ -1,7 +1,7 @@
 
-set(SERVER_NETWORK_LIB server_network)
-
 add_library(server_network STATIC)
+
+set(SERVER_NETWORK_LIB server_network)
 
 target_sources(${SERVER_NETWORK_LIB} PRIVATE
         types.h

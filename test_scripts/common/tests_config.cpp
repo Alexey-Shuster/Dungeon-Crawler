@@ -1,8 +1,8 @@
-#include <C:/Users/qt96334/.conan2/p/b/gtestfde03c87b0d12/p/include/gtest/gtest.h>
-#include <common/config.h>
+#include <common/utility/config.h>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <gtest/gtest.h>
 #include <stdexcept>
 
 #ifdef _WIN32
@@ -22,11 +22,12 @@ inline void unsetenv(const char* name) {
 #endif
 
 namespace fs = std::filesystem;
+using namespace dungeons::common::utility;
 
 class SettingsTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        config::Settings::resetForTesting();
+        Settings::resetForTesting();
 
         // Unset all environment variables that might interfere
         unsetenv("SERVER_HOST");
@@ -110,8 +111,8 @@ TEST_F(SettingsTest, LoadFromJson) {
         }
     })");
 
-    config::Settings::initialize("test_config.json");
-    const auto& cfg = config::getSettings();
+    Settings::initialize("test_config.json");
+    const auto& cfg = getSettings();
 
     EXPECT_EQ(cfg.server.host, "10.0.0.1");
     EXPECT_EQ(cfg.server.port, 9090);
@@ -132,8 +133,8 @@ TEST_F(SettingsTest, LoadFromJson) {
 // ------------------------------------------------------------------
 TEST_F(SettingsTest, DefaultValuesForAllKnownFields) {
     // No file, no env – all defaults must be present
-    config::Settings::initialize("");
-    const auto& cfg = config::getSettings();
+    Settings::initialize("");
+    const auto& cfg = getSettings();
 
     EXPECT_EQ(cfg.server.host, "127.0.0.1");
     EXPECT_EQ(cfg.server.port, 8080);
@@ -166,8 +167,8 @@ TEST_F(SettingsTest, EnvironmentOverridesAllKnownFields) {
     setenv("LOGGER_LEVEL", "warn", 1);
     setenv("LOGGER_OUTPUT_DIR", "/env/logs", 1);
 
-    config::Settings::initialize("");
-    const auto& cfg = config::getSettings();
+    Settings::initialize("");
+    const auto& cfg = getSettings();
 
     EXPECT_EQ(cfg.server.host, "env.host");
     EXPECT_EQ(cfg.server.port, 9999);
@@ -195,8 +196,8 @@ TEST_F(SettingsTest, EnvironmentOverrideDynamicKey) {
     })");
 
     setenv("MOD_FOO", "bar", 1);
-    config::Settings::initialize("test_config.json");
-    const auto& cfg = config::getSettings();
+    Settings::initialize("test_config.json");
+    const auto& cfg = getSettings();
 
     EXPECT_EQ(cfg.get<std::string>("mod.foo", ""), "bar");
 }
@@ -217,8 +218,8 @@ TEST_F(SettingsTest, BooleanConversionVariants) {
         }
     })");
 
-    config::Settings::initialize("test_config.json");
-    const auto& cfg = config::getSettings();
+    Settings::initialize("test_config.json");
+    const auto& cfg = getSettings();
 
     EXPECT_TRUE(cfg.get<bool>("mod.bool_true_1", false));
     EXPECT_TRUE(cfg.get<bool>("mod.bool_true_yes", false));
@@ -241,8 +242,8 @@ TEST_F(SettingsTest, ArrayFlattening) {
         }
     })");
 
-    config::Settings::initialize("test_config.json");
-    const auto& cfg = config::getSettings();
+    Settings::initialize("test_config.json");
+    const auto& cfg = getSettings();
 
     EXPECT_EQ(cfg.get<int>("arr.0", 0), 10);
     EXPECT_EQ(cfg.get<int>("arr.1", 0), 20);
@@ -265,8 +266,8 @@ TEST_F(SettingsTest, EmptyStringNumericFallsBackToDefault) {
         }
     })");
 
-    config::Settings::initialize("test_config.json");
-    const auto& cfg = config::getSettings();
+    Settings::initialize("test_config.json");
+    const auto& cfg = getSettings();
 
     // Empty string conversion fails → keep defaults
     EXPECT_EQ(cfg.server.port, 8080);
@@ -286,13 +287,13 @@ TEST_F(SettingsTest, EnvironmentCacheClearing) {
     })");
 
     setenv("MOD_FOO", "first", 1);
-    config::Settings::initialize("test_config.json");
-    const auto& cfg1 = config::getSettings();
+    Settings::initialize("test_config.json");
+    const auto& cfg1 = getSettings();
     EXPECT_EQ(cfg1.get<std::string>("mod.foo", ""), "first");
 
     // Reset and change env
-    config::Settings::resetForTesting();
-    config::Settings::clearEnvCacheForTesting();  // ensure cache cleared
+    Settings::resetForTesting();
+    Settings::clearEnvCacheForTesting();  // ensure cache cleared
     setenv("MOD_FOO", "second", 1);
     // Re‑write the same JSON (or keep existing file; it still exists)
     writeConfig(R"({
@@ -300,8 +301,8 @@ TEST_F(SettingsTest, EnvironmentCacheClearing) {
             "foo": "dummy"
         }
     })");
-    config::Settings::initialize("test_config.json");
-    const auto& cfg2 = config::getSettings();
+    Settings::initialize("test_config.json");
+    const auto& cfg2 = getSettings();
     EXPECT_EQ(cfg2.get<std::string>("mod.foo", ""), "second");
 }
 
@@ -317,8 +318,8 @@ TEST_F(SettingsTest, DynamicKeys) {
         }
     })");
 
-    config::Settings::initialize("test_config.json");
-    const auto& cfg = config::getSettings();
+    Settings::initialize("test_config.json");
+    const auto& cfg = getSettings();
 
     EXPECT_DOUBLE_EQ(cfg.get<double>("mod.myFloat", 0.0), 3.14);
     EXPECT_TRUE(cfg.get<bool>("mod.myBool", false));
@@ -335,8 +336,8 @@ TEST_F(SettingsTest, ConversionErrorUsesDefault) {
         "database": { "pool_size": "xyz" }
     })");
 
-    config::Settings::initialize("test_config.json");
-    const auto& cfg = config::getSettings();
+    Settings::initialize("test_config.json");
+    const auto& cfg = getSettings();
 
     EXPECT_EQ(cfg.server.max_players, 100);
     EXPECT_EQ(cfg.database.pool_size, 10);
@@ -346,9 +347,9 @@ TEST_F(SettingsTest, ConversionErrorUsesDefault) {
 // Global reference matches instance
 // ------------------------------------------------------------------
 TEST_F(SettingsTest, GlobalReferenceMatchesInstance) {
-    config::Settings::initialize("test_config.json");
-    const auto& cfg = config::getSettings();
-    const auto& instance = config::Settings::instance();
+    Settings::initialize("test_config.json");
+    const auto& cfg = getSettings();
+    const auto& instance = Settings::instance();
     EXPECT_EQ(&cfg, &instance);
 }
 
@@ -357,8 +358,8 @@ TEST_F(SettingsTest, GlobalReferenceMatchesInstance) {
 // ------------------------------------------------------------------
 TEST_F(SettingsTest, EmptyPathSkipsFile) {
     setenv("SERVER_MAX_PLAYERS", "250", 1);
-    config::Settings::initialize("");
-    const auto& cfg = config::getSettings();
+    Settings::initialize("");
+    const auto& cfg = getSettings();
 
     EXPECT_EQ(cfg.server.max_players, 250);
     EXPECT_EQ(cfg.server.host, "127.0.0.1");
@@ -370,8 +371,8 @@ TEST_F(SettingsTest, EmptyPathSkipsFile) {
 TEST_F(SettingsTest, StringViewDefault) {
     writeConfig(R"({ "mod": { "test": "trace" } })");
 
-    config::Settings::initialize("test_config.json");
-    const auto& cfg = config::getSettings();
+    Settings::initialize("test_config.json");
+    const auto& cfg = getSettings();
 
     std::string value = cfg.get("mod.test", std::string_view("info"));
     EXPECT_EQ(value, "trace");
@@ -385,13 +386,13 @@ TEST_F(SettingsTest, StringViewDefault) {
 // ------------------------------------------------------------------
 TEST_F(SettingsTest, ResetAllowsReinitialization) {
     writeConfig(R"({ "server": { "port": 1111 } })");
-    config::Settings::initialize("test_config.json");
-    EXPECT_EQ(config::getSettings().server.port, 1111);
+    Settings::initialize("test_config.json");
+    EXPECT_EQ(getSettings().server.port, 1111);
 
-    config::Settings::resetForTesting();
+    Settings::resetForTesting();
     writeConfig(R"({ "server": { "port": 2222 } })");
-    config::Settings::initialize("test_config.json");
-    EXPECT_EQ(config::getSettings().server.port, 2222);
+    Settings::initialize("test_config.json");
+    EXPECT_EQ(getSettings().server.port, 2222);
 }
 
 // ------------------------------------------------------------------
@@ -422,8 +423,8 @@ TEST_F(SettingsTest, DumpOutput) {
     setenv("LOGGER_LEVEL", "warn", 1);
     setenv("MOD_CUSTOM_STRING", "hello_env", 1);
 
-    config::Settings::initialize("test_config.json");
-    const auto& cfg = config::getSettings();
+    Settings::initialize("test_config.json");
+    const auto& cfg = getSettings();
     cfg.dump();
     EXPECT_TRUE(true);
 }
@@ -439,8 +440,8 @@ TEST_F(SettingsTest, KnownKeyOverrideDirectAccessVsGet) {
         }
     })");
 
-    config::Settings::initialize("test_config.json");
-    const auto& cfg = config::getSettings();
+    Settings::initialize("test_config.json");
+    const auto& cfg = getSettings();
 
     // Direct struct access sees the override
     EXPECT_EQ(cfg.gameplay.default_map_trc_x, 40);
@@ -458,8 +459,8 @@ TEST_F(SettingsTest, EnvOverrideKnownKeyDirectAccessVsGet) {
     setenv("GAMEPLAY_DEFAULT_MAP_TRC_X", "50", 1);
     setenv("GAMEPLAY_DEFAULT_MAP_TRC_Y", "30", 1);
 
-    config::Settings::initialize("");
-    const auto& cfg = config::getSettings();
+    Settings::initialize("");
+    const auto& cfg = getSettings();
 
     EXPECT_EQ(cfg.gameplay.default_map_trc_x, 50);
     EXPECT_EQ(cfg.gameplay.default_map_trc_y, 30);
@@ -481,8 +482,8 @@ TEST_F(SettingsTest, EnvOverridesJson) {
     setenv("SERVER_PORT", "2222", 1);
     setenv("SERVER_HOST", "env.host", 1);
 
-    config::Settings::initialize("test_config.json");
-    const auto& cfg = config::getSettings();
+    Settings::initialize("test_config.json");
+    const auto& cfg = getSettings();
 
     EXPECT_EQ(cfg.server.port, 2222);
     EXPECT_EQ(cfg.server.host, "env.host");
@@ -499,8 +500,8 @@ TEST_F(SettingsTest, CaseSensitiveKeys) {
         }
     })");
 
-    config::Settings::initialize("test_config.json");
-    const auto& cfg = config::getSettings();
+    Settings::initialize("test_config.json");
+    const auto& cfg = getSettings();
 
     // "host" is known, "Host" is not – will end up in dynamic_
     EXPECT_EQ(cfg.server.host, "lowercase");
@@ -518,8 +519,8 @@ TEST_F(SettingsTest, DynamicKeyWithEnvOverride) {
     })");
     setenv("MOD_FOO", "env_value", 1);
 
-    config::Settings::initialize("test_config.json");
-    const auto& cfg = config::getSettings();
+    Settings::initialize("test_config.json");
+    const auto& cfg = getSettings();
 
     // get() sees the environment value because dynamic_ is updated
     EXPECT_EQ(cfg.get<std::string>("mod.foo", ""), "env_value");
@@ -533,7 +534,7 @@ TEST_F(SettingsTest, InvalidJsonThrows) {
         "server": { "port": 8080,  // missing closing brace
     })");
 
-    EXPECT_THROW(config::Settings::initialize("test_config.json"), std::runtime_error);
+    EXPECT_THROW(Settings::initialize("test_config.json"), std::runtime_error);
 }
 
 // ------------------------------------------------------------------
@@ -541,8 +542,8 @@ TEST_F(SettingsTest, InvalidJsonThrows) {
 // ------------------------------------------------------------------
 TEST_F(SettingsTest, MissingJsonFileUsesDefaults) {
     // No file created
-    config::Settings::initialize("non_existent.json");
-    const auto& cfg = config::getSettings();
+    Settings::initialize("non_existent.json");
+    const auto& cfg = getSettings();
 
     EXPECT_EQ(cfg.server.port, 8080);
     EXPECT_EQ(cfg.gameplay.default_map_trc_x, 60);
@@ -559,8 +560,8 @@ TEST_F(SettingsTest, GetDynamicInvalidNumberReturnsDefault) {
         }
     })");
 
-    config::Settings::initialize("test_config.json");
-    const auto& cfg = config::getSettings();
+    Settings::initialize("test_config.json");
+    const auto& cfg = getSettings();
 
     EXPECT_EQ(cfg.get<int>("mod.bad_int", 999), 999);
 }
@@ -573,8 +574,8 @@ TEST_F(SettingsTest, EnvKeyUppercaseWithUnderscores) {
     setenv("SERVER_PORT", "1234", 1);  // correct
     setenv("server_port", "5678", 1);  // ignored – wrong case
 
-    config::Settings::initialize("");
-    const auto& cfg = config::getSettings();
+    Settings::initialize("");
+    const auto& cfg = getSettings();
 
     EXPECT_EQ(cfg.server.port, 1234);
 }
@@ -585,13 +586,13 @@ TEST_F(SettingsTest, EnvKeyUppercaseWithUnderscores) {
 // ------------------------------------------------------------------
 TEST_F(SettingsTest, DoubleInitializationIgnored) {
     writeConfig(R"({ "server": { "port": 9999 } })");
-    config::Settings::initialize("test_config.json");
-    const auto& cfg1 = config::getSettings();
+    Settings::initialize("test_config.json");
+    const auto& cfg1 = getSettings();
     EXPECT_EQ(cfg1.server.port, 9999);
 
     writeConfig(R"({ "server": { "port": 8888 } })");
-    config::Settings::initialize("test_config.json");
-    const auto& cfg2 = config::getSettings();
+    Settings::initialize("test_config.json");
+    const auto& cfg2 = getSettings();
     // Same object, so port remains 9999
     EXPECT_EQ(cfg2.server.port, 9999);
     // Ensure they are the same instance
@@ -606,7 +607,7 @@ TEST_F(SettingsTest, EnvBooleanFalse) {
     // Use dynamic instead.
     writeConfig(R"({ "mod": { "flag": true } })");
     setenv("MOD_FLAG", "false", 1);
-    config::Settings::initialize("test_config.json");
-    const auto& cfg = config::getSettings();
+    Settings::initialize("test_config.json");
+    const auto& cfg = getSettings();
     EXPECT_FALSE(cfg.get<bool>("mod.flag", true));
 }

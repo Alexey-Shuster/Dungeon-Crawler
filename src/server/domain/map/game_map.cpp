@@ -1,10 +1,18 @@
 #include "game_map.h"
 
+#include <common/utility/logger.h>
 #include <format>
 
-#include "common/logger.h"
-
 namespace dungeons::server::domain {
+
+GameMap::GameMap(MapSize map_size)
+    : map_size_{map_size} {
+    LOG_INFO(std::format("GameMap created with bottom_left_corner ({}, {}), top_right_corner ({}, {})",
+                         map_size_.getBottomLeftCorner().x,
+                         map_size_.getBottomLeftCorner().y,
+                         map_size_.getTopRightCorner().x,
+                         map_size_.getTopRightCorner().y));
+}
 
 bool GameMap::addBarrier(const Position& position) {
     if (!isInMap(position)) {
@@ -56,4 +64,4 @@ const std::unordered_set<Position, PositionHash>& GameMap::getBarriers() const {
     return barriers_;
 }
 
-} // namespace dungeons::server::domain
+}  // namespace dungeons::server::domain

@@ -3,8 +3,8 @@
 #include <cstdint>
 #include <vector>
 
-namespace network {
+namespace dungeons::common::network {
 
 using ByteBuffer = std::vector<uint8_t>;
 
-}  // namespace network
+}  // namespace dungeons::common::network

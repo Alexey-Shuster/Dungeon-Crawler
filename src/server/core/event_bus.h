@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <boost/signals2.hpp>
+#include <common/utility/logger.h>
 #include <format>
 #include <memory>
 #include <mutex>
@@ -11,7 +12,6 @@
 #include <utility>
 #include <vector>
 
-#include "common/logger.h"
 #include "event_base.h"
 
 namespace dungeons::server::core {

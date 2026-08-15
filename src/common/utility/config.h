@@ -10,7 +10,7 @@
 #include <string_view>
 #include <unordered_set>
 
-namespace config {
+namespace dungeons::common::utility {
 /**
  * @brief Singleton configuration manager.
  *
@@ -224,4 +224,4 @@ T Settings::get(const std::string& key, const T& default_value) const {
 inline const Settings& getSettings() {
     return Settings::instance();
 }
-}  // namespace config
+}  // namespace dungeons::common::utility

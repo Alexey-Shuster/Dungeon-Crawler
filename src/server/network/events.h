@@ -1,10 +1,10 @@
 #pragma once
 
+#include <common/network/raw_message.h>
+#include <core/event_base.h>
+#include <core/event_type.h>
 #include <memory>
 
-#include "core/event_base.h"
-#include "core/event_type.h"
-#include <common/message.h>
 #include "session_event.h"
 #include "session_fwd.h"
 
@@ -58,9 +58,9 @@ struct PongEvent : SessionEvent {
 // Создает: Session
 // Получает: MessageRouter
 struct RawMessageReceivedEvent : public SessionEvent {
-    ::network::Message message;
+    common::network::RawMessage message;
 
-    RawMessageReceivedEvent(SessionId sid, ::network::Message msg) noexcept
+    RawMessageReceivedEvent(SessionId sid, common::network::RawMessage msg) noexcept
         : SessionEvent(sid)
         , message(std::move(msg)) {}
 

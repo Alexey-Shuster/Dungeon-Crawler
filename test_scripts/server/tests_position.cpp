@@ -1,4 +1,4 @@
-#include <C:/Users/qt96334/.conan2/p/b/gtestfde03c87b0d12/p/include/gtest/gtest.h>
+#include <gtest/gtest.h>
 #include <limits>
 #include <server/domain/map/position.h>
 

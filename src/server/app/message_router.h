@@ -1,11 +1,11 @@
 #pragma once
 
 #include <boost/signals2/signal.hpp>
+#include <core/event_bus.h>
+#include <domain/types.h>
 #include <memory>
+#include <network/events.h>
 
-#include "core/event_bus.h"
-#include "domain/types.h"
-#include "network/events.h"
 #include "session_registry.h"
 
 namespace dungeons::server::app {

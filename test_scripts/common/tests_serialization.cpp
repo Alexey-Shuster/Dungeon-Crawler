@@ -1,11 +1,12 @@
-#include <C:/Users/qt96334/.conan2/p/b/gtestfde03c87b0d12/p/include/gtest/gtest.h>
 #include <cbor.h>
-#include <common/serialization.h>
+#include <common/wire/serialization.h>
 #include <cstdint>
+#include <gtest/gtest.h>
 #include <memory>
 #include <vector>
 
-using namespace network;
+using namespace dungeons::common::network;
+using namespace dungeons::common::wire;
 
 struct CborTestDeleter {
     void operator()(cbor_item_t* item) const {
@@ -18,7 +19,7 @@ struct CborTestDeleter {
 using CborTestPtr = std::unique_ptr<cbor_item_t, CborTestDeleter>;
 
 // ============================================================================
-// Тесты для addArgToArray (без изменений)
+// addArgToArray tests
 // ============================================================================
 
 class AddArgToArrayTest : public ::testing::Test {
@@ -79,7 +80,7 @@ TEST_F(AddArgToArrayTest, MultipleValues) {
 }
 
 // ============================================================================
-// Тесты для getMsgArgsFromCborArray (без изменений)
+// getMsgArgsFromCborArray tests
 // ============================================================================
 
 class GetMsgArgsFromCborArrayTest : public ::testing::Test {

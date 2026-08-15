@@ -7,7 +7,7 @@
     #include <unistd.h>
 #endif
 
-namespace utility {
+namespace dungeons::common::utility {
 
 class TerminalGuard {
 public:
@@ -69,4 +69,4 @@ private:
     bool active_ = false;
 };
 
-}  // namespace utility
+}  // namespace dungeons::common::utility

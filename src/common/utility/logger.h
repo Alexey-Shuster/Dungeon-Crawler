@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-namespace utils {
+namespace dungeons::common::utility {
 
 struct LogConfig {
     std::string log_dir = "./logs";
@@ -28,10 +28,10 @@ struct LogSrcInfo {
         , line(loc.line()) {}
 };
 
-#define LOG_INFO(msg) ::utils::Logger::Instance().LogInfo(msg)
-#define LOG_ERROR(msg) ::utils::Logger::Instance().LogError(msg)
-#define LOG_DEBUG(msg) ::utils::Logger::Instance().LogDebug(msg)
-#define LOG_WARN(msg) ::utils::Logger::Instance().LogWarn(msg)
+#define LOG_INFO(msg) ::dungeons::common::utility::Logger::Instance().LogInfo(msg)
+#define LOG_ERROR(msg) ::dungeons::common::utility::Logger::Instance().LogError(msg)
+#define LOG_DEBUG(msg) ::dungeons::common::utility::Logger::Instance().LogDebug(msg)
+#define LOG_WARN(msg) ::dungeons::common::utility::Logger::Instance().LogWarn(msg)
 
 class Logger {
 public:
@@ -72,4 +72,4 @@ void Logger::LogWithSource(LogStream&& stream, const LogSrcInfo& source_info, st
            << boost::log::add_value("Line", source_info.line) << message;
 }
 
-}  // namespace utils
+}  // namespace dungeons::common::utility

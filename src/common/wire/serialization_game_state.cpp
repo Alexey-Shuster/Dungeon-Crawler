@@ -2,7 +2,9 @@
 
 #include <format>
 
-namespace network {
+namespace dungeons::common::wire {
+
+using namespace dungeons::common::network;
 
 namespace {
 
@@ -159,4 +161,4 @@ std::optional<DungeonSnapshot> deserializeGameState(const ByteBuffer& message) {
     return snapshot;
 }
 
-}  // namespace serialization
+}  // namespace dungeons::common::wire

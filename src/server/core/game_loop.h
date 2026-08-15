@@ -3,7 +3,7 @@
 #include <atomic>
 #include <boost/asio.hpp>
 #include <chrono>
-#include <common/logger.h>
+#include <common/utility/logger.h>
 #include <format>
 #include <memory>
 
@@ -59,7 +59,7 @@ private:
         timer_.expires_after(tick_rate_);
         timer_.async_wait([self = shared_from_this(), this](const boost::system::error_code& ec) {
             if (ec == boost::asio::error::operation_aborted || stopped_) {
-                // Timer was cancelled (stop called)
+                // Timer was canceled (stop called)
                 return;
             }
             if (ec) {

@@ -2,8 +2,8 @@
 
 namespace dungeons::server::domain {
 
-::network::DungeonSnapshot createGameStateDTO(const DungeonState& state) {
-    network::DungeonSnapshot snapshot;
+common::network::DungeonSnapshot createGameStateDTO(const DungeonState& state) {
+    common::network::DungeonSnapshot snapshot;
 
     // 1. Map snapshot
     const auto& map_size = state.game_map.size();

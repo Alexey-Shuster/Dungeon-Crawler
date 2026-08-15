@@ -5,7 +5,7 @@
 #include <cstdint>  // IWYU pragma: keep // uint64_t
 #include <ostream>
 
-namespace dungeons::common {
+namespace dungeons::common::types {
 
 template <typename Tag, typename T = uint64_t>
 struct StrongId {
@@ -107,4 +107,4 @@ struct StrongIdMixedHash {
     }
 };
 
-}  // namespace dungeons::common
+}  // namespace dungeons::common::types

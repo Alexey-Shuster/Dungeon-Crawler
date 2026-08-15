@@ -1,23 +1,23 @@
 #include <boost/asio/io_context.hpp>
-#include <common/config.h>
-#include <common/keyboard_reader.h>
-#include <common/logger.h>
-#include <common/stdin_reader.h>
-#include <common/terminal_guard.h>
+#include <client/app/client_controller.h>
+#include <client/network/client.h>
+#include <common/utility/config.h>
+#include <common/utility/keyboard_reader.h>
+#include <common/utility/logger.h>
+#include <common/utility/stdin_reader.h>
+#include <common/utility/terminal_guard.h>
 #include <exception>
 #include <format>
 #include <iostream>
 
-#include "app/client_controller.h"
-#include "network/client.h"
-
 using namespace dungeons::client;
+using namespace dungeons::common;
 
 int main() {
     try {
-        config::Settings::initialize("config.json");
-        const auto& cfg = config::getSettings();
-        utils::Logger::Initialize({cfg.logger.output_dir, cfg.logger.level, cfg.logger.format});
+        utility::Settings::initialize("config.json");
+        const auto& cfg = utility::getSettings();
+        utility::Logger::Initialize({cfg.logger.output_dir, cfg.logger.level, cfg.logger.format});
 
         boost::asio::io_context io_context;
         boost::asio::signal_set signals(io_context, SIGINT, SIGTERM);
@@ -43,7 +43,7 @@ int main() {
             });
 
         // Connect callback: forward incoming frames to dispatcher
-        client->setOnReceiveMessage([client_controller](::network::Message data) {
+        client->setOnReceiveMessage([client_controller](auto data) {
             client_controller->onMessageReceived(std::move(data));
         });
 
@@ -74,7 +74,7 @@ int main() {
         io_context.run();
 
     } catch (const std::exception& e) {
-        LOG_ERROR(std::format("Client stoped with exception: {}", e.what()));
+        LOG_ERROR(std::format("Client stopped with exception: {}", e.what()));
         return EXIT_FAILURE;
     }
 

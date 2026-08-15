@@ -4,7 +4,7 @@
 #include <format>
 #include <string>
 
-namespace utility {
+namespace dungeons::common::utility {
 
 [[nodiscard]] constexpr std::string_view trimWhitespace(std::string_view str) noexcept {
     constexpr std::string_view whitespace = " \t\n\r\f\v";
@@ -54,4 +54,4 @@ std::string joinWithSpace(const Args... args) {
     return std::nullopt;
 }
 
-}  // namespace utility
+}  // namespace dungeons::common::utility

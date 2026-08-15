@@ -1,6 +1,7 @@
 #pragma once
 
-#include <common/strong_id.h>
+#include <common/types/strong_id.h>
+#include <common/types/direction.h>
 #include <optional>
 #include <unordered_map>
 
@@ -11,7 +12,7 @@ namespace dungeons::server::domain {
 template <typename EntityType, typename IdType>
 class EntityManager {
 public:
-    using EntityMap = std::unordered_map<IdType, EntityType, common::StrongIdIdentityHash<IdType>>;
+    using EntityMap = std::unordered_map<IdType, EntityType, common::types::StrongIdIdentityHash<IdType>>;
 
     const EntityMap& getEntities() const {
         return entities_;
@@ -32,7 +33,7 @@ public:
     }
 
     // Move an entity if the new position is available (checked externally)
-    bool moveEntity(IdType id, types::Direction dir, const Position& newPos) {
+    bool moveEntity(IdType id, common::types::Direction dir, const Position& newPos) {
         auto it = entities_.find(id);
         if (it == entities_.end() || !it->second.isAlive()) {
             return false;
