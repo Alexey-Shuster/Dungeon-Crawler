@@ -1,11 +1,10 @@
 #include "session_registry.h"
 
 #include <boost/format.hpp>
-#include <common/logger.h>
+#include <common/utility/logger.h>
+#include <domain/types.h>
+#include <network/session.h>
 #include <ranges>
-
-#include "domain/types.h"
-#include "network/session.h"
 
 namespace dungeons::server::app {
 

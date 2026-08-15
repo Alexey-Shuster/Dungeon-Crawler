@@ -1,7 +1,7 @@
 #include "session.h"
 
-#include <common/frame_codec.h>
-#include <common/logger.h>
+#include <common/network/frame_codec.h>
+#include <common/utility/logger.h>
 #include <format>
 
 #include "events.h"
@@ -34,19 +34,19 @@ void Session::start() {
     eventBus_.publish(ClientConnectedEvent{shared_from_this()});
 }
 
-void Session::send(::network::Message raw_message) {
+void Session::send(common::network::RawMessage raw_message) {
     boost::asio::dispatch(strand_, [this, self = shared_from_this(), msg = std::move(raw_message)]() {
         if (is_disconnected_.load(std::memory_order_acquire)) {
             return;
         }
         // Encode the message into a frame
-        auto encoded = ::network::FrameCodec::encodeFrame(std::move(msg.buffer));
+        auto encoded = common::network::FrameCodec::encodeFrame(std::move(msg.buffer));
         if (encoded.empty()) {
             LOG_ERROR(std::format("[Session {}] encoding failed", sessionId_.value));
             return;
         }
 
-        auto msg_ptr = std::make_shared<::network::Message>(std::move(encoded));
+        auto msg_ptr = std::make_shared<common::network::RawMessage>(std::move(encoded));
         const bool idle = write_queue_.empty();
         write_queue_.push_back(std::move(msg_ptr));
         if (idle) {
@@ -97,7 +97,7 @@ void Session::doRead() {
                     read_buffer_.commit(length);
 
                     // Extract all complete frames from the accumulated data
-                    auto messages = ::network::FrameCodec::extractFrames(read_buffer_);
+                    auto messages = common::network::FrameCodec::extractFrames(read_buffer_);
                     // TODO: update with FrameCodec return logic
                     if (messages.empty()) {
                         LOG_INFO(std::format("[Session {}] no data extracted", sessionId_.value));
@@ -114,7 +114,7 @@ void Session::doRead() {
                                              sessionId_.value,
                                              n,
                                              msg.size()));
-                        processMessage(::network::Message(std::move(msg)));
+                        processMessage(common::network::RawMessage(std::move(msg)));
                         ++n;
                     }
 
@@ -158,7 +158,7 @@ void Session::doWrite() {
             }));
 }
 
-void Session::processMessage(::network::Message raw_msg) const {
+void Session::processMessage(common::network::RawMessage raw_msg) const {
     LOG_INFO(std::format("[Session {}] sending RawMessageReceivedEvent. Included message size={} bytes",
                          sessionId_.value,
                          raw_msg.buffer.size()));

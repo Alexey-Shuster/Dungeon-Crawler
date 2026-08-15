@@ -1,9 +1,8 @@
 #include "connection_manager.h"
 
-#include <common/logger.h>
+#include <common/utility/logger.h>
 #include <format>
-
-#include "network/session.h"
+#include <network/session.h>
 
 namespace dungeons::server::app {
 
@@ -11,10 +10,10 @@ namespace dungeons::server::app {
 
 constexpr std::chrono::seconds kPlayerReconnectTimeout{30};
 
-std::shared_ptr<ConnectionManager> ConnectionManager::Create(
-    std::shared_ptr<core::EventBus> event_bus,
-    std::shared_ptr<SessionRegistry> session_registry) {
-    auto connection_manager = std::shared_ptr<ConnectionManager>(new ConnectionManager{event_bus, session_registry});
+std::shared_ptr<ConnectionManager> ConnectionManager::Create(std::shared_ptr<core::EventBus> event_bus,
+                                                             std::shared_ptr<SessionRegistry> session_registry) {
+    auto connection_manager =
+        std::shared_ptr<ConnectionManager>(new ConnectionManager{std::move(event_bus), std::move(session_registry)});
     std::once_flag init_flag;
     std::call_once(init_flag, &ConnectionManager::Initialize, connection_manager.get());
     return connection_manager;
@@ -39,8 +38,8 @@ void ConnectionManager::Initialize() {
                 shared_self->HandlePlayerReconnectRequestedEvent(event);
             }
         }));
-    connections_.emplace_back(event_bus_->subscribe<AuthRequestedEvent>(
-        [weak_self = weak_from_this()](const AuthRequestedEvent& event) {
+    connections_.emplace_back(
+        event_bus_->subscribe<AuthRequestedEvent>([weak_self = weak_from_this()](const AuthRequestedEvent& event) {
             if (auto shared_self = weak_self.lock()) {
                 shared_self->HandlePlayerAuthRequestedEvent(event);
             }

@@ -1,13 +1,13 @@
 #pragma once
 
-#include <common/strong_id.h>
+#include <common/types/strong_id.h>
 
 namespace dungeons::server::network {
 
 struct SessionIdTag {};
 
-using SessionId = common::StrongId<SessionIdTag>;
+using SessionId = common::types::StrongId<SessionIdTag>;
 
-using SessionHash = common::StrongIdIdentityHash<SessionId>;
+using SessionHash = common::types::StrongIdIdentityHash<SessionId>;
 
 }  // namespace dungeons::server::network

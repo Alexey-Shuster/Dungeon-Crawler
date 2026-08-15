@@ -12,27 +12,27 @@
 
 #pragma once
 
-#include <common/direction.h>
-#include <common/logger.h>
-#include <common/message_utils.h>
 #include <common/network/raw_message.h>
-#include <common/serialization.h>
+#include <common/types/direction.h>
+#include <common/types/message_utils.h>
+#include <common/utility/logger.h>
+#include <common/wire/serialization.h>
+#include <core/event_base.h>
+#include <domain/events.h>
+#include <domain/types.h>
 #include <functional>
 #include <memory>
 #include <optional>
 #include <type_traits>
 #include <unordered_map>
 
-#include "core/event_base.h"
-#include "domain/events.h"
-#include "domain/types.h"
 #include "events.h"
 
 namespace dungeons::server::app {
 
 struct MessageTypeVariantHash {
-    size_t operator()(const message::MessageTypeVariant& v) const {
-        auto packed = message::packMessageType(v);
+    size_t operator()(const common::types::MessageTypeVariant& v) const {
+        auto packed = packMessageType(v);
         return packed ? static_cast<size_t>(*packed) : 0;
     }
 };
@@ -40,7 +40,7 @@ struct MessageTypeVariantHash {
 // ----------------------------------------------------------------------------
 // Фабрика событий
 // ----------------------------------------------------------------------------
-using EventFactory = std::function<std::shared_ptr<core::Event>(const ::network::MessageArgs&)>;
+using EventFactory = std::function<std::shared_ptr<core::Event>(const common::wire::MessageArgs&)>;
 
 ///@brief Вспомогательный хелпер
 template <typename Target, typename Source>
@@ -65,7 +65,7 @@ constexpr std::optional<Target> safe_argument_cast(Source value) {
 
 ///@brief Универсальный шаблон для создания событий с проверкой аргументов
 template <typename EventType, typename... ArgTypes>
-std::shared_ptr<core::Event> CreateEvent(const ::network::MessageArgs& args) {
+std::shared_ptr<core::Event> CreateEvent(const common::wire::MessageArgs& args) {
     constexpr size_t ExpectedSize = sizeof...(ArgTypes);
 
     if (!args.has_value() || args->size() != ExpectedSize) {
@@ -97,26 +97,29 @@ std::shared_ptr<core::Event> CreateEvent(const ::network::MessageArgs& args) {
  *
  * @todo fix into std::array
  */
-const std::unordered_map<message::MessageTypeVariant, EventFactory, MessageTypeVariantHash> kEventFactoryMap = {
-    {message::NetworkMessageType::kJoin, CreateEvent<AuthRequestedEvent, network::SessionId, domain::PlayerId>},
+using MsgVariant = common::types::MessageTypeVariant;
+using NetMsg = common::types::NetworkMessageType;
+using AppMsg = common::types::AppMessageType;
+using DmnMsg = common::types::DomainMessageType;
 
-    {message::NetworkMessageType::kReconnect,
-     CreateEvent<ReconnectRequestedEvent, network::SessionId, domain::PlayerId>},
+const std::unordered_map<MsgVariant, EventFactory, MessageTypeVariantHash> kEventFactoryMap = {
+    {NetMsg::kJoin, CreateEvent<AuthRequestedEvent, network::SessionId, domain::PlayerId>},
 
-    {message::AppMessageType::kCreateParty, CreateEvent<domain::CreateLobbyRequestEvent, domain::PlayerId>},
+    {NetMsg::kReconnect, CreateEvent<ReconnectRequestedEvent, network::SessionId, domain::PlayerId>},
 
-    {message::AppMessageType::kListParties, CreateEvent<domain::ListLobbiesRequestEvent, domain::PlayerId>},
+    {AppMsg::kCreateParty, CreateEvent<domain::CreateLobbyRequestEvent, domain::PlayerId>},
 
-    {message::AppMessageType::kJoinParty,
-     CreateEvent<domain::JoinLobbyRequestEvent, domain::PlayerId, domain::LobbyId>},
+    {AppMsg::kListParties, CreateEvent<domain::ListLobbiesRequestEvent, domain::PlayerId>},
 
-    {message::AppMessageType::kLeaveParty, CreateEvent<domain::LeaveLobbyRequestEvent, domain::PlayerId>},
+    {AppMsg::kJoinParty, CreateEvent<domain::JoinLobbyRequestEvent, domain::PlayerId, domain::LobbyId>},
 
-    {message::AppMessageType::kStartGame, CreateEvent<domain::StartGameRequestEvent, domain::PlayerId>},
+    {AppMsg::kLeaveParty, CreateEvent<domain::LeaveLobbyRequestEvent, domain::PlayerId>},
 
-    {message::DomainMessageType::kMove, CreateEvent<domain::MoveRequestEvent, domain::PlayerId, types::Direction>},
+    {AppMsg::kStartGame, CreateEvent<domain::StartGameRequestEvent, domain::PlayerId>},
 
-    {message::DomainMessageType::kAttack, CreateEvent<domain::AtackRequestEvent, domain::PlayerId>},
+    {DmnMsg::kMove, CreateEvent<domain::MoveRequestEvent, domain::PlayerId, common::types::Direction>},
+
+    {DmnMsg::kAttack, CreateEvent<domain::AtackRequestEvent, domain::PlayerId>},
 };
 
 /**
@@ -134,8 +137,8 @@ const std::unordered_map<message::MessageTypeVariant, EventFactory, MessageTypeV
  *       - Нет зарегистрированной фабрики для msg_type
  *       - Фабрика вернула nullptr (невалидные аргументы)
  */
-[[nodiscard]] inline std::shared_ptr<core::Event> makeEvent(const message::MessageTypeVariant& msg_type,
-                                                            const ::network::MessageArgs& msg_args) {
+[[nodiscard]] inline std::shared_ptr<core::Event> makeEvent(const MsgVariant& msg_type,
+                                                            const common::wire::MessageArgs& msg_args) {
     if (std::holds_alternative<std::monostate>(msg_type)) {
         LOG_ERROR("Cannot create event from unknown message type");
         return nullptr;
@@ -143,7 +146,7 @@ const std::unordered_map<message::MessageTypeVariant, EventFactory, MessageTypeV
 
     auto it = kEventFactoryMap.find(msg_type);
     if (it == kEventFactoryMap.end()) {
-        auto info = message::getLevelId(msg_type);
+        auto info = common::types::getLevelId(msg_type);
         if (info) {
             LOG_ERROR(std::format("No event factory for type (level={}, id={})",
                                   static_cast<uint8_t>(info->level),
@@ -171,8 +174,8 @@ const std::unordered_map<message::MessageTypeVariant, EventFactory, MessageTypeV
  * @see serialization::deserializeMessageRaw
  * @see makeEvent
  */
-[[nodiscard]] inline std::shared_ptr<core::Event> deserializeMessage(::network::Message message) {
-    auto raw = ::network::deserializeMessageRaw(std::move(message.buffer));
+[[nodiscard]] inline std::shared_ptr<core::Event> deserializeMessage(common::network::RawMessage message) {
+    auto raw = common::wire::deserializeMessageRaw(std::move(message.buffer));
     if (!raw) {
         LOG_ERROR("Failed to deserialize raw message");
         return nullptr;

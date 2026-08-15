@@ -1,7 +1,7 @@
 
-set(SERVER_CORE_LIB server_core)
-
 add_library(server_core STATIC)
+
+set(SERVER_CORE_LIB server_core)
 
 target_sources(${SERVER_CORE_LIB} PRIVATE
         # temporary solution for STATIC

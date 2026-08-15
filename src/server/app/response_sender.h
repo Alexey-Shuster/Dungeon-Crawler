@@ -1,15 +1,15 @@
 #pragma once
 
 #include <boost/signals2/connection.hpp>
-#include <common/logger.h>
 #include <common/network/raw_message.h>
-#include <common/serialization.h>
+#include <common/utility/logger.h>
+#include <common/wire/serialization.h>
+#include <core/event_bus.h>
+#include <domain/events.h>
 #include <memory>
+#include <network/session.h>
 #include <vector>
 
-#include "core/event_bus.h"
-#include "domain/events.h"
-#include "network/session.h"
 #include "session_registry.h"
 
 namespace dungeons::server::app {
@@ -104,10 +104,10 @@ void ResponseSender::sendResponse(const EventType& event, MsgType msg_type, Args
         return;
     }
 
-    auto opt_buf = ::network::serializeMessage(msg_type, std::forward<Args>(args)...);
+    auto opt_buf = common::wire::serializeMessage(msg_type, std::forward<Args>(args)...);
     if (opt_buf.has_value()) {
         LOG_INFO(std::format("Queued {}", event_type));
-        session->send(::network::Message(std::move(*opt_buf)));
+        session->send(common::network::RawMessage(std::move(*opt_buf)));
     } else {
         LOG_ERROR(std::format("Failed to serialize message for event {}", event_type));
     }
@@ -122,10 +122,10 @@ void ResponseSender::sendResponse(const EventType& event, MsgType msg_type, cons
         return;
     }
 
-    auto opt_buf = ::network::serializeMessage(msg_type, std::move(args));
+    auto opt_buf = common::wire::serializeMessage(msg_type, std::move(args));
     if (opt_buf.has_value()) {
         LOG_INFO(std::format("Queued {}", event_type));
-        session->send(::network::Message(std::move(*opt_buf)));
+        session->send(common::network::RawMessage(std::move(*opt_buf)));
     } else {
         LOG_ERROR(std::format("Failed to serialize message for event {}", event_type));
     }

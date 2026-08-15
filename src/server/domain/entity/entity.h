@@ -1,6 +1,6 @@
 #pragma once
 
-#include <common/config.h>
+#include <common/utility/config.h>
 
 #include "domain/map/position.h"
 #include "domain/types.h"
@@ -16,14 +16,14 @@ struct EntityData {
 };
 
 inline EntityData getCfgPlayerData() {
-    const auto& cfg = config::getSettings();
+    const auto& cfg = common::utility::getSettings();
     return EntityData{.health{Health(cfg.gameplay.player_default_hp)},
                       .radius_attack = static_cast<uint32_t>(cfg.gameplay.default_radius_attack),
                       .radius_view = static_cast<uint32_t>(cfg.gameplay.default_radius_view)};
 }
 
 inline EntityData getCfgMonsterData() {
-    const auto& cfg = config::getSettings();
+    const auto& cfg = common::utility::getSettings();
     return EntityData{.health{Health(cfg.gameplay.monster_default_hp)},
                       .radius_attack = static_cast<uint32_t>(cfg.gameplay.default_radius_attack),
                       .radius_view = static_cast<uint32_t>(cfg.gameplay.default_radius_view)};

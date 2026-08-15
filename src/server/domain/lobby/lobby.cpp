@@ -1,9 +1,8 @@
 #include "lobby.h"
 
 #include <algorithm>
+#include <common/utility/config.h>
 #include <ranges>
-
-#include "common/config.h"
 
 namespace dungeons::server::domain {
 
@@ -62,7 +61,7 @@ bool Lobby::checkAllReady() const {
 }
 
 bool Lobby::isFull() const {
-    return players_.size() == config::getSettings().gameplay.lobby_max_players;
+    return players_.size() == common::utility::getSettings().gameplay.lobby_max_players;
 }
 
 bool Lobby::isEmpty() const {

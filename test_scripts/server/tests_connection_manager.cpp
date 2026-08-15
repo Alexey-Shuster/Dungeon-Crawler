@@ -1,5 +1,5 @@
-#include <C:/Users/qt96334/.conan2/p/b/gtestfde03c87b0d12/p/include/gmock/gmock.h>
-#include <C:/Users/qt96334/.conan2/p/b/gtestfde03c87b0d12/p/include/gtest/gtest.h>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 #include <boost/asio.hpp>
 #include <chrono>
 #include <future>

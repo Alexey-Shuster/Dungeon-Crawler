@@ -1,9 +1,9 @@
 #include "lobby_registry.h"
 
+#include <common/utility/logger.h>
 #include <format>
 #include <ranges>
 
-#include "common/logger.h"
 #include "lobby.h"
 
 namespace dungeons::server::domain {

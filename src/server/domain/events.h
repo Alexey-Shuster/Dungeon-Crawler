@@ -1,9 +1,9 @@
 #pragma once
 
-#include <common/direction.h>
+#include <common/types/direction.h>
+#include <core/event_type.h>
 #include <vector>
 
-#include "core/event_type.h"
 #include "domain/dungeon/dungeon_state.h"
 #include "event_base.h"
 
@@ -289,9 +289,9 @@ struct StartGameNotTheLeaderResponseEvent : PlayerEvent {
 // Создает: MessageRouter
 // Получает: GameManager
 struct MoveRequestEvent : PlayerEvent {
-    types::Direction direction;
+    common::types::Direction direction;
 
-    explicit MoveRequestEvent(PlayerId pid, types::Direction dir) noexcept
+    explicit MoveRequestEvent(PlayerId pid, common::types::Direction dir) noexcept
         : PlayerEvent(pid)
         , direction(dir) {}
 

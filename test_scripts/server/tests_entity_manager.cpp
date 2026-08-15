@@ -1,15 +1,16 @@
-#include <C:/Users/qt96334/.conan2/p/b/gtestfde03c87b0d12/p/include/gtest/gtest.h>
-#include <common/strong_id.h>
+#include <common/types/strong_id.h>
+#include <gtest/gtest.h>
 #include <optional>
 #include <server/domain/dungeon/entity_manager.h>
 #include <server/domain/map/position.h>
 
 using namespace dungeons::server::domain;
+using namespace dungeons::common::types;
 
 // Specialize StrongIdHash for int so unordered_map works with int keys.
 // This is only for testing; production uses StrongId types.
 template <>
-struct dungeons::common::StrongIdIdentityHash<int> {
+struct dungeons::common::types::StrongIdIdentityHash<int> {
     size_t operator()(const int& id) const noexcept {
         return std::hash<int>{}(id);
     }
@@ -91,7 +92,7 @@ TEST(EntityManagerTest, MoveEntity) {
     mgr.addEntity(7, initial);
 
     Position newPos(5, 6);
-    EXPECT_TRUE(mgr.moveEntity(7, types::Direction::kUp, newPos));  // direction ignored, just uses newPos
+    EXPECT_TRUE(mgr.moveEntity(7, Direction::kUp, newPos));  // direction ignored, just uses newPos
 
     const auto* entity = mgr.getEntity(7);
     ASSERT_NE(entity, nullptr);
@@ -100,7 +101,7 @@ TEST(EntityManagerTest, MoveEntity) {
 
 TEST(EntityManagerTest, MoveEntityNonExistentFails) {
     TestManager mgr;
-    EXPECT_FALSE(mgr.moveEntity(99, types::Direction::kRight, Position(0, 0)));
+    EXPECT_FALSE(mgr.moveEntity(99, Direction::kRight, Position(0, 0)));
 }
 
 TEST(EntityManagerTest, MoveEntityDeadFails) {
@@ -111,7 +112,7 @@ TEST(EntityManagerTest, MoveEntityDeadFails) {
     ASSERT_NE(entity, nullptr);
     entity->setAlive(false);
 
-    EXPECT_FALSE(mgr.moveEntity(5, types::Direction::kUp, Position(2, 2)));
+    EXPECT_FALSE(mgr.moveEntity(5, Direction::kUp, Position(2, 2)));
 
     // Position should not have changed.
     const auto* updated = mgr.getEntity(5);

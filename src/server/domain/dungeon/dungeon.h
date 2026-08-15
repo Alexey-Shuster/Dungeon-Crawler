@@ -2,6 +2,8 @@
 
 #include <atomic>
 #include <chrono>
+#include <common/types/direction.h>
+#include <common/utility/config.h>
 #include <memory>
 #include <optional>
 #include <vector>
@@ -26,7 +28,7 @@ public:
     explicit Dungeon(GameMap game_map, PlayersContainer&& initial_players);
 
     void addPlayerAttackCommand(PlayerId player_id, uint32_t damage);
-    void addMovePlayerCommand(PlayerId player_id, types::Direction direction);
+    void addMovePlayerCommand(PlayerId player_id, common::types::Direction direction);
     std::optional<DungeonState> processTick(std::chrono::milliseconds time_delta);
     std::vector<PlayerId> getPlayers() const;
 
@@ -70,7 +72,7 @@ Dungeon::Dungeon(GameMap game_map, PlayersContainer&& initial_players)
 
     // Add monsters
     size_t playerCount = initial_players.size();
-    size_t totalMonsters = playerCount * config::getSettings().gameplay.monsters_per_player;
+    size_t totalMonsters = playerCount * common::utility::getSettings().gameplay.monsters_per_player;
     for (size_t i = 0; i < totalMonsters; ++i) {
         spawner_.spawnEntity(monsters_, nextMobId());
     }

@@ -1,6 +1,5 @@
 #include "dungeon.h"
 
-#include <common/config.h>
 #include <ranges>
 #include <vector>
 
@@ -27,7 +26,7 @@ void Dungeon::addPlayerAttackCommand(PlayerId player_id, uint32_t damage) {
     });
 }
 
-void Dungeon::addMovePlayerCommand(PlayerId player_id, types::Direction direction) {
+void Dungeon::addMovePlayerCommand(PlayerId player_id, common::types::Direction direction) {
     command_queue_.push([self = weak_from_this(), player_id, direction]() {
         auto shared = self.lock();
         if (!shared)
@@ -67,7 +66,7 @@ std::optional<DungeonState> Dungeon::processTick(std::chrono::milliseconds /*tim
             size_t attackCount = dist(gen);
 
             monster_ai_.moveRandomMonsters(moveCount);
-            uint32_t attackPower = config::getSettings().gameplay.monster_default_attack;
+            uint32_t attackPower = common::utility::getSettings().gameplay.monster_default_attack;
             monster_ai_.performRandomAttacks(attackPower, attackCount);
         }
     }

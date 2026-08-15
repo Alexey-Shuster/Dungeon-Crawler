@@ -1,5 +1,6 @@
-#include <C:/Users/qt96334/.conan2/p/b/gtestfde03c87b0d12/p/include/gtest/gtest.h>
 #include <chrono>
+#include <common/utility/config.h>
+#include <gtest/gtest.h>
 #include <memory>
 #include <server/domain/dungeon/dungeon.h>
 
@@ -22,7 +23,7 @@ TEST(DungeonTest, ConstructorCreatesPlayersAndMonsters) {
     ASSERT_TRUE(state.has_value());
 
     EXPECT_EQ(state->players.size(), players.size());
-    size_t expected_monsters = players.size() * config::getSettings().gameplay.monsters_per_player;
+    size_t expected_monsters = players.size() * dungeons::common::utility::getSettings().gameplay.monsters_per_player;
     EXPECT_EQ(state->monsters.size(), expected_monsters);
 }
 
@@ -37,7 +38,7 @@ TEST(DungeonTest, CollisionPreventsOverlap) {
     auto pos1 = state->players.at(p1).GetPosition();
     auto pos2 = state->players.at(p2).GetPosition();
 
-    using namespace types;
+    using namespace dungeons::common::types;
     // Move p1 towards p2
     Direction dir;
     if (pos2.x > pos1.x)

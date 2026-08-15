@@ -1,8 +1,11 @@
 #include "message_router.h"
 
-#include <common/logger.h>
+#include <common/types/message_types.h>
+#include <common/utility/logger.h>
 #include <format>
 #include <server/app/message_dispatcher.h>
+
+#include "wire/serialization.h"
 
 namespace dungeons::server::app {
 
@@ -35,7 +38,7 @@ void MessageRouter::OnRawMessage(const network::RawMessageReceivedEvent& event) 
                          sid,
                          event.message.buffer.size()));
 
-    auto message = ::network::deserializeMessageRaw(std::move(event.message.buffer));
+    auto message = common::wire::deserializeMessageRaw(std::move(event.message.buffer));
 
     if (!message) {
         LOG_ERROR("Failed to deserialize message");
@@ -46,25 +49,27 @@ void MessageRouter::OnRawMessage(const network::RawMessageReceivedEvent& event) 
                          sid,
                          message->args.size()));
 
-    ::network::MessageArgs args{std::in_place};
+    common::wire::MessageArgs args{std::in_place};
 
-    if (message::isNetworkMessage(message->type)) {
+    using namespace dungeons::common::types;
+
+    if (isNetworkMessage(message->type)) {
         LOG_INFO(std::format("[MessageRouter: Session #{}] message received is NetworkMessage", sid));
-        auto type = message::asNetworkMessage(message->type);
+        auto type = asNetworkMessage(message->type);
         if (type.has_value() &&
-            (type == message::NetworkMessageType::kJoin || type == message::NetworkMessageType::kReconnect)) {
+            (type == NetworkMessageType::kJoin || type == NetworkMessageType::kReconnect)) {
             LOG_INFO(std::format("[MessageRouter] adding sessionId #{} to event args", sid));
             args->emplace_back(event.session_id.value);
         }
     }
 
-    if (message::isAppMessage(message->type)) {
+    if (isAppMessage(message->type)) {
         LOG_INFO(std::format("[MessageRouter: Session #{}] message received is AppMessage", sid));
-        auto type = message::asAppMessage(message->type);
+        auto type = asAppMessage(message->type);
         if (type.has_value() &&
-            (type == message::AppMessageType::kJoinParty || type == message::AppMessageType::kLeaveParty ||
-             type == message::AppMessageType::kCreateParty || type == message::AppMessageType::kListParties ||
-             type == message::AppMessageType::kStartGame)) {
+            (type == AppMessageType::kJoinParty || type == AppMessageType::kLeaveParty ||
+             type == AppMessageType::kCreateParty || type == AppMessageType::kListParties ||
+             type == AppMessageType::kStartGame)) {
             if (auto pid = checkPlayer(event.session_id)) {
                 LOG_INFO(std::format("[MessageRouter] adding playerId #{} to event args", pid->value));
                 args->emplace_back(pid.value());
@@ -74,11 +79,11 @@ void MessageRouter::OnRawMessage(const network::RawMessageReceivedEvent& event) 
         }
     }
 
-    if (message::isDomainMessage(message->type)) {
+    if (isDomainMessage(message->type)) {
         LOG_INFO(std::format("[MessageRouter: Session #{}] message received is DomainMessage", sid));
-        auto type = message::asDomainMessage(message->type);
+        auto type = asDomainMessage(message->type);
         if (type.has_value() &&
-            (type == message::DomainMessageType::kMove || type == message::DomainMessageType::kAttack)) {
+            (type == DomainMessageType::kMove || type == DomainMessageType::kAttack)) {
             if (auto pid = checkPlayer(event.session_id)) {
                 LOG_INFO(std::format("[MessageRouter] adding playerId #{} to event args.", pid->value));
                 args->emplace_back(pid.value());

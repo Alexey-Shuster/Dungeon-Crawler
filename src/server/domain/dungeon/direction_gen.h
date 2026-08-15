@@ -1,6 +1,6 @@
 #pragma once
 
-#include <common/direction.h>
+#include <common/types/direction.h>
 #include <random>
 
 namespace dungeons::server::domain {
@@ -11,8 +11,8 @@ public:
         : gen_(std::random_device{}())
         , dist_(0, 3) {}
 
-    types::Direction generate() const {
-        return static_cast<types::Direction>(dist_(gen_));
+    common::types::Direction generate() const {
+        return static_cast<common::types::Direction>(dist_(gen_));
     }
 
 private:

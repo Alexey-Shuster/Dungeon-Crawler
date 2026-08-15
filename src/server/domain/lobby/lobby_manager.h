@@ -3,11 +3,11 @@
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/strand.hpp>
 #include <boost/signals2.hpp>
+#include <core/event_bus.h>
 #include <functional>
 #include <memory>
 #include <vector>
 
-#include "core/event_bus.h"
 #include "domain/events.h"
 #include "lobby_registry.h"
 
