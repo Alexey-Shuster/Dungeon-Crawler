@@ -5,7 +5,7 @@
 
 #include "serder_vector_base.h"
 
-namespace dungeons::common::wire {
+namespace dungeons::common::wire::detail {
 
 // Define a concept to check if a type can be serialized/deserialized
 template <typename T>

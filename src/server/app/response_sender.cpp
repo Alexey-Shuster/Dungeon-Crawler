@@ -1,7 +1,7 @@
 #include "response_sender.h"
 
 #include <common/types/message_types.h>
-#include <common/wire/serialization_game_state.h>
+#include <common/wire/serder_game_state.h>
 #include <domain/dungeon/create_game_state.h>
 
 #include "events.h"

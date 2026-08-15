@@ -4,9 +4,9 @@
 #include <network/game_state_dto.h>
 #include <optional>
 
-#include "serialization_base.h"
+#include "serder_base.h"
 
-namespace dungeons::common::wire {
+namespace dungeons::common::wire::detail {
 
 CborPtr serialize(const network::BarrierSnapshot& barrier);
 

@@ -16,7 +16,7 @@
 #include <common/types/direction.h>
 #include <common/types/message_utils.h>
 #include <common/utility/logger.h>
-#include <common/wire/serialization.h>
+#include <common/wire/serder.h>
 #include <core/event_base.h>
 #include <domain/events.h>
 #include <domain/types.h>
@@ -175,7 +175,7 @@ const std::unordered_map<MsgVariant, EventFactory, MessageTypeVariantHash> kEven
  * @see makeEvent
  */
 [[nodiscard]] inline std::shared_ptr<core::Event> deserializeMessage(common::network::RawMessage message) {
-    auto raw = common::wire::deserializeMessageRaw(std::move(message.buffer));
+    auto raw = common::wire::deserializeRawMessage(std::move(message.buffer));
     if (!raw) {
         LOG_ERROR("Failed to deserialize raw message");
         return nullptr;

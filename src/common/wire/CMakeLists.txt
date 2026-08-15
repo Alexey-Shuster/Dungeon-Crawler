@@ -5,12 +5,14 @@ set(COMMON_WIRE_LIB common_wire)
 
 target_sources(${COMMON_WIRE_LIB} PRIVATE
         message_utils.h
-        serialization_base.h
-        serialization.h
+        serder_base.h
+        serder_base.cpp
+        serder.h
+        serder.cpp
         serder_vector_base.h
         serder_vector.h
-        serialization_game_state.h
-        serialization_game_state.cpp
+        serder_game_state.h
+        serder_game_state.cpp
 )
 
 target_include_directories(${COMMON_WIRE_LIB} PUBLIC

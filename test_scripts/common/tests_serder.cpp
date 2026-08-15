@@ -1,5 +1,5 @@
 #include <cbor.h>
-#include <common/wire/serialization.h>
+#include <common/wire/serder.h>
 #include <cstdint>
 #include <gtest/gtest.h>
 #include <memory>
@@ -33,7 +33,7 @@ protected:
 };
 
 TEST_F(AddArgToArrayTest, AddUint64Value) {
-    EXPECT_TRUE(addArgToArray(array_.get(), 12345));
+    EXPECT_TRUE(detail::addArgToArray(array_.get(), 12345));
 
     EXPECT_EQ(cbor_array_size(array_.get()), 1);
 
@@ -44,7 +44,7 @@ TEST_F(AddArgToArrayTest, AddUint64Value) {
 }
 
 TEST_F(AddArgToArrayTest, AddZeroValue) {
-    EXPECT_TRUE(addArgToArray(array_.get(), 0));
+    EXPECT_TRUE(detail::addArgToArray(array_.get(), 0));
 
     CborTestPtr item(cbor_array_get(array_.get(), 0));
     ASSERT_NE(item, nullptr);
@@ -53,7 +53,7 @@ TEST_F(AddArgToArrayTest, AddZeroValue) {
 }
 
 TEST_F(AddArgToArrayTest, AddMaxUint64) {
-    EXPECT_TRUE(addArgToArray(array_.get(), UINT64_MAX));
+    EXPECT_TRUE(detail::addArgToArray(array_.get(), UINT64_MAX));
 
     CborTestPtr item(cbor_array_get(array_.get(), 0));
     ASSERT_NE(item, nullptr);
@@ -65,9 +65,9 @@ TEST_F(AddArgToArrayTest, MultipleValues) {
     array_.reset(cbor_new_definite_array(3));
     ASSERT_NE(array_, nullptr);
 
-    EXPECT_TRUE(addArgToArray(array_.get(), 100));
-    EXPECT_TRUE(addArgToArray(array_.get(), 200));
-    EXPECT_TRUE(addArgToArray(array_.get(), 300));
+    EXPECT_TRUE(detail::addArgToArray(array_.get(), 100));
+    EXPECT_TRUE(detail::addArgToArray(array_.get(), 200));
+    EXPECT_TRUE(detail::addArgToArray(array_.get(), 300));
 
     EXPECT_EQ(cbor_array_size(array_.get()), 3);
 
@@ -121,7 +121,7 @@ TEST_F(GetMsgArgsFromCborArrayTest, ArrayWithOnlyType) {
     auto array = createDefiniteArray(0);
     ASSERT_NE(array, nullptr);
 
-    auto args = getMsgArgsFromCborArray(array.get());
+    auto args = detail::getMsgArgsFromCborArray(array.get());
 
     EXPECT_TRUE(args.has_value());
     EXPECT_TRUE(args->empty());
@@ -131,7 +131,7 @@ TEST_F(GetMsgArgsFromCborArrayTest, ValidArray) {
     auto array = createDefiniteArray(0, {123, 456});
     ASSERT_NE(array, nullptr);
 
-    auto args = getMsgArgsFromCborArray(array.get());
+    auto args = detail::getMsgArgsFromCborArray(array.get());
 
     ASSERT_TRUE(args.has_value());
     EXPECT_EQ(args->size(), 2);
@@ -143,7 +143,7 @@ TEST_F(GetMsgArgsFromCborArrayTest, LargeUint64Values) {
     auto array = createDefiniteArray(0, {UINT64_MAX, 0x0123456789ABCDEF});
     ASSERT_NE(array, nullptr);
 
-    auto args = getMsgArgsFromCborArray(array.get());
+    auto args = detail::getMsgArgsFromCborArray(array.get());
 
     ASSERT_TRUE(args.has_value());
     EXPECT_EQ(args->size(), 2);
@@ -152,13 +152,13 @@ TEST_F(GetMsgArgsFromCborArrayTest, LargeUint64Values) {
 }
 
 TEST_F(GetMsgArgsFromCborArrayTest, NullArrayReturnsNullopt) {
-    auto args = getMsgArgsFromCborArray(nullptr);
+    auto args = detail::getMsgArgsFromCborArray(nullptr);
     EXPECT_FALSE(args.has_value());
 }
 
 TEST_F(GetMsgArgsFromCborArrayTest, NonArrayReturnsNullopt) {
     CborTestPtr item(cbor_build_uint8(42));
-    auto args = getMsgArgsFromCborArray(item.get());
+    auto args = detail::getMsgArgsFromCborArray(item.get());
     EXPECT_FALSE(args.has_value());
 }
 
@@ -166,6 +166,6 @@ TEST_F(GetMsgArgsFromCborArrayTest, EmptyCborArrayReturnsNullopt) {
     CborTestPtr empty_array(cbor_new_definite_array(0));
     ASSERT_NE(empty_array, nullptr);
 
-    auto args = getMsgArgsFromCborArray(empty_array.get());
+    auto args = detail::getMsgArgsFromCborArray(empty_array.get());
     EXPECT_FALSE(args.has_value());
 }
