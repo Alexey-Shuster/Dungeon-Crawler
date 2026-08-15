@@ -1,7 +1,7 @@
 #include "client.h"
 
-#include <common/frame_codec.h>
-#include <common/logger.h>
+#include <common/network/frame_codec.h>
+#include <common/utility/logger.h>
 #include <format>
 #include <string_view>
 
@@ -82,12 +82,12 @@ void Client::doRead() {
                 read_buffer_.commit(length);
 
                 // Extract complete frames
-                auto messages = ::network::FrameCodec::extractFrames(read_buffer_);
+                auto messages = common::network::FrameCodec::extractFrames(read_buffer_);
                 for (auto& msg : messages) {
                     std::string_view msg_view(reinterpret_cast<const char*>(msg.data()), msg.size());
                     if (on_message_) {
                         LOG_INFO(std::format("[Client] received: {}", msg_view));
-                        on_message_(::network::Message(std::move(msg)));
+                        on_message_(common::network::RawMessage(std::move(msg)));
                     } else {
                         LOG_INFO(std::format("[Client] message dropped: {}", msg_view));
                     }
@@ -102,7 +102,7 @@ void Client::doRead() {
         }));
 }
 
-void Client::send(::network::Message message) {
+void Client::send(common::network::RawMessage message) {
     boost::asio::post(strand_, [this, message = std::move(message)]() {
         if (!isConnected() || !socket_.is_open()) {
             LOG_ERROR(std::format("[Client] cannot send – socket closed or disconnected"));
@@ -110,7 +110,7 @@ void Client::send(::network::Message message) {
         }
 
         // Encode the raw message into a frame
-        auto encoded = ::network::FrameCodec::encodeFrame(message.buffer);
+        auto encoded = common::network::FrameCodec::encodeFrame(message.buffer);
         if (encoded.empty()) {
             LOG_ERROR(std::format("[Client] encoding failed"));
             return;
@@ -122,7 +122,7 @@ void Client::send(::network::Message message) {
             return;
         }
 
-        write_queue_.push_back(::network::Message(std::move(encoded)));
+        write_queue_.push_back(common::network::RawMessage(std::move(encoded)));
 
         // Start writing if not already in progress
         if (!writing_) {

@@ -1,17 +1,18 @@
-#include <C:/Users/qt96334/.conan2/p/b/gtestfde03c87b0d12/p/include/gtest/gtest.h>
-#include <common/game_state_dto.h>
+#include <common/network/game_state_dto.h>
+#include <gtest/gtest.h>
 #include <ui/render_game_state.h>
 
 using namespace dungeons::client::ui;
 
 // Helper to create a simple map with given bounds and optional barriers
-static ::network::DungeonSnapshot makeMap(uint64_t blc_x,
-                                          uint64_t blc_y,
-                                          uint64_t trc_x,
-                                          uint64_t trc_y,
-                                          std::vector<::network::BarrierSnapshot> barriers = {},
-                                          std::vector<::network::EntitySnapshot> entities = {}) {
-    ::network::DungeonSnapshot snap;
+static dungeons::common::network::DungeonSnapshot makeMap(
+    uint64_t blc_x,
+    uint64_t blc_y,
+    uint64_t trc_x,
+    uint64_t trc_y,
+    std::vector<dungeons::common::network::BarrierSnapshot> barriers = {},
+    std::vector<dungeons::common::network::EntitySnapshot> entities = {}) {
+    dungeons::common::network::DungeonSnapshot snap;
     snap.game_map.blc_x = blc_x;
     snap.game_map.blc_y = blc_y;
     snap.game_map.trc_x = trc_x;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <common/message_types.h>
+#include <common/types/message_types.h>
 #include <string_view>
 
 namespace dungeons::client::ui {
@@ -23,35 +23,36 @@ struct overloaded : Ts... {
 template <class... Ts>
 overloaded(Ts...) -> overloaded<Ts...>;
 
-[[nodiscard]] inline std::string_view commandFromMessageType(const message::MessageTypeVariant& type) noexcept {
+[[nodiscard]] inline std::string_view commandFromMessageType(const common::types::MessageTypeVariant& type) noexcept {
+    using namespace common::types;
     using namespace commands;
-    return std::visit(overloaded{[](message::NetworkMessageType net_type) noexcept -> std::string_view {
+    return std::visit(overloaded{[](NetworkMessageType net_type) noexcept -> std::string_view {
                                      switch (net_type) {
-                                         case message::NetworkMessageType::kJoin:
+                                         case NetworkMessageType::kJoin:
                                              return kJoin;
                                          default:
                                              return kUnknown;
                                      }
                                  },
-                                 [](message::AppMessageType app_type) noexcept -> std::string_view {
+                                 [](AppMessageType app_type) noexcept -> std::string_view {
                                      switch (app_type) {
-                                         case message::AppMessageType::kCreateParty:
+                                         case AppMessageType::kCreateParty:
                                              return kCreateLobby;
-                                         case message::AppMessageType::kListParties:
+                                         case AppMessageType::kListParties:
                                              return kListLobby;
-                                         case message::AppMessageType::kJoinParty:
+                                         case AppMessageType::kJoinParty:
                                              return kJoinLobby;
-                                         case message::AppMessageType::kStartGame:
+                                         case AppMessageType::kStartGame:
                                              return kStartGame;
                                          default:
                                              return kUnknown;
                                      }
                                  },
-                                 [](message::DomainMessageType domain_type) noexcept -> std::string_view {
+                                 [](DomainMessageType domain_type) noexcept -> std::string_view {
                                      switch (domain_type) {
-                                         case message::DomainMessageType::kMove:
+                                         case DomainMessageType::kMove:
                                              return kMove;
-                                         case message::DomainMessageType::kAttack:
+                                         case DomainMessageType::kAttack:
                                              return kAttack;
                                          default:
                                              return kUnknown;

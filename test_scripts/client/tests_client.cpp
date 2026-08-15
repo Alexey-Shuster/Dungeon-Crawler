@@ -1,7 +1,7 @@
-#include <C:/Users/qt96334/.conan2/p/b/gtestfde03c87b0d12/p/include/gtest/gtest.h>
 #include <boost/asio.hpp>
 #include <chrono>
 #include <cstring>
+#include <gtest/gtest.h>
 #include <memory>
 #include <network/client.h>
 #include <string>
@@ -9,6 +9,7 @@
 #include <vector>
 
 using namespace dungeons::client::network;
+using namespace dungeons::common::network;
 using boost::asio::ip::tcp;
 
 // Helper: Simple echo server for testing
@@ -72,9 +73,9 @@ private:
 };
 
 // Helper to convert string to MessageData
-static network::Message toMessageData(const std::string& str) {
-    network::ByteBuffer buf{str.begin(), str.end()};
-    return network::Message(std::move(buf));
+static RawMessage toMessageData(const std::string& str) {
+    ByteBuffer buf{str.begin(), str.end()};
+    return RawMessage(std::move(buf));
 }
 
 class ClientTest : public ::testing::Test {
@@ -222,7 +223,7 @@ TEST_F(ClientTest, SendEmptyMessage) {
     client->startConnect("127.0.0.1", port);
     runIO(io, 200);
 
-    EXPECT_NO_THROW(client->send(network::Message{network::ByteBuffer{}}));
+    EXPECT_NO_THROW(client->send(RawMessage{ByteBuffer{}}));
     runIO(io, 200);
     server.stop();
 }
@@ -480,8 +481,8 @@ TEST_F(ClientTest, SendBinaryData) {
     runIO(io, 200);
 
     // Send binary data
-    network::ByteBuffer binaryData = {0x01, 0x02, 0x03, 0xFF, 0x00, 0x7F, 0x80, 0xDE, 0xAD, 0xBE, 0xEF};
-    EXPECT_NO_THROW(client->send(network::Message(std::move(binaryData))));
+    ByteBuffer binaryData = {0x01, 0x02, 0x03, 0xFF, 0x00, 0x7F, 0x80, 0xDE, 0xAD, 0xBE, 0xEF};
+    EXPECT_NO_THROW(client->send(RawMessage(std::move(binaryData))));
     runIO(io, 200);
     server.stop();
 }
@@ -495,8 +496,8 @@ TEST_F(ClientTest, SendMessageDataDirectly) {
     client->startConnect("127.0.0.1", port);
     runIO(io, 200);
 
-    network::ByteBuffer data = {0x48, 0x65, 0x6C, 0x6C, 0x6F};  // "Hello"
-    EXPECT_NO_THROW(client->send(network::Message(std::move(data))));
+    ByteBuffer data = {0x48, 0x65, 0x6C, 0x6C, 0x6F};  // "Hello"
+    EXPECT_NO_THROW(client->send(RawMessage(std::move(data))));
     runIO(io, 200);
     server.stop();
 }

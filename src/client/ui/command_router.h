@@ -10,6 +10,6 @@ namespace dungeons::client::ui {
 
 class Client;
 
-std::optional<::network::Message> routeCommand(const std::string& line, const ConsoleOutput& output);
+std::optional<common::network::RawMessage> routeCommand(const std::string& line, const ConsoleOutput& output);
 
 }  // namespace dungeons::client::ui

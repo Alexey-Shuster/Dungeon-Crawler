@@ -1,8 +1,8 @@
 #include "render_game_state.h"
 
-#include <common/logger.h>
-#include <common/number_utils.h>
-#include <common/string_utils.h>
+#include <common/utility/logger.h>
+#include <common/utility/number_utils.h>
+#include <common/utility/string_utils.h>
 #include <cstdint>  // IWYU pragma: keep // uint64_t
 #include <format>
 #include <limits>
@@ -43,7 +43,7 @@ constexpr size_t kMaxMapCells = 200 * 200;
 
 }  // namespace
 
-std::vector<std::string> renderGameState(const network::DungeonSnapshot& snapshot) {
+std::vector<std::string> renderGameState(const common::network::DungeonSnapshot& snapshot) {
     const auto& map = snapshot.game_map;
 
     uint64_t minX = map.blc_x;
@@ -51,8 +51,10 @@ std::vector<std::string> renderGameState(const network::DungeonSnapshot& snapsho
     uint64_t minY = map.blc_y;
     uint64_t maxY = map.trc_y;
 
+    using namespace common::utility;
+
     if (maxX < minX || maxY < minY) {
-        std::string msg = utility::joinWithSpace(kRenderGameState, kInvalidCoordinates);
+        std::string msg = joinWithSpace(kRenderGameState, kInvalidCoordinates);
         LOG_INFO(msg);
         return {msg};
     }
@@ -61,7 +63,7 @@ std::vector<std::string> renderGameState(const network::DungeonSnapshot& snapsho
     uint64_t diffY = maxY - minY;
 
     if (diffX == std::numeric_limits<uint64_t>::max() || diffY == std::numeric_limits<uint64_t>::max()) {
-        std::string msg = utility::joinWithSpace(kRenderGameState, kCoordinateOverflow);
+        std::string msg = joinWithSpace(kRenderGameState, kCoordinateOverflow);
         LOG_INFO(msg);
         return {msg};
     }
@@ -70,7 +72,7 @@ std::vector<std::string> renderGameState(const network::DungeonSnapshot& snapsho
     uint64_t h64 = diffY + 1;
 
     if (std::cmp_greater(w64, kMaxMapCells / h64)) {
-        std::string msg = utility::joinWithSpace(kRenderGameState, kTooLargeMsg, kMaxMapCells);
+        std::string msg = joinWithSpace(kRenderGameState, kTooLargeMsg, kMaxMapCells);
         LOG_INFO(msg);
         return {msg};
     }
@@ -85,7 +87,7 @@ std::vector<std::string> renderGameState(const network::DungeonSnapshot& snapsho
     for (const auto& barrier : map.barriers) {
         uint64_t x = barrier.pos_x;
         uint64_t y = barrier.pos_y;
-        if (utility::isBetween(x, minX, maxX) && utility::isBetween(y, minY, maxY)) {
+        if (isBetween(x, minX, maxX) && isBetween(y, minY, maxY)) {
             grid[static_cast<size_t>(y - minY)][static_cast<size_t>(x - minX)] = kBarrierSymbol;
         }
     }
@@ -94,7 +96,7 @@ std::vector<std::string> renderGameState(const network::DungeonSnapshot& snapsho
     for (const auto& entity : snapshot.entities) {
         uint64_t x = entity.pos_x;
         uint64_t y = entity.pos_y;
-        if (utility::isBetween(x, minX, maxX) && utility::isBetween(y, minY, maxY)) {
+        if (isBetween(x, minX, maxX) && isBetween(y, minY, maxY)) {
             char symbol = kUnknownSymbol;
             switch (entity.type) {
                 case kEntityTypePlayer:

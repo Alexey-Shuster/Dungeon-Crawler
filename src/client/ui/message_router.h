@@ -6,6 +6,6 @@
 
 namespace dungeons::client::ui {
 
-void routeMessage(::network::Message data, const ConsoleOutput& output);
+void routeMessage(common::network::RawMessage data, const ConsoleOutput& output);
 
 }  // namespace dungeons::client::ui
