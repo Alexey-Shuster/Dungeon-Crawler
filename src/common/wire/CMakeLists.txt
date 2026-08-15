@@ -1,5 +1,5 @@
 
-add_library(common_wire STATIC)
+add_library(common_wire OBJECT)
 
 set(COMMON_WIRE_LIB common_wire)
 
@@ -15,8 +15,8 @@ target_sources(${COMMON_WIRE_LIB} PRIVATE
         serder_game_state.cpp
 )
 
-target_include_directories(${COMMON_WIRE_LIB} PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/..
+target_include_directories(${COMMON_WIRE_LIB} INTERFACE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
 )
 
 # for serialization

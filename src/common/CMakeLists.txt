@@ -11,13 +11,13 @@ target_link_libraries(common_deps INTERFACE
         boost_deps
 )
 
-add_library(common INTERFACE)
+add_library(common STATIC)
 
-target_include_directories(common INTERFACE
-        ${CMAKE_CURRENT_SOURCE_DIR}/..
+target_include_directories(common PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
 )
 
-target_link_libraries(common INTERFACE
+target_link_libraries(common PUBLIC
         common_deps
         common_network
         common_types

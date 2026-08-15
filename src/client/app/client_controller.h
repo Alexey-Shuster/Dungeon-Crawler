@@ -1,10 +1,10 @@
 #pragma once
 
+#include <client/network/client_fwd.h>
+#include <client/ui/command_router.h>
 #include <common/network/raw_message.h>
 #include <memory>
-#include <network/client_fwd.h>
 #include <string>
-#include <ui/command_router.h>
 
 namespace dungeons::client::app {
 

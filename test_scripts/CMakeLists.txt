@@ -6,7 +6,7 @@ include(CTest)
 
 add_library(tests_base INTERFACE)
 
-# Только то, что нужно каждому тесту
+# нужно каждому тесту
 target_link_libraries(tests_base INTERFACE
         GTest::gtest_main
 )
