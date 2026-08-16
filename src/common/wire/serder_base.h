@@ -1,8 +1,8 @@
 #pragma once
 
 #include <cbor.h>
+#include <common/network/byte_buffer.h>
 #include <memory>
-#include <network/byte_buffer.h>
 #include <optional>
 #include <vector>
 

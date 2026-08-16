@@ -10,7 +10,7 @@ target_sources(${CLIENT_NETWORK_LIB} PRIVATE
 )
 
 target_include_directories(${CLIENT_NETWORK_LIB} PRIVATE
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 )
 
 target_link_libraries(${CLIENT_NETWORK_LIB} PUBLIC

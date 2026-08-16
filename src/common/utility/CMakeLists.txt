@@ -18,8 +18,8 @@ target_sources(${COMMON_UTILITY_LIB} PRIVATE
         keyboard_reader.cpp
 )
 
-target_include_directories(${COMMON_UTILITY_LIB} INTERFACE
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
+target_include_directories(${COMMON_UTILITY_LIB} PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 )
 
 target_link_libraries(${COMMON_UTILITY_LIB} PUBLIC

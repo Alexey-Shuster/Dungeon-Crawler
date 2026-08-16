@@ -1,5 +1,5 @@
+#include <client/ui/keyboard_controller.h>
 #include <gtest/gtest.h>
-#include <ui/keyboard_controller.h>
 
 using namespace dungeons::client::ui;
 

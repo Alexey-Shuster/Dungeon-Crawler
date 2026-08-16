@@ -17,7 +17,7 @@ target_sources(${CLIENT_UI_LIB} PRIVATE
 )
 
 target_include_directories(${CLIENT_UI_LIB} PRIVATE
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 )
 
 target_link_libraries(${CLIENT_UI_LIB} PUBLIC

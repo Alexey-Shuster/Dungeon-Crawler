@@ -41,6 +41,8 @@ add_test_target(test_client
 )
 
 target_link_libraries(test_client PRIVATE
+        client_network
+        client_ui
         client_app
 )
 
