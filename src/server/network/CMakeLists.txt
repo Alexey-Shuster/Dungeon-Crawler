@@ -1,5 +1,5 @@
 
-add_library(server_network STATIC)
+add_library(server_network OBJECT)
 
 set(SERVER_NETWORK_LIB server_network)
 
@@ -14,8 +14,8 @@ target_sources(${SERVER_NETWORK_LIB} PRIVATE
         session.cpp
 )
 
-target_include_directories(${SERVER_NETWORK_LIB} PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/..
+target_include_directories(${SERVER_NETWORK_LIB} PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 )
 
 target_link_libraries(${SERVER_NETWORK_LIB} PUBLIC

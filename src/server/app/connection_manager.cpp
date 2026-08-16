@@ -2,7 +2,7 @@
 
 #include <common/utility/logger.h>
 #include <format>
-#include <network/session.h>
+#include <server/network/session.h>
 
 namespace dungeons::server::app {
 

@@ -1,8 +1,11 @@
 #include "game_manager.h"
 
-#include <common/utility/logger.h>
 #include <common/utility/config.h>
+#include <common/utility/logger.h>
 #include <format>
+#include <server/domain/dungeon/dungeon.h>
+#include <server/domain/lobby/lobby.h>
+#include <server/domain/lobby/lobby_registry.h>
 
 namespace dungeons::server::app {
 

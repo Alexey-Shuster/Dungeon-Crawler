@@ -2,11 +2,10 @@
 
 #include <boost/signals2.hpp>
 #include <chrono>
-#include <core/event_bus.h>
-#include <domain/events.h>
 #include <memory>
 #include <mutex>
-#include <network/events.h>
+#include <server/core/event_bus.h>
+#include <server/network/events.h>
 #include <unordered_map>
 #include <vector>
 

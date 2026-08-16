@@ -3,9 +3,9 @@
 #include <atomic>
 #include <boost/asio.hpp>
 #include <common/network/raw_message.h>
-#include <core/event_bus.h>
 #include <deque>
 #include <memory>
+#include <server/core/event_bus.h>
 
 #include "types.h"
 

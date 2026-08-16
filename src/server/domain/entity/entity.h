@@ -2,10 +2,10 @@
 
 #include <common/utility/config.h>
 
-#include "domain/map/position.h"
-#include "domain/types.h"
+#include "core/types.h"
 #include "entity_health.h"
 #include "entity_types.h"
+#include "map/position.h"
 
 namespace dungeons::server::domain {
 

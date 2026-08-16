@@ -4,6 +4,7 @@
 #include <format>
 
 #include "lobby.h"
+#include "lobby_registry.h"
 
 namespace dungeons::server::domain {
 

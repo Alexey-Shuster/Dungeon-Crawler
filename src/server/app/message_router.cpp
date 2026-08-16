@@ -2,10 +2,9 @@
 
 #include <common/types/message_types.h>
 #include <common/utility/logger.h>
+#include <common/wire/serder.h>
 #include <format>
 #include <server/app/message_dispatcher.h>
-
-#include "wire/serder.h"
 
 namespace dungeons::server::app {
 
@@ -56,8 +55,7 @@ void MessageRouter::OnRawMessage(const network::RawMessageReceivedEvent& event) 
     if (isNetworkMessage(message->type)) {
         LOG_INFO(std::format("[MessageRouter: Session #{}] message received is NetworkMessage", sid));
         auto type = asNetworkMessage(message->type);
-        if (type.has_value() &&
-            (type == NetworkMessageType::kJoin || type == NetworkMessageType::kReconnect)) {
+        if (type.has_value() && (type == NetworkMessageType::kJoin || type == NetworkMessageType::kReconnect)) {
             LOG_INFO(std::format("[MessageRouter] adding sessionId #{} to event args", sid));
             args->emplace_back(event.session_id.value);
         }
@@ -66,10 +64,9 @@ void MessageRouter::OnRawMessage(const network::RawMessageReceivedEvent& event) 
     if (isAppMessage(message->type)) {
         LOG_INFO(std::format("[MessageRouter: Session #{}] message received is AppMessage", sid));
         auto type = asAppMessage(message->type);
-        if (type.has_value() &&
-            (type == AppMessageType::kJoinParty || type == AppMessageType::kLeaveParty ||
-             type == AppMessageType::kCreateParty || type == AppMessageType::kListParties ||
-             type == AppMessageType::kStartGame)) {
+        if (type.has_value() && (type == AppMessageType::kJoinParty || type == AppMessageType::kLeaveParty ||
+                                 type == AppMessageType::kCreateParty || type == AppMessageType::kListParties ||
+                                 type == AppMessageType::kStartGame)) {
             if (auto pid = checkPlayer(event.session_id)) {
                 LOG_INFO(std::format("[MessageRouter] adding playerId #{} to event args", pid->value));
                 args->emplace_back(pid.value());
@@ -82,8 +79,7 @@ void MessageRouter::OnRawMessage(const network::RawMessageReceivedEvent& event) 
     if (isDomainMessage(message->type)) {
         LOG_INFO(std::format("[MessageRouter: Session #{}] message received is DomainMessage", sid));
         auto type = asDomainMessage(message->type);
-        if (type.has_value() &&
-            (type == DomainMessageType::kMove || type == DomainMessageType::kAttack)) {
+        if (type.has_value() && (type == DomainMessageType::kMove || type == DomainMessageType::kAttack)) {
             if (auto pid = checkPlayer(event.session_id)) {
                 LOG_INFO(std::format("[MessageRouter] adding playerId #{} to event args.", pid->value));
                 args->emplace_back(pid.value());

@@ -1,11 +1,11 @@
 #pragma once
 
-#include <common/types/strong_id.h>
 #include <common/types/direction.h>
+#include <common/types/strong_id.h>
 #include <optional>
 #include <unordered_map>
 
-#include "domain/map/position.h"
+#include "map/position.h"
 
 namespace dungeons::server::domain {
 

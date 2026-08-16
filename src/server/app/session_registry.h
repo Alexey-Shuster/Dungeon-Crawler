@@ -1,12 +1,12 @@
 #pragma once
 
 #include <common/types/strong_id.h>
-#include <domain/types.h>
 #include <memory>
 #include <mutex>
-#include <network/session_fwd.h>
-#include <network/types.h>
 #include <optional>
+#include <server/domain/core/types.h>
+#include <server/network/session_fwd.h>
+#include <server/network/types.h>
 #include <unordered_map>
 #include <vector>
 

@@ -6,8 +6,8 @@
 #include <unordered_set>
 #include <vector>
 
-#include "domain/types.h"
-#include "lobby.h"
+#include "core/types.h"
+#include "lobby_fwd.h"
 
 namespace dungeons::server::domain {
 

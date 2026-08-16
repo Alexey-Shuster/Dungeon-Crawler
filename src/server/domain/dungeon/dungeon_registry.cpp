@@ -6,6 +6,8 @@
 #include <ranges>
 #include <unordered_set>
 
+#include "dungeon.h"
+
 namespace dungeons::server::domain {
 
 bool DungeonRegistry::addDungeon(GameMap game_map, std::vector<PlayerId> player_ids) {

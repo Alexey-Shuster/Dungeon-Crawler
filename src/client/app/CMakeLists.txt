@@ -1,5 +1,5 @@
 
-add_library(client_app OBJECT)
+add_library(client_app STATIC)
 
 set(CLIENT_APP_LIB client_app)
 

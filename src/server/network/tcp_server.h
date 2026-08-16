@@ -2,8 +2,8 @@
 
 #include <atomic>
 #include <boost/asio.hpp>
-#include <core/event_bus.h>
 #include <memory>
+#include <server/core/event_bus.h>
 #include <stdint.h>
 
 namespace dungeons::server::network {

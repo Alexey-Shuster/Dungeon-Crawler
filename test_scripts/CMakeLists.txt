@@ -41,8 +41,6 @@ add_test_target(test_client
 )
 
 target_link_libraries(test_client PRIVATE
-        client_network
-        client_ui
         client_app
 )
 
@@ -79,6 +77,10 @@ add_test_target(test_server
         server/tests_dungeon.cpp
         server/tests_entity_manager.cpp
         server/tests_game_manager.cpp
+)
+
+target_include_directories(test_server PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/../src/server/domain
 )
 
 target_link_libraries(test_server PRIVATE

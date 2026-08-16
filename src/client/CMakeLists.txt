@@ -12,7 +12,5 @@ target_include_directories(dungeons_client PRIVATE
 )
 
 target_link_libraries(dungeons_client PRIVATE
-        client_network
-        client_ui
         client_app
 )

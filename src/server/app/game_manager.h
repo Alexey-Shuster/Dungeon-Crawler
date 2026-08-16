@@ -2,12 +2,12 @@
 
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/strand.hpp>
-#include <core/event_bus.h>
-#include <core/events.h>
-#include <domain/dungeon/dungeon_registry.h>
-#include <domain/events.h>
-#include <domain/lobby/lobby_registry.h>
 #include <memory>
+#include <server/core/event_bus.h>
+#include <server/core/events.h>
+#include <server/domain/core/events.h>
+#include <server/domain/dungeon/dungeon_registry.h>
+#include <server/domain/lobby/lobby_registry_fwd.h>
 #include <vector>
 
 namespace dungeons::server::app {
