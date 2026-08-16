@@ -1,10 +1,10 @@
 #pragma once
 
 #include <common/types/direction.h>
-#include <core/event_type.h>
+#include <server/core/event_type.h>
 #include <vector>
 
-#include "domain/dungeon/dungeon_state.h"
+#include "dungeon/dungeon_state.h"
 #include "event_base.h"
 
 namespace dungeons::server::domain {

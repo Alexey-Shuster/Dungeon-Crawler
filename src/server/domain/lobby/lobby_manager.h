@@ -3,13 +3,14 @@
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/strand.hpp>
 #include <boost/signals2.hpp>
-#include <core/event_bus.h>
 #include <functional>
 #include <memory>
+#include <server/core/event_bus.h>
 #include <vector>
 
-#include "domain/events.h"
-#include "lobby_registry.h"
+#include "core/events.h"
+#include "lobby_fwd.h"
+#include "lobby_registry_fwd.h"
 
 namespace dungeons::server::domain {
 

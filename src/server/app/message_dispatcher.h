@@ -17,12 +17,12 @@
 #include <common/types/message_utils.h>
 #include <common/utility/logger.h>
 #include <common/wire/serder.h>
-#include <core/event_base.h>
-#include <domain/events.h>
-#include <domain/types.h>
 #include <functional>
 #include <memory>
 #include <optional>
+#include <server/core/event_base.h>
+#include <server/domain/core/events.h>
+#include <server/domain/core/types.h>
 #include <type_traits>
 #include <unordered_map>
 

@@ -1,10 +1,10 @@
 #pragma once
 
 #include <boost/signals2/signal.hpp>
-#include <core/event_bus.h>
-#include <domain/types.h>
 #include <memory>
-#include <network/events.h>
+#include <server/core/event_bus.h>
+#include <server/domain/core/types.h>
+#include <server/network/events.h>
 
 #include "session_registry.h"
 

@@ -1,5 +1,5 @@
 
-add_library(client_ui STATIC)
+add_library(client_ui OBJECT)
 
 set(CLIENT_UI_LIB client_ui)
 
@@ -16,8 +16,8 @@ target_sources(${CLIENT_UI_LIB} PRIVATE
         message_router.cpp
 )
 
-target_include_directories(${CLIENT_UI_LIB} PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/..
+target_include_directories(${CLIENT_UI_LIB} PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 )
 
 target_link_libraries(${CLIENT_UI_LIB} PUBLIC

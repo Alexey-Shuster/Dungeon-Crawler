@@ -1,9 +1,9 @@
 #include <boost/asio.hpp>
 #include <chrono>
+#include <client/network/client.h>
 #include <cstring>
 #include <gtest/gtest.h>
 #include <memory>
-#include <network/client.h>
 #include <string>
 #include <thread>
 #include <vector>

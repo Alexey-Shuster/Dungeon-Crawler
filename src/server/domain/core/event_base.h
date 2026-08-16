@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/event_base.h"
+#include "server/core/event_base.h"
 #include "types.h"
 
 namespace dungeons::server::domain {

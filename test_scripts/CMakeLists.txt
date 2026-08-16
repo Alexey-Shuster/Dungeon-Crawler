@@ -1,14 +1,20 @@
 
-# Gtest
+# region GTEST_SETUP
 find_package(GTest CONFIG REQUIRED)
 include(GoogleTest)
 include(CTest)
+# endregion
 
-add_library(tests_base INTERFACE)
+# region TESTS_BASE_CONFIGURATION
+add_library(tests_base STATIC)
 
-# Только то, что нужно каждому тесту
-target_link_libraries(tests_base INTERFACE
+target_sources(tests_base PRIVATE
+        tests_init_config_logger.cpp
+)
+
+target_link_libraries(tests_base PUBLIC
         GTest::gtest_main
+        common
 )
 
 # Отключение предупреждений nodiscard
@@ -17,23 +23,10 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
 elseif (MSVC)
     target_compile_options(tests_base INTERFACE /wd4834)
 endif ()
+# endregion
 
-function(add_test_target TARGET_NAME INIT_SRC)
-    get_filename_component(INIT_SRC_NAME "${INIT_SRC}" NAME)
-
-    if (NOT "${INIT_SRC_NAME}" STREQUAL "tests_init_config_logger.cpp")
-        message(FATAL_ERROR "add_test_target: Main source for '${TARGET_NAME}' must be exactly 'tests_init_config_logger.cpp'. Given: '${INIT_SRC}'")
-    endif ()
-
-    # ${ARGN} автоматически собирает все аргументы, переданные после TARGET_NAME
-    add_executable(${TARGET_NAME} ${INIT_SRC} ${ARGN})
-
-    target_link_libraries(${TARGET_NAME} PRIVATE tests_base)
-
-    gtest_discover_tests(${TARGET_NAME})
-endfunction()
-
-add_test_target(test_client
+# region TEST_TARGETS
+add_executable(test_client
         tests_init_config_logger.cpp
         client/tests_client.cpp
         client/tests_keyboard_controller.cpp
@@ -41,10 +34,12 @@ add_test_target(test_client
 )
 
 target_link_libraries(test_client PRIVATE
+        tests_base
         client_app
 )
+gtest_discover_tests(test_client)
 
-add_test_target(test_common
+add_executable(test_common
         tests_init_config_logger.cpp
         common/tests_config.cpp
         common/tests_frame_codec.cpp
@@ -56,14 +51,16 @@ add_test_target(test_common
 )
 
 target_link_libraries(test_common PRIVATE
+        tests_base
         common
 )
+gtest_discover_tests(test_common)
 
 if (BUILD_TESTS)
     target_compile_definitions(test_common PRIVATE BUILD_TESTS)
 endif ()
 
-add_test_target(test_server
+add_executable(test_server
         tests_init_config_logger.cpp
         server/tests_eventbus.cpp
         server/tests_session.cpp
@@ -79,6 +76,13 @@ add_test_target(test_server
         server/tests_game_manager.cpp
 )
 
+target_include_directories(test_server PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/../src/server/domain
+)
+
 target_link_libraries(test_server PRIVATE
+        tests_base
         server_app
 )
+gtest_discover_tests(test_server)
+# endregion

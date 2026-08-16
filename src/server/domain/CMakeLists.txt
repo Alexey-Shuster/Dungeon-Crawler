@@ -1,17 +1,19 @@
 
-add_library(server_domain STATIC)
+add_library(server_domain OBJECT)
 
 set(SERVER_DOMAIN_LIB server_domain)
 
 target_sources(${SERVER_DOMAIN_LIB} PRIVATE
-        event_base.h
-        events.h
-        types.h
+        core/event_base.h
+        core/events.h
+        core/types.h
         dungeon/collision_check.h
         dungeon/command_queue.h
         dungeon/direction_gen.h
+        dungeon/dungeon_fwd.h
         dungeon/dungeon.h
         dungeon/dungeon.cpp
+        dungeon/dungeon_registry_fwd.h
         dungeon/dungeon_registry.h
         dungeon/dungeon_registry.cpp
         dungeon/entity_manager.h
@@ -24,8 +26,10 @@ target_sources(${SERVER_DOMAIN_LIB} PRIVATE
         entity/entity.h
         entity/entity_health.h
         entity/entity_types.h
+        lobby/lobby_fwd.h
         lobby/lobby.h
         lobby/lobby.cpp
+        lobby/lobby_registry_fwd.h
         lobby/lobby_registry.h
         lobby/lobby_registry.cpp
         lobby/lobby_manager.h
@@ -36,8 +40,8 @@ target_sources(${SERVER_DOMAIN_LIB} PRIVATE
         map/game_map.cpp
 )
 
-target_include_directories(${SERVER_DOMAIN_LIB} PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/..
+target_include_directories(${SERVER_DOMAIN_LIB} PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 )
 
 target_link_libraries(${SERVER_DOMAIN_LIB} PUBLIC

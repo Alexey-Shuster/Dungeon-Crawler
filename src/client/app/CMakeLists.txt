@@ -8,12 +8,11 @@ target_sources(${CLIENT_APP_LIB} PRIVATE
         client_controller.cpp
 )
 
-target_include_directories(${CLIENT_APP_LIB} PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/..
+target_include_directories(${CLIENT_APP_LIB} PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
 )
 
 target_link_libraries(${CLIENT_APP_LIB} PUBLIC
-        common
         client_network
         client_ui
 )

@@ -9,11 +9,11 @@
  */
 
 #include <cbor.h>
+#include <common/network/byte_buffer.h>
+#include <common/types/message_types.h>
+#include <common/utility/logger.h>
 #include <memory>
-#include <network/byte_buffer.h>
 #include <optional>
-#include <types/message_types.h>
-#include <utility/logger.h>
 #include <vector>
 
 #include "serder_base.h"

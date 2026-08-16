@@ -1,5 +1,5 @@
 
-add_library(common_utility STATIC)
+add_library(common_utility OBJECT)
 
 set(COMMON_UTILITY_LIB common_utility)
 
@@ -18,8 +18,8 @@ target_sources(${COMMON_UTILITY_LIB} PRIVATE
         keyboard_reader.cpp
 )
 
-target_include_directories(${COMMON_UTILITY_LIB} PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/..
+target_include_directories(${COMMON_UTILITY_LIB} PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 )
 
 target_link_libraries(${COMMON_UTILITY_LIB} PUBLIC
@@ -29,7 +29,7 @@ target_link_libraries(${COMMON_UTILITY_LIB} PUBLIC
 # for KeyboardReader on Linux
 if (NOT WIN32)
     find_package(X11 REQUIRED)
-    target_link_libraries(${COMMON_UTILITY_LIB} PUBLIC
+    target_link_libraries(${COMMON_UTILITY_LIB} PRIVATE
             X11::X11
     )
 endif ()

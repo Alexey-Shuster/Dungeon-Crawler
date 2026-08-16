@@ -5,7 +5,7 @@
 
 #include "collision_check.h"
 #include "direction_gen.h"
-#include "domain/entity/entity.h"
+#include "entity/entity.h"
 #include "entity_manager.h"
 
 namespace dungeons::server::domain {

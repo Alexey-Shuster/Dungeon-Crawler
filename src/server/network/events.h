@@ -1,9 +1,9 @@
 #pragma once
 
 #include <common/network/raw_message.h>
-#include <core/event_base.h>
-#include <core/event_type.h>
 #include <memory>
+#include <server/core/event_base.h>
+#include <server/core/event_type.h>
 
 #include "session_event.h"
 #include "session_fwd.h"

@@ -1,6 +1,6 @@
+#include <client/ui/render_game_state.h>
 #include <common/network/game_state_dto.h>
 #include <gtest/gtest.h>
-#include <ui/render_game_state.h>
 
 using namespace dungeons::client::ui;
 

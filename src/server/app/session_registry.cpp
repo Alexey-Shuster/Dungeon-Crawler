@@ -2,8 +2,7 @@
 
 #include <boost/format.hpp>
 #include <common/utility/logger.h>
-#include <domain/types.h>
-#include <network/session.h>
+#include <server/network/session.h>
 #include <ranges>
 
 namespace dungeons::server::app {

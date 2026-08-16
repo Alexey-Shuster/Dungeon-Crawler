@@ -1,7 +1,7 @@
 #pragma once
 
-#include "domain/event_base.h"
-#include "network/events.h"
+#include <server/domain/core/event_base.h>
+#include <server/network/events.h>
 
 namespace dungeons::server::app {
 
@@ -85,4 +85,4 @@ struct PlayerReconnectionFailedEvent : network::SessionEvent, domain::PlayerEven
     }
 };
 
-}
+}  // namespace dungeons::server::app

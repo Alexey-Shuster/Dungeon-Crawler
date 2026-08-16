@@ -2,7 +2,7 @@
 
 #include <common/types/message_types.h>
 #include <common/wire/serder_game_state.h>
-#include <domain/dungeon/create_game_state.h>
+#include <server/domain/dungeon/create_game_state.h>
 
 #include "events.h"
 

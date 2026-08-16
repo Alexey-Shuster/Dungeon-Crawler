@@ -3,7 +3,7 @@
 #include <chrono>
 #include <unordered_map>
 
-#include "domain/types.h"
+#include "core/types.h"
 
 namespace dungeons::server::domain {
 
