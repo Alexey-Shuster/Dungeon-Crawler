@@ -69,6 +69,9 @@ add_executable(test_server
         server/tests_dungeon.cpp
         server/tests_entity_manager.cpp
         server/tests_game_manager.cpp
+        server/tests_collision_check.cpp
+        server/tests_game_map.cpp
+        server/tests_monster_control.cpp
 )
 
 target_link_libraries(test_server PRIVATE

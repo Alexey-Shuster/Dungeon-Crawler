@@ -11,7 +11,7 @@ public:
         : gen_(std::random_device{}())
         , dist_(0, 3) {}
 
-    common::types::Direction generate() const {
+    virtual common::types::Direction generate() const {
         return static_cast<common::types::Direction>(dist_(gen_));
     }
 

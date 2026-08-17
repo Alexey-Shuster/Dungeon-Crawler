@@ -21,7 +21,7 @@ bool GameMap::addBarrier(const Position& position) {
                               position.y));
         return false;
     }
-    if (!isBarrier(position)) {
+    if (isBarrier(position)) {
         LOG_ERROR(
             std::format("Cannot add barrier at position ({}, {}): barrier already exists", position.x, position.y));
         return false;
@@ -31,7 +31,8 @@ bool GameMap::addBarrier(const Position& position) {
         LOG_INFO(std::format("Barrier added at position ({}, {})", position.x, position.y));
         return true;
     } else {
-        LOG_ERROR(std::format("Barrier already exists at position ({}, {}), addition skipped", position.x, position.y));
+        // safety net
+        LOG_ERROR(std::format("Unexpected failure adding barrier at ({}, {})", position.x, position.y));
         return false;
     }
 }
