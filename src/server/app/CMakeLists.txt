@@ -20,7 +20,6 @@ target_sources(${SERVER_APP_LIB} PRIVATE
 
 target_include_directories(${SERVER_APP_LIB} PRIVATE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../domain>
 )
 
 target_link_libraries(${SERVER_APP_LIB} PUBLIC

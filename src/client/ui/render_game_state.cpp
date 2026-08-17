@@ -80,37 +80,24 @@ std::vector<std::string> renderGameState(const common::network::DungeonSnapshot&
     size_t width = static_cast<size_t>(w64);
     size_t height = static_cast<size_t>(h64);
 
-    // Initialise grid with floor
+    // Initialize grid with floor
     std::vector<std::string> grid(height, std::string(width, kFloorSymbol));
 
-    // Place barriers
-    for (const auto& barrier : map.barriers) {
-        uint64_t x = barrier.pos_x;
-        uint64_t y = barrier.pos_y;
-        if (isBetween(x, minX, maxX) && isBetween(y, minY, maxY)) {
-            grid[static_cast<size_t>(y - minY)][static_cast<size_t>(x - minX)] = kBarrierSymbol;
-        }
-    }
-
-    // Place entities (overwrites barriers)
-    for (const auto& entity : snapshot.entities) {
-        uint64_t x = entity.pos_x;
-        uint64_t y = entity.pos_y;
-        if (isBetween(x, minX, maxX) && isBetween(y, minY, maxY)) {
-            char symbol = kUnknownSymbol;
-            switch (entity.type) {
-                case kEntityTypePlayer:
-                    symbol = kPlayerSymbol;
-                    break;
-                case kEntityTypeMonster:
-                    symbol = kMonsterSymbol;
-                    break;
-                default:
-                    break;
+    // Helper to place any item type that has pos_x / pos_y onto the grid
+    auto placeOnGrid = [&](const auto& items, char symbol) {
+        for (const auto& item : items) {
+            uint64_t x = item.pos_x;
+            uint64_t y = item.pos_y;
+            if (isBetween(x, minX, maxX) && isBetween(y, minY, maxY)) {
+                grid[static_cast<size_t>(y - minY)][static_cast<size_t>(x - minX)] = symbol;
             }
-            grid[static_cast<size_t>(y - minY)][static_cast<size_t>(x - minX)] = symbol;
         }
-    }
+    };
+
+    // Place barriers, players, and mobs
+    placeOnGrid(map.barriers, kBarrierSymbol);
+    placeOnGrid(snapshot.players, kPlayerSymbol);
+    placeOnGrid(snapshot.mobs, kMonsterSymbol);
 
     std::vector<std::string> lines;
     lines.reserve(height + 4);
@@ -129,23 +116,15 @@ std::vector<std::string> renderGameState(const common::network::DungeonSnapshot&
     }
 
     lines.push_back(border);
-    lines.emplace_back(std::format("{} {}", kEntitiesMsg, snapshot.entities.size()));
+    size_t totalEntities = snapshot.players.size() + snapshot.mobs.size();
+    lines.emplace_back(std::format("{} {}", kEntitiesMsg, totalEntities));
 
     // Display HP info for each entity
-    for (const auto& entity : snapshot.entities) {
-        std::string_view typeStr;
-        switch (entity.type) {
-            case kEntityTypePlayer:
-                typeStr = kPlayerTypeString;
-                break;
-            case kEntityTypeMonster:
-                typeStr = kMonsterTypeString;
-                break;
-            default:
-                typeStr = kUnknownTypeString;
-                break;
-        }
-        lines.emplace_back(std::format("  Entity {} ({}) HP: {}", entity.id, typeStr, entity.hp));
+    for (const auto& player : snapshot.players) {
+        lines.emplace_back(std::format("  Entity {} ({}) HP: {}", player.id, kPlayerTypeString, player.hp));
+    }
+    for (const auto& mob : snapshot.mobs) {
+        lines.emplace_back(std::format("  Entity {} ({}) HP: {}", mob.id, kMonsterTypeString, mob.hp));
     }
 
     return lines;

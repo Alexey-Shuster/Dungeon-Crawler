@@ -1,8 +1,9 @@
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
 #include <boost/asio.hpp>
 #include <chrono>
+#include <common/utility/config.h>
 #include <future>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 #include <memory>
 #include <optional>
 #include <server/app/connection_manager.h>
@@ -128,7 +129,8 @@ TEST_F(ConnectionManagerTest, ReconnectRequestedTimeoutExceeded) {
     event_bus_->publish(ClientDisconnectedEvent(session));
     EXPECT_EQ(registry_->size(), 0);
 
-    std::this_thread::sleep_for(std::chrono::seconds(31));
+    auto& cfg = dungeons::common::utility::getSettings();
+    std::this_thread::sleep_for(cfg.server.client_disconnect_timeout + std::chrono::seconds(1));
 
     auto new_session = createTestSession(sid);
     registry_->addSession(new_session);

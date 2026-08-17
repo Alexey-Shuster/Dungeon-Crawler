@@ -2,8 +2,8 @@
 
 #include <random>
 
-#include "map/game_map.h"
-#include "map/position.h"
+#include "server/domain/map/game_map.h"
+#include "server/domain/map/position.h"
 
 namespace dungeons::server::domain {
 

@@ -47,7 +47,7 @@ public:
         uint16_t port = 8080;
         uint16_t max_players = 100;
         std::chrono::milliseconds tick_rate = std::chrono::milliseconds(100);
-        std::chrono::seconds client_disconnect_timeout = std::chrono::seconds(60);
+        std::chrono::seconds client_disconnect_timeout = std::chrono::seconds(10);
     } server;
 
     struct Database {

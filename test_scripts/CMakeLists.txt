@@ -6,15 +6,10 @@ include(CTest)
 # endregion
 
 # region TESTS_BASE_CONFIGURATION
-add_library(tests_base STATIC)
+add_library(tests_base INTERFACE)
 
-target_sources(tests_base PRIVATE
-        tests_init_config_logger.cpp
-)
-
-target_link_libraries(tests_base PUBLIC
+target_link_libraries(tests_base INTERFACE
         GTest::gtest_main
-        common
 )
 
 # Отключение предупреждений nodiscard
@@ -74,10 +69,6 @@ add_executable(test_server
         server/tests_dungeon.cpp
         server/tests_entity_manager.cpp
         server/tests_game_manager.cpp
-)
-
-target_include_directories(test_server PRIVATE
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/../src/server/domain
 )
 
 target_link_libraries(test_server PRIVATE

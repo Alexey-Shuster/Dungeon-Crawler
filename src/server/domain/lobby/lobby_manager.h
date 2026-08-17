@@ -8,9 +8,9 @@
 #include <server/core/event_bus.h>
 #include <vector>
 
-#include "core/events.h"
 #include "lobby_fwd.h"
 #include "lobby_registry_fwd.h"
+#include "server/domain/core/events.h"
 
 namespace dungeons::server::domain {
 

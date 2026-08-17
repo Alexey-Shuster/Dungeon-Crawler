@@ -2,22 +2,21 @@
 
 #include <atomic>
 #include <chrono>
+#include <common/network/game_state_dto_fwd.h>
 #include <common/types/direction.h>
 #include <common/utility/config.h>
 #include <memory>
-#include <optional>
 #include <vector>
 
 #include "collision_check.h"
 #include "command_queue.h"
-#include "core/types.h"
 #include "direction_gen.h"
-#include "dungeon_state.h"
-#include "entity/entity.h"
 #include "entity_manager.h"
-#include "map/game_map.h"
 #include "monster_control.h"
 #include "position_gen.h"
+#include "server/domain/core/types.h"
+#include "server/domain/entity/entity.h"
+#include "server/domain/map/game_map.h"
 #include "spawner.h"
 
 namespace dungeons::server::domain {
@@ -29,7 +28,7 @@ public:
 
     void addPlayerAttackCommand(PlayerId player_id, uint32_t damage);
     void addMovePlayerCommand(PlayerId player_id, common::types::Direction direction);
-    std::optional<DungeonState> processTick(std::chrono::milliseconds time_delta);
+    std::shared_ptr<common::network::DungeonSnapshot> processTick(std::chrono::milliseconds time_delta);
     std::vector<PlayerId> getPlayers() const;
 
 private:

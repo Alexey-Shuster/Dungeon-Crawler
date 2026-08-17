@@ -5,7 +5,7 @@
 #include <optional>
 #include <unordered_map>
 
-#include "map/position.h"
+#include "server/domain/map/position.h"
 
 namespace dungeons::server::domain {
 

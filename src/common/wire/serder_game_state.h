@@ -5,7 +5,8 @@
 namespace dungeons::common::wire {
 
 inline const char* kMap = "map";
-inline const char* kEntities = "entities";
+inline const char* kPlayers = "players";
+inline const char* kMobs = "mobs";
 
 std::optional<network::ByteBuffer> serializeGameState(const network::DungeonSnapshot& snapshot);
 

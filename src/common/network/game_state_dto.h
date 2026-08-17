@@ -36,7 +36,8 @@ struct GameMapSnapshot {
 
 struct DungeonSnapshot {
     GameMapSnapshot game_map;
-    std::vector<EntitySnapshot> entities;
+    std::vector<EntitySnapshot> players;
+    std::vector<EntitySnapshot> mobs;
 
     auto operator<=>(const DungeonSnapshot&) const = default;
 };

@@ -6,6 +6,7 @@
 #include <memory>
 #include <server/app/game_manager.h>
 #include <server/core/event_bus.h>
+#include <server/domain/dungeon/dungeon_registry.h>
 #include <server/domain/lobby/lobby.h>
 #include <server/domain/lobby/lobby_registry.h>
 #include <thread>

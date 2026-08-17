@@ -4,9 +4,9 @@
 #include <common/network/raw_message.h>
 #include <common/utility/logger.h>
 #include <common/wire/serder.h>
+#include <memory>
 #include <server/core/event_bus.h>
 #include <server/domain/core/events.h>
-#include <memory>
 #include <server/network/session.h>
 #include <vector>
 

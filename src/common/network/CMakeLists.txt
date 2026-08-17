@@ -7,6 +7,7 @@ target_sources(${COMMON_NETWORK_LIB} PRIVATE
         byte_buffer.h
         raw_message.h
         frame_codec.h
+        game_state_dto_fwd.h
         game_state_dto.h
 )
 

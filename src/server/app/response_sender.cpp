@@ -2,7 +2,6 @@
 
 #include <common/types/message_types.h>
 #include <common/wire/serder_game_state.h>
-#include <server/domain/dungeon/create_game_state.h>
 
 #include "events.h"
 
@@ -86,11 +85,12 @@ void ResponseSender::onListLobbiesResponse(const domain::ListLobbiesResponseEven
 
 void ResponseSender::onGameStateUpdate(const domain::GameStateUpdateEvent& event) {
     LOG_INFO("ResponseSender::onGameStateUpdate");
-    if (event.dungeon_state.players.empty()) {
+    // TODO: refine logic
+    if (!event.dungeon_snapshot || event.dungeon_snapshot->players.empty()) {
         return;
     }
-    auto game_state = domain::createGameStateDTO(event.dungeon_state);
-    auto game_state_msg = common::wire::serializeGameState(game_state);
+
+    auto game_state_msg = common::wire::serializeGameState(*event.dungeon_snapshot);
     if (game_state_msg.has_value()) {
         // TODO: send to players in dungeon
         for (const auto& session : session_registry_->getAllSessions()) {
