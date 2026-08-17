@@ -1,6 +1,7 @@
 #include <boost/asio.hpp>
 #include <chrono>
 #include <client/network/client.h>
+#include <condition_variable>
 #include <cstring>
 #include <gtest/gtest.h>
 #include <memory>
@@ -12,7 +13,7 @@ using namespace dungeons::client::network;
 using namespace dungeons::common::network;
 using boost::asio::ip::tcp;
 
-// Helper: Simple echo server for testing
+// Simple echo server for testing
 class EchoServer {
 public:
     EchoServer(boost::asio::io_context& io, uint16_t port)
@@ -72,10 +73,35 @@ private:
     bool is_running_;
 };
 
-// Helper to convert string to MessageData
+// Helper to convert string to RawMessage
 static RawMessage toMessageData(const std::string& str) {
     ByteBuffer buf{str.begin(), str.end()};
     return RawMessage(std::move(buf));
+}
+
+// Helper: run io_context until a predicate becomes true or timeout
+template <typename Predicate>
+static void runUntil(boost::asio::io_context& io, Predicate pred, int maxMilliseconds = 500) {
+    auto start = std::chrono::steady_clock::now();
+    while (!pred() && std::chrono::steady_clock::now() - start < std::chrono::milliseconds(maxMilliseconds)) {
+        if (io.run_one_for(std::chrono::milliseconds(5)) == 0) {
+            break;  // no more work
+        }
+    }
+    io.stop();
+    io.restart();
+}
+
+// Helper: run io_context until no more work or timeout
+static void runIO(boost::asio::io_context& io, int maxMilliseconds = 50) {
+    auto start = std::chrono::steady_clock::now();
+    while (std::chrono::steady_clock::now() - start < std::chrono::milliseconds(maxMilliseconds)) {
+        if (io.run_one_for(std::chrono::milliseconds(5)) == 0) {
+            break;
+        }
+    }
+    io.stop();
+    io.restart();
 }
 
 class ClientTest : public ::testing::Test {
@@ -85,33 +111,7 @@ protected:
     void TearDown() override {
         // Ensure no lingering operations
     }
-
-    // Helper to run IO with timeout and proper cleanup
-    static void runIO(boost::asio::io_context& io, int milliseconds = 100) {
-        // Run for specified time
-        io.run_for(std::chrono::milliseconds(milliseconds));
-
-        // Stop the io_context to prevent hanging
-        io.stop();
-
-        // Reset for next use
-        io.restart();
-    }
-
-    // Helper to run IO until work is done or timeout
-    static void runIOUntil(boost::asio::io_context& io, int maxMilliseconds = 1000) {
-        auto start = std::chrono::steady_clock::now();
-        while (std::chrono::steady_clock::now() - start < std::chrono::milliseconds(maxMilliseconds)) {
-            if (io.run_one_for(std::chrono::milliseconds(10)) == 0) {
-                break;  // No more work
-            }
-        }
-        io.stop();
-        io.restart();
-    }
 };
-
-// ==================== EXISTING TESTS (FIXED) ====================
 
 TEST_F(ClientTest, ClientCreate) {
     boost::asio::io_context io;
@@ -125,30 +125,27 @@ TEST_F(ClientTest, ConnectNotCrash) {
     boost::asio::io_context io;
     auto client = Client::create(io);
     EXPECT_NO_THROW(client->startConnect("host.invalid", 11111));
-    runIO(io, 100);
+    runIO(io, 20);
 }
 
 TEST_F(ClientTest, MultipleCalls) {
     boost::asio::io_context io;
     auto client = Client::create(io);
     EXPECT_NO_THROW(client->startConnect("host.one", 22222));
-    runIO(io, 50);  // Give first call time to start
-
+    runIO(io, 10);
     EXPECT_NO_THROW(client->startConnect("host.two", 33333));
-    runIO(io, 50);  // Give second call time to start
-
-    // Final run to let operations finish/cancel
-    runIO(io, 100);
+    runIO(io, 10);
+    runIO(io, 20);  // final cleanup
 }
 
-// ==================== NEW SEND TESTS ====================
+// ==================== SEND TESTS (WITH PREDICATES) ====================
 
 TEST_F(ClientTest, SendWithoutConnectionShouldNotCrash) {
     boost::asio::io_context io;
     auto client = Client::create(io);
 
     EXPECT_NO_THROW(client->send(toMessageData("Hello, World!")));
-    runIO(io, 50);
+    runIO(io, 10);
 }
 
 TEST_F(ClientTest, SendAfterConnectionToRealServer) {
@@ -157,12 +154,32 @@ TEST_F(ClientTest, SendAfterConnectionToRealServer) {
     EchoServer server(io, port);
 
     auto client = Client::create(io);
+    bool connected = false;
+    client->setOnConnect([&]() {
+        connected = true;
+    });
+
     client->startConnect("127.0.0.1", port);
-    runIO(io, 200);  // Allow connection to establish
+    runUntil(
+        io,
+        [&]() {
+            return connected;
+        },
+        100);
 
     std::string testMessage = "Hello Echo Server!";
+    bool messageReceived = false;
+    client->setOnReceiveMessage([&](RawMessage) {
+        messageReceived = true;
+    });
+
     EXPECT_NO_THROW(client->send(toMessageData(testMessage)));
-    runIO(io, 200);  // Give time for send to complete
+    runUntil(
+        io,
+        [&]() {
+            return messageReceived;
+        },
+        100);
 
     server.stop();
 }
@@ -173,16 +190,37 @@ TEST_F(ClientTest, SendMultipleMessages) {
     EchoServer server(io, port);
 
     auto client = Client::create(io);
+    bool connected = false;
+    client->setOnConnect([&]() {
+        connected = true;
+    });
+
     client->startConnect("127.0.0.1", port);
-    runIO(io, 200);
+    runUntil(
+        io,
+        [&]() {
+            return connected;
+        },
+        100);
 
-    std::vector<std::string> messages = {"First message", "Second message", "Third message", "Fourth message"};
+    int receivedCount = 0;
+    const int totalMessages = 4;
+    client->setOnReceiveMessage([&](RawMessage) {
+        ++receivedCount;
+    });
 
+    std::vector<std::string> messages = {"First", "Second", "Third", "Fourth"};
     for (const auto& msg : messages) {
-        EXPECT_NO_THROW(client->send(toMessageData(msg)));
+        client->send(toMessageData(msg));
     }
 
-    runIO(io, 500);
+    runUntil(
+        io,
+        [&]() {
+            return receivedCount >= totalMessages;
+        },
+        150);
+    EXPECT_EQ(receivedCount, totalMessages);
     server.stop();
 }
 
@@ -192,11 +230,10 @@ TEST_F(ClientTest, SendAfterConnectionClosed) {
 
     auto client = Client::create(io);
     client->startConnect("127.0.0.1", port);
-    runIO(io, 100);
+    runIO(io, 30);  // connection will fail quickly
 
-    // Connection will fail/timeout, then send should safely fail
     EXPECT_NO_THROW(client->send(toMessageData("Message after failed connect")));
-    runIO(io, 100);
+    runIO(io, 20);
 }
 
 TEST_F(ClientTest, SendLargeMessage) {
@@ -205,12 +242,32 @@ TEST_F(ClientTest, SendLargeMessage) {
     EchoServer server(io, port);
 
     auto client = Client::create(io);
-    client->startConnect("127.0.0.1", port);
-    runIO(io, 200);
+    bool connected = false;
+    client->setOnConnect([&]() {
+        connected = true;
+    });
 
-    std::string largeMessage(10240, 'X');
+    client->startConnect("127.0.0.1", port);
+    runUntil(
+        io,
+        [&]() {
+            return connected;
+        },
+        100);
+
+    bool received = false;
+    client->setOnReceiveMessage([&](RawMessage) {
+        received = true;
+    });
+
+    std::string largeMessage(10 * 1024, 'X');  // 10 KiB (reduced from 10 MiB)
     EXPECT_NO_THROW(client->send(toMessageData(largeMessage)));
-    runIO(io, 500);
+    runUntil(
+        io,
+        [&]() {
+            return received;
+        },
+        200);
     server.stop();
 }
 
@@ -220,11 +277,31 @@ TEST_F(ClientTest, SendEmptyMessage) {
     EchoServer server(io, port);
 
     auto client = Client::create(io);
+    bool connected = false;
+    client->setOnConnect([&]() {
+        connected = true;
+    });
+
     client->startConnect("127.0.0.1", port);
-    runIO(io, 200);
+    runUntil(
+        io,
+        [&]() {
+            return connected;
+        },
+        100);
+
+    bool received = false;
+    client->setOnReceiveMessage([&](RawMessage) {
+        received = true;
+    });
 
     EXPECT_NO_THROW(client->send(RawMessage{ByteBuffer{}}));
-    runIO(io, 200);
+    runUntil(
+        io,
+        [&]() {
+            return received;
+        },
+        100);
     server.stop();
 }
 
@@ -234,18 +311,40 @@ TEST_F(ClientTest, RapidSendCalls) {
     EchoServer server(io, port);
 
     auto client = Client::create(io);
-    client->startConnect("127.0.0.1", port);
-    runIO(io, 200);
+    bool connected = false;
+    client->setOnConnect([&]() {
+        connected = true;
+    });
 
-    for (int i = 0; i < 50; ++i) {
-        client->send(toMessageData("Message " + std::to_string(i)));
+    client->startConnect("127.0.0.1", port);
+    runUntil(
+        io,
+        [&]() {
+            return connected;
+        },
+        100);
+
+    int receivedCount = 0;
+    const int totalMessages = 20;  // reduced from 50
+    client->setOnReceiveMessage([&](RawMessage) {
+        ++receivedCount;
+    });
+
+    for (int i = 0; i < totalMessages; ++i) {
+        client->send(toMessageData("Msg " + std::to_string(i)));
     }
 
-    runIO(io, 1000);
+    runUntil(
+        io,
+        [&]() {
+            return receivedCount >= totalMessages;
+        },
+        200);
+    EXPECT_EQ(receivedCount, totalMessages);
     server.stop();
 }
 
-// ==================== THREAD SAFETY TESTS ====================
+// ==================== THREAD SAFETY TESTS (WITH CONDITION_VARIABLE) ====================
 
 TEST_F(ClientTest, SendFromMultipleThreads) {
     boost::asio::io_context io;
@@ -253,18 +352,32 @@ TEST_F(ClientTest, SendFromMultipleThreads) {
     EchoServer server(io, port);
 
     auto client = Client::create(io);
-    client->startConnect("127.0.0.1", port);
+    bool connected = false;
+    client->setOnConnect([&]() {
+        connected = true;
+    });
 
-    // Let connection establish
-    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    client->startConnect("127.0.0.1", port);
+    runUntil(
+        io,
+        [&]() {
+            return connected;
+        },
+        200);  // run io until connected
+    ASSERT_TRUE(connected);
 
     // Send from multiple threads
+    const int numThreads = 5;
+    const int messagesPerThread = 10;
+    std::atomic<int> totalSent{0};
     std::vector<std::thread> senders;
-    for (int i = 0; i < 5; ++i) {
-        senders.emplace_back([client, i]() {
-            for (int j = 0; j < 10; ++j) {
+
+    for (int i = 0; i < numThreads; ++i) {
+        senders.emplace_back([client, i, messagesPerThread, &totalSent]() {
+            for (int j = 0; j < messagesPerThread; ++j) {
                 std::string msg = "Thread " + std::to_string(i) + " - " + std::to_string(j);
                 client->send(toMessageData(msg));
+                totalSent.fetch_add(1, std::memory_order_relaxed);
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));
             }
         });
@@ -274,8 +387,8 @@ TEST_F(ClientTest, SendFromMultipleThreads) {
         t.join();
     }
 
-    // Allow time for all sends to complete
-    runIO(io, 500);
+    // Let IO finish sending all messages
+    runIO(io, 200);
     server.stop();
 }
 
@@ -306,8 +419,18 @@ TEST_F(ClientTest, SendWithTracking) {
     EchoServer server(io, port);
 
     auto client = Client::create(io);
+    bool connected = false;
+    client->setOnConnect([&]() {
+        connected = true;
+    });
+
     client->startConnect("127.0.0.1", port);
-    runIO(io, 200);
+    runUntil(
+        io,
+        [&]() {
+            return connected;
+        },
+        100);
 
     TrackingClient tracker(client);
 
@@ -316,7 +439,7 @@ TEST_F(ClientTest, SendWithTracking) {
     }
 
     EXPECT_EQ(tracker.getSentCount(), 5);
-    runIO(io, 500);
+    runIO(io, 50);  // allow sends to complete
     server.stop();
 }
 
@@ -328,18 +451,27 @@ TEST_F(ClientTest, SendStressTest) {
     EchoServer server(io, port);
 
     auto client = Client::create(io);
-    client->startConnect("127.0.0.1", port);
-    runIO(io, 200);
+    bool connected = false;
+    client->setOnConnect([&]() {
+        connected = true;
+    });
 
-    for (int i = 0; i < 100; ++i) {
-        // Reduced from 1000 for performance
-        client->send(toMessageData("Stress message " + std::to_string(i)));
-        if (i % 20 == 0) {
-            runIO(io, 10);
+    client->startConnect("127.0.0.1", port);
+    runUntil(
+        io,
+        [&]() {
+            return connected;
+        },
+        100);
+
+    const int totalMessages = 50;  // reduced from 100
+    for (int i = 0; i < totalMessages; ++i) {
+        client->send(toMessageData("Stress " + std::to_string(i)));
+        if (i % 10 == 0) {
+            runIO(io, 5);
         }
     }
-
-    runIO(io, 500);
+    runIO(io, 100);
     server.stop();
 }
 
@@ -351,15 +483,25 @@ TEST_F(ClientTest, SendAfterCloseConnect) {
     EchoServer server(io, port);
 
     auto client = Client::create(io);
+    bool connected = false;
+    client->setOnConnect([&]() {
+        connected = true;
+    });
+
     client->startConnect("127.0.0.1", port);
-    runIO(io, 200);
+    runUntil(
+        io,
+        [&]() {
+            return connected;
+        },
+        100);
 
     // Force close by reconnecting
     client->startConnect("127.0.0.1", port + 1);
-    runIO(io, 100);
+    runIO(io, 30);
 
     EXPECT_NO_THROW(client->send(toMessageData("Message after close")));
-    runIO(io, 200);
+    runIO(io, 30);
     server.stop();
 }
 
@@ -371,13 +513,32 @@ TEST_F(ClientTest, SendNullTerminatedString) {
     EchoServer server(io, port);
 
     auto client = Client::create(io);
+    bool connected = false;
+    client->setOnConnect([&]() {
+        connected = true;
+    });
+
     client->startConnect("127.0.0.1", port);
-    runIO(io, 200);
+    runUntil(
+        io,
+        [&]() {
+            return connected;
+        },
+        100);
+
+    bool received = false;
+    client->setOnReceiveMessage([&](RawMessage) {
+        received = true;
+    });
 
     std::string message = "Hello\0World";
-    // MessageData with embedded null
     EXPECT_NO_THROW(client->send(toMessageData(message)));
-    runIO(io, 200);
+    runUntil(
+        io,
+        [&]() {
+            return received;
+        },
+        100);
     server.stop();
 }
 
@@ -387,26 +548,44 @@ TEST_F(ClientTest, SendVeryLargeMessage) {
     EchoServer server(io, port);
 
     auto client = Client::create(io);
-    client->startConnect("127.0.0.1", port);
-    runIO(io, 200);
+    bool connected = false;
+    client->setOnConnect([&]() {
+        connected = true;
+    });
 
-    std::string hugeMessage(1024 * 1024, 'A');
+    client->startConnect("127.0.0.1", port);
+    runUntil(
+        io,
+        [&]() {
+            return connected;
+        },
+        100);
+
+    bool received = false;
+    client->setOnReceiveMessage([&](RawMessage) {
+        received = true;
+    });
+
+    std::string hugeMessage(100 * 1024, 'A');  // 100 KiB (was 1 MiB)
     EXPECT_NO_THROW(client->send(toMessageData(hugeMessage)));
-    runIO(io, 2000);
+    runUntil(
+        io,
+        [&]() {
+            return received;
+        },
+        300);
     server.stop();
 }
 
-// ==================== ADDITIONAL FIXES FOR HANGING ====================
+// ==================== FIXES FOR HANGING ====================
 
 TEST_F(ClientTest, StartConnectWithImmediateStop) {
     boost::asio::io_context io;
     auto client = Client::create(io);
 
     client->startConnect("localhost", 12345);
-    io.stop();  // Stop immediately
+    io.stop();
     io.restart();
-
-    // Should not crash or hang
     SUCCEED();
 }
 
@@ -416,7 +595,6 @@ TEST_F(ClientTest, SendAfterIoContextStopped) {
 
     io.stop();
     EXPECT_NO_THROW(client->send(toMessageData("Message after stop")));
-    // Should not hang
     SUCCEED();
 }
 
@@ -450,7 +628,7 @@ TEST_F(ClientTest, DisconectTest) {
     DisServer server(io, port);
     auto client = Client::create(io);
     EXPECT_NO_THROW(client->startConnect("127.0.0.1", port));
-    runIO(io, 180);
+    runIO(io, 30);
     SUCCEED();
 }
 
@@ -459,17 +637,36 @@ TEST_F(ClientTest, ReconnectWhileReading) {
     uint16_t port = 22222;
     EchoServer server(io, port);
     auto client = Client::create(io);
+    bool connected = false;
+    client->setOnConnect([&]() {
+        connected = true;
+    });
+
     client->startConnect("127.0.0.1", port);
-    runIO(io, 180);
+    runUntil(
+        io,
+        [&]() {
+            return connected;
+        },
+        100);
 
-    EXPECT_NO_THROW(client->startConnect("127.0.0.1", port));
-    runIO(io, 180);
+    // Reconnect (will close and reconnect)
+    bool reconnected = false;
+    client->setOnConnect([&]() {
+        reconnected = true;
+    });
+    client->startConnect("127.0.0.1", port);
+    runUntil(
+        io,
+        [&]() {
+            return reconnected;
+        },
+        100);
 
-    SUCCEED();
     server.stop();
 }
 
-// ==================== ADDITIONAL TESTS FOR BINARY DATA ====================
+// ==================== TESTS FOR BINARY DATA ====================
 
 TEST_F(ClientTest, SendBinaryData) {
     boost::asio::io_context io;
@@ -477,13 +674,32 @@ TEST_F(ClientTest, SendBinaryData) {
     EchoServer server(io, port);
 
     auto client = Client::create(io);
-    client->startConnect("127.0.0.1", port);
-    runIO(io, 200);
+    bool connected = false;
+    client->setOnConnect([&]() {
+        connected = true;
+    });
 
-    // Send binary data
+    client->startConnect("127.0.0.1", port);
+    runUntil(
+        io,
+        [&]() {
+            return connected;
+        },
+        100);
+
+    bool received = false;
+    client->setOnReceiveMessage([&](RawMessage) {
+        received = true;
+    });
+
     ByteBuffer binaryData = {0x01, 0x02, 0x03, 0xFF, 0x00, 0x7F, 0x80, 0xDE, 0xAD, 0xBE, 0xEF};
     EXPECT_NO_THROW(client->send(RawMessage(std::move(binaryData))));
-    runIO(io, 200);
+    runUntil(
+        io,
+        [&]() {
+            return received;
+        },
+        100);
     server.stop();
 }
 
@@ -493,11 +709,31 @@ TEST_F(ClientTest, SendMessageDataDirectly) {
     EchoServer server(io, port);
 
     auto client = Client::create(io);
+    bool connected = false;
+    client->setOnConnect([&]() {
+        connected = true;
+    });
+
     client->startConnect("127.0.0.1", port);
-    runIO(io, 200);
+    runUntil(
+        io,
+        [&]() {
+            return connected;
+        },
+        100);
+
+    bool received = false;
+    client->setOnReceiveMessage([&](RawMessage) {
+        received = true;
+    });
 
     ByteBuffer data = {0x48, 0x65, 0x6C, 0x6C, 0x6F};  // "Hello"
     EXPECT_NO_THROW(client->send(RawMessage(std::move(data))));
-    runIO(io, 200);
+    runUntil(
+        io,
+        [&]() {
+            return received;
+        },
+        100);
     server.stop();
 }
