@@ -1,5 +1,6 @@
 #include "connection_manager.h"
 
+#include <common/utility/config.h>
 #include <common/utility/logger.h>
 #include <format>
 #include <server/network/session.h>
@@ -7,8 +8,6 @@
 namespace dungeons::server::app {
 
 // TODO (DRUsmanov): Add a alias for long type names like std::shared_ptr<network::SessionRegistry>
-
-constexpr std::chrono::seconds kPlayerReconnectTimeout{30};
 
 std::shared_ptr<ConnectionManager> ConnectionManager::Create(std::shared_ptr<core::EventBus> event_bus,
                                                              std::shared_ptr<SessionRegistry> session_registry) {
@@ -86,7 +85,7 @@ void ConnectionManager::HandlePlayerReconnectRequestedEvent(const ReconnectReque
     if (auto it = disconnected_players_.find(player_id); it != disconnected_players_.end()) {
         auto duration = std::chrono::steady_clock::now() - it->second;
 
-        if (duration > kPlayerReconnectTimeout) {
+        if (duration > common::utility::getSettings().server.client_disconnect_timeout) {
             event_bus_->publish(PlayerReconnectionFailedEvent{session_id, player_id});
             LOG_INFO(std::format("Player {} failed to reconnect to session {}", player_id.value, session_id.value));
         } else if (session_registry_->bindPlayerToSession(player_id, session_id)) {

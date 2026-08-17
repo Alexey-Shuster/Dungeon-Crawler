@@ -4,7 +4,7 @@
     "port": 8080,
     "max_players": 10,
     "tick_rate_ms": 100,
-    "client_disconnect_timeout_sec": 10
+    "client_disconnect_timeout_sec": 1
   },
   "database": {
     "connection_string": "",

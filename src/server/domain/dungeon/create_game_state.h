@@ -2,7 +2,7 @@
 
 #include <common/network/game_state_dto.h>
 
-#include "dungeon.h"
+#include "dungeon_state.h"
 
 namespace dungeons::server::domain {
 

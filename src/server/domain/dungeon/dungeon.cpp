@@ -1,7 +1,10 @@
 #include "dungeon.h"
 
+#include <common/network/game_state_dto.h>
 #include <ranges>
 #include <vector>
+
+#include "create_game_state.h"
 
 namespace dungeons::server::domain {
 
@@ -44,7 +47,7 @@ void Dungeon::addMovePlayerCommand(PlayerId player_id, common::types::Direction 
     });
 }
 
-std::optional<DungeonState> Dungeon::processTick(std::chrono::milliseconds /*time_delta*/) {
+std::shared_ptr<common::network::DungeonSnapshot> Dungeon::processTick(std::chrono::milliseconds /*time_delta*/) {
     // Process player commands
     auto commands = command_queue_.popAll();
     while (!commands.empty()) {
@@ -73,7 +76,7 @@ std::optional<DungeonState> Dungeon::processTick(std::chrono::milliseconds /*tim
 
     // Check game over
     if (isGameOver()) {
-        return std::nullopt;
+        return nullptr;
     }
 
     // Build state
@@ -82,7 +85,7 @@ std::optional<DungeonState> Dungeon::processTick(std::chrono::milliseconds /*tim
     state.players = players_.getEntities();
     state.monsters = monsters_.getEntities();
 
-    return state;
+    return std::make_shared<common::network::DungeonSnapshot>(createGameStateDTO(state));
 }
 
 std::vector<PlayerId> Dungeon::getPlayers() const {

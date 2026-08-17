@@ -6,7 +6,7 @@
 #include <server/core/event_bus.h>
 #include <server/core/events.h>
 #include <server/domain/core/events.h>
-#include <server/domain/dungeon/dungeon_registry.h>
+#include <server/domain/dungeon/dungeon_registry_fwd.h>
 #include <server/domain/lobby/lobby_registry_fwd.h>
 #include <vector>
 
@@ -46,7 +46,7 @@ private:
     boost::asio::strand<boost::asio::io_context::executor_type> strand_;
     std::shared_ptr<core::EventBus> event_bus_;
     std::shared_ptr<domain::LobbyRegistry> lobby_registry_;
-    domain::DungeonRegistry dungeon_registry_;
+    std::shared_ptr<domain::DungeonRegistry> dungeon_registry_ = std::make_shared<domain::DungeonRegistry>();
     std::vector<boost::signals2::scoped_connection> connections_;
 };
 

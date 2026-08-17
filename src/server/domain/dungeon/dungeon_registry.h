@@ -5,9 +5,9 @@
 #include <unordered_map>
 #include <vector>
 
-#include "map/game_map.h"
-#include "core/types.h"
 #include "dungeon_fwd.h"
+#include "server/domain/core/types.h"
+#include "server/domain/map/game_map.h"
 
 namespace dungeons::server::domain {
 

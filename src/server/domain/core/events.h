@@ -1,10 +1,10 @@
 #pragma once
 
+#include <common/network/game_state_dto.h>
 #include <common/types/direction.h>
 #include <server/core/event_type.h>
 #include <vector>
 
-#include "dungeon/dungeon_state.h"
 #include "event_base.h"
 
 namespace dungeons::server::domain {
@@ -322,11 +322,11 @@ struct AtackRequestEvent : PlayerEvent {
 // Создает: GameManager
 // Получает: ResponseSender
 struct GameStateUpdateEvent : GameEvent {
-    DungeonState dungeon_state;
+    std::shared_ptr<common::network::DungeonSnapshot> dungeon_snapshot;
 
-    explicit GameStateUpdateEvent(GameId gid, DungeonState ds) noexcept
+    explicit GameStateUpdateEvent(GameId gid, std::shared_ptr<common::network::DungeonSnapshot> ds) noexcept
         : GameEvent(gid)
-        , dungeon_state(std::move(ds)) {}
+        , dungeon_snapshot(std::move(ds)) {}
 
     core::EventType getType() const override {
         return core::EventType::GameStateUpdate;

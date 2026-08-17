@@ -1,7 +1,7 @@
+#include "serder_game_state.h"
+
 #include <format>
 #include <utility/logger.h>
-
-#include "serder_game_state.h"
 
 namespace dungeons::common::wire {
 
@@ -9,6 +9,7 @@ using namespace dungeons::common::network;
 
 namespace {
 
+inline constexpr size_t kSnapshotSize = 3;
 inline constexpr size_t kBarrierArraySize = 2;
 inline constexpr size_t kEntityArraySize = 6;
 inline constexpr size_t kGameMapArraySize = 5;
@@ -99,29 +100,56 @@ std::optional<GameMapSnapshot> deserialize(cbor_item_t* item, GameMapSnapshot*) 
 }  // namespace detail
 
 std::optional<ByteBuffer> serializeGameState(const DungeonSnapshot& snapshot) {
-    auto root = detail::CborPtr(cbor_new_definite_map(kBarrierArraySize));
+    auto root = detail::CborPtr(cbor_new_definite_map(kSnapshotSize));
     if (!root) {
-        LOG_ERROR("Failed to create CBOR map");
+        LOG_ERROR("[serializeGameState] Failed to create CBOR map");
         return std::nullopt;
     }
+
+    // Helper to add any CBOR value under a given key to the root map
+    auto addValueToMap = [&root](const char* key, auto* value) -> bool {
+        if (!value) {
+            LOG_ERROR(std::format("[serializeGameState] Null CBOR value for key '{}'", key));
+            return false;
+        }
+        auto key_cbor = detail::CborPtr(cbor_build_string(key));
+        if (!key_cbor) {
+            LOG_ERROR(std::format("[serializeGameState] Failed to build CBOR string for key '{}'", key));
+            return false;
+        }
+        if (!cbor_map_add(root.get(), {.key = key_cbor.get(), .value = value})) {
+            LOG_ERROR(std::format("[serializeGameState] Failed to add key '{}' to CBOR map", key));
+            return false;
+        }
+        return true;
+    };
+
+    // Helper for vectors (uses serializeVector internally)
+    auto addVectorToMap = [&](const char* key, const auto& vec) -> bool {
+        auto cbor = detail::serializeVector(vec);
+        if (!cbor) {
+            LOG_ERROR(std::format("[serializeGameState] Failed to serialize vector for key '{}'", key));
+            return false;
+        }
+        return addValueToMap(key, cbor.get());
+    };
 
     // Map
     auto map_cbor = detail::serialize(snapshot.game_map);
-    if (!map_cbor)
-        return std::nullopt;
-    auto key_map = detail::CborPtr(cbor_build_string(kMap));
-    if (!key_map || !cbor_map_add(root.get(), {.key = key_map.get(), .value = map_cbor.get()})) {
+    if (!map_cbor) {
+        LOG_ERROR("[serializeGameState] Failed to serialize game_map");
         return std::nullopt;
     }
+    if (!addValueToMap(kMap, map_cbor.get()))
+        return std::nullopt;
 
-    // Entities
-    auto entities_cbor = detail::serializeVector(snapshot.entities);
-    if (!entities_cbor)
+    // Players
+    if (!addVectorToMap(kPlayers, snapshot.players))
         return std::nullopt;
-    auto key_entities = detail::CborPtr(cbor_build_string(kEntities));
-    if (!key_entities || !cbor_map_add(root.get(), {.key = key_entities.get(), .value = entities_cbor.get()})) {
+
+    // Mobs
+    if (!addVectorToMap(kMobs, snapshot.mobs))
         return std::nullopt;
-    }
 
     return cborToMessage(std::move(root));
 }
@@ -131,38 +159,62 @@ std::optional<DungeonSnapshot> deserializeGameState(const ByteBuffer& message) {
     auto root = detail::bufferToCbor(message, &load_result);
 
     if (!root || load_result.error.code != CBOR_ERR_NONE || !cbor_isa_map(root.get())) {
-        LOG_ERROR("Failed to load CBOR data or not a map");
+        LOG_ERROR("[deserializeGameState] Failed to load CBOR data or not a map");
         return std::nullopt;
     }
 
     DungeonSnapshot snapshot;
 
-    // Map
-    auto map_item = detail::CborPtr(detail::cborMapGet(root.get(), kMap));
-    if (!map_item) {
-        LOG_ERROR(std::format("Missing {} key in game state", std::string_view(kMap)));
-        return std::nullopt;
-    }
-    auto map_opt = detail::deserialize<GameMapSnapshot>(map_item.get());
-    if (!map_opt) {
-        LOG_ERROR("Failed to deserialize game map");
-        return std::nullopt;
-    }
-    snapshot.game_map = std::move(*map_opt);
+    // Helper: retrieve a CBOR value from the root map by key.
+    auto getValue = [&](const char* key) -> detail::CborPtr {
+        auto item = detail::CborPtr(detail::cborMapGet(root.get(), key));
+        if (!item) {
+            LOG_ERROR(std::format("[deserializeGameState] Missing key '{}' in game state", key));
+        }
+        return item;
+    };
 
-    // Entities
-    auto entities_item = detail::CborPtr(detail::cborMapGet(root.get(), kEntities));
-    if (!entities_item) {
-        LOG_ERROR(std::format("Missing {} key in game state", std::string_view(kEntities)));
-        return std::nullopt;
-    }
+    // Helper: extract a single (non‑vector) value by key and deserialize it.
+    auto extractValue = [&]<typename T>(const char* key, T& out) -> bool {
+        auto item = getValue(key);
+        if (!item) {
+            return false;
+        }
+        auto opt = detail::deserialize<T>(item.get());
+        if (!opt) {
+            LOG_ERROR(std::format("[deserializeGameState] Failed to deserialize value for key '{}'", key));
+            return false;
+        }
+        out = std::move(*opt);
+        return true;
+    };
 
-    auto entities_opt = detail::deserializeVector<EntitySnapshot>(entities_item.get());
-    if (!entities_opt) {
-        LOG_ERROR("Failed to deserialize entities");
+    // Helper: extract a vector by key and deserialize it.
+    auto extractVector = [&]<typename T>(const char* key, std::vector<T>& out) -> bool {
+        auto item = getValue(key);
+        if (!item) {
+            return false;
+        }
+        auto opt = detail::deserializeVector<T>(item.get());
+        if (!opt) {
+            LOG_ERROR(std::format("[deserializeGameState] Failed to deserialize vector for key '{}'", key));
+            return false;
+        }
+        out = std::move(*opt);
+        return true;
+    };
+
+    // Game map
+    if (!extractValue(kMap, snapshot.game_map))
         return std::nullopt;
-    }
-    snapshot.entities = std::move(*entities_opt);
+
+    // Players
+    if (!extractVector(kPlayers, snapshot.players))
+        return std::nullopt;
+
+    // Mobs
+    if (!extractVector(kMobs, snapshot.mobs))
+        return std::nullopt;
 
     return snapshot;
 }

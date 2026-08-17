@@ -10,7 +10,6 @@ add_executable(dungeons_server
 
 target_include_directories(dungeons_server PRIVATE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/domain>
 )
 
 target_link_libraries(dungeons_server PRIVATE

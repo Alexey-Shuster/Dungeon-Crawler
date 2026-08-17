@@ -1,9 +1,9 @@
 #pragma once
 
-#include "core/types.h"
-#include "entity/entity.h"
 #include "entity_manager.h"
-#include "map/game_map.h"
+#include "server/domain/core/types.h"
+#include "server/domain/entity/entity.h"
+#include "server/domain/map/game_map.h"
 
 namespace dungeons::server::domain {
 

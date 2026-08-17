@@ -17,6 +17,7 @@
 #include <common/types/message_utils.h>
 #include <common/utility/logger.h>
 #include <common/wire/serder.h>
+#include <format>
 #include <functional>
 #include <memory>
 #include <optional>
