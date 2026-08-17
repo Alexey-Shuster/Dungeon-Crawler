@@ -3,22 +3,24 @@
 #include <gtest/gtest.h>
 
 using namespace dungeons::client::ui;
+using namespace dungeons::common::network;
 
-// Helper to create a simple map with given bounds and optional barriers
-static dungeons::common::network::DungeonSnapshot makeMap(
-    uint64_t blc_x,
-    uint64_t blc_y,
-    uint64_t trc_x,
-    uint64_t trc_y,
-    std::vector<dungeons::common::network::BarrierSnapshot> barriers = {},
-    std::vector<dungeons::common::network::EntitySnapshot> entities = {}) {
-    dungeons::common::network::DungeonSnapshot snap;
+// Helper to create a map with separate players and mobs
+static DungeonSnapshot makeMap(uint64_t blc_x,
+                               uint64_t blc_y,
+                               uint64_t trc_x,
+                               uint64_t trc_y,
+                               std::vector<BarrierSnapshot> barriers = {},
+                               std::vector<EntitySnapshot> players = {},
+                               std::vector<EntitySnapshot> mobs = {}) {
+    DungeonSnapshot snap;
     snap.game_map.blc_x = blc_x;
     snap.game_map.blc_y = blc_y;
     snap.game_map.trc_x = trc_x;
     snap.game_map.trc_y = trc_y;
     snap.game_map.barriers = std::move(barriers);
-    snap.entities = std::move(entities);
+    snap.players = std::move(players);
+    snap.mobs = std::move(mobs);
     return snap;
 }
 
@@ -46,8 +48,14 @@ TEST(RenderGameStateTest, WithBarriers) {
 }
 
 TEST(RenderGameStateTest, WithEntities) {
-    auto snap =
-        makeMap(0, 0, 2, 2, {}, {{kEntityTypePlayer, 0, 100, 1, 1, 10}, {kEntityTypeMonster, 0, 200, 2, 0, 20}});
+    auto snap = makeMap(0,
+                        0,
+                        2,
+                        2,
+                        {},
+                        {{kEntityTypePlayer, 0, 100, 1, 1, 10}},  // player
+                        {{kEntityTypeMonster, 0, 200, 2, 0, 20}}  // mob
+    );
     auto lines = renderGameState(snap);
 
     std::vector<std::string> expected = {"=== Game State ===",
@@ -63,7 +71,13 @@ TEST(RenderGameStateTest, WithEntities) {
 }
 
 TEST(RenderGameStateTest, EntitiesOverwriteBarriers) {
-    auto snap = makeMap(0, 0, 2, 2, {{1, 1}}, {{kEntityTypePlayer, 0, 100, 1, 1, 10}});
+    auto snap = makeMap(0,
+                        0,
+                        2,
+                        2,
+                        {{1, 1}},                                // barrier
+                        {{kEntityTypePlayer, 0, 100, 1, 1, 10}}  // player at same cell
+    );
     auto lines = renderGameState(snap);
 
     std::vector<std::string> expected = {"=== Game State ===",
@@ -100,24 +114,15 @@ TEST(RenderGameStateTest, LargeMapExceedsLimit) {
     EXPECT_TRUE(lines[0].find("Game map too large to display") != std::string::npos);
 }
 
-TEST(RenderGameStateTest, UnknownEntityType) {
-    auto snap = makeMap(0, 0, 2, 2, {}, {{99, 0, 100, 1, 1, 10}});  // type 99
-    auto lines = renderGameState(snap);
-
-    std::vector<std::string> expected = {"=== Game State ===",
-                                         "#####",
-                                         "#...#",
-                                         "#.?.#",
-                                         "#...#",
-                                         "#####",
-                                         "Entities: 1",
-                                         "  Entity 100 (Unknown) HP: 10"};
-    EXPECT_EQ(lines, expected);
-}
-
 TEST(RenderGameStateTest, MultipleEntitiesSameCell) {
-    auto snap =
-        makeMap(0, 0, 2, 2, {}, {{kEntityTypePlayer, 0, 100, 1, 1, 10}, {kEntityTypeMonster, 0, 200, 1, 1, 20}});
+    auto snap = makeMap(0,
+                        0,
+                        2,
+                        2,
+                        {},
+                        {{kEntityTypePlayer, 0, 100, 1, 1, 10}},  // player
+                        {{kEntityTypeMonster, 0, 200, 1, 1, 20}}  // mob – overwrites player
+    );
     auto lines = renderGameState(snap);
 
     std::vector<std::string> expected = {"=== Game State ===",

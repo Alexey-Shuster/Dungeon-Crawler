@@ -140,9 +140,11 @@ TEST(SerializationGameStateTest, DungeonSnapshotRoundTrip) {
     original.game_map.trc_y = 20;
     original.game_map.barriers = {{1, 1}, {2, 2}, {3, 3}};
 
-    EntitySnapshot e1{1, 1, 100, 10, 10, 30};
-    EntitySnapshot e2{2, 0, 200, 15, 15, 0};  // dead monster
-    original.entities = {e1, e2};
+    EntitySnapshot player1{1, 1, 100, 10, 10, 30};  // type=player, alive
+    EntitySnapshot player2{1, 0, 101, 12, 12, 0};   // type=player, dead
+    EntitySnapshot mob1{2, 1, 200, 15, 15, 40};     // type=monster, alive
+    original.players = {player1, player2};
+    original.mobs = {mob1};
 
     auto msg = serializeGameState(original);
     ASSERT_TRUE(msg.has_value());
@@ -152,7 +154,7 @@ TEST(SerializationGameStateTest, DungeonSnapshotRoundTrip) {
     EXPECT_EQ(original, *deserialized);
 }
 
-TEST(SerializationGameStateTest, DungeonSnapshotEmptyEntities) {
+TEST(SerializationGameStateTest, DungeonSnapshotEmptyPlayersAndMobs) {
     DungeonSnapshot original;
     original.game_map.blc_x = 0;
     original.game_map.blc_y = 0;
@@ -166,7 +168,8 @@ TEST(SerializationGameStateTest, DungeonSnapshotEmptyEntities) {
     auto deserialized = deserializeGameState(*msg);
     ASSERT_TRUE(deserialized.has_value());
     EXPECT_TRUE(deserialized->game_map.barriers.empty());
-    EXPECT_TRUE(deserialized->entities.empty());
+    EXPECT_TRUE(deserialized->players.empty());
+    EXPECT_TRUE(deserialized->mobs.empty());
 }
 
 TEST(SerializationGameStateTest, DeserializeGameStateInvalid) {

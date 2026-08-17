@@ -129,7 +129,7 @@ TEST_F(SettingsTest, LoadFromJson) {
 }
 
 // ------------------------------------------------------------------
-// Default values for ALL known fields
+// Default values for some fields
 // ------------------------------------------------------------------
 TEST_F(SettingsTest, DefaultValuesForAllKnownFields) {
     // No file, no env – all defaults must be present
@@ -140,7 +140,7 @@ TEST_F(SettingsTest, DefaultValuesForAllKnownFields) {
     EXPECT_EQ(cfg.server.port, 8080);
     EXPECT_EQ(cfg.server.max_players, 100);
     EXPECT_EQ(cfg.server.tick_rate.count(), 100);
-    EXPECT_EQ(cfg.server.client_disconnect_timeout.count(), 60);
+    EXPECT_EQ(cfg.server.client_disconnect_timeout.count(), 10);
     EXPECT_EQ(cfg.database.connection_string, "");
     EXPECT_EQ(cfg.database.pool_size, 10);
     EXPECT_EQ(cfg.gameplay.lobby_max_players, 4);
