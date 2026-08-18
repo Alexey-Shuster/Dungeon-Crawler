@@ -13,7 +13,7 @@ namespace dungeons::server::app {
 // Получает: ConnectionManager
 struct AuthRequestedEvent : network::SessionEvent, domain::PlayerEvent {
     explicit AuthRequestedEvent(network::SessionId sid, domain::PlayerId pid) noexcept
-        : network::SessionEvent(sid)
+        : SessionEvent(sid)
         , PlayerEvent(pid) {}
 
     core::EventType getType() const override {
@@ -25,7 +25,7 @@ struct AuthRequestedEvent : network::SessionEvent, domain::PlayerEvent {
 // Получает: ResponseSender
 struct PlayerAuthenticatedEvent : network::SessionEvent, domain::PlayerEvent {
     explicit PlayerAuthenticatedEvent(network::SessionId sid, domain::PlayerId pid) noexcept
-        : network::SessionEvent(sid)
+        : SessionEvent(sid)
         , PlayerEvent(pid) {}
 
     core::EventType getType() const override {
@@ -37,7 +37,7 @@ struct PlayerAuthenticatedEvent : network::SessionEvent, domain::PlayerEvent {
 // Получает: ResponseSender
 struct PlayerAuthenticationFailedEvent : network::SessionEvent, domain::PlayerEvent {
     explicit PlayerAuthenticationFailedEvent(network::SessionId sid, domain::PlayerId pid) noexcept
-        : network::SessionEvent(sid)
+        : SessionEvent(sid)
         , PlayerEvent(pid) {}
 
     core::EventType getType() const override {
@@ -53,7 +53,7 @@ struct PlayerAuthenticationFailedEvent : network::SessionEvent, domain::PlayerEv
 // Получает: ConnectionManager
 struct ReconnectRequestedEvent : network::SessionEvent, domain::PlayerEvent {
     explicit ReconnectRequestedEvent(network::SessionId sid, domain::PlayerId pid) noexcept
-        : network::SessionEvent(sid)
+        : SessionEvent(sid)
         , PlayerEvent(pid) {}
 
     core::EventType getType() const override {
@@ -65,7 +65,7 @@ struct ReconnectRequestedEvent : network::SessionEvent, domain::PlayerEvent {
 // Получает: ResponseSender
 struct PlayerReconnectedEvent : network::SessionEvent, domain::PlayerEvent {
     explicit PlayerReconnectedEvent(network::SessionId sid, domain::PlayerId pid) noexcept
-        : network::SessionEvent(sid)
+        : SessionEvent(sid)
         , PlayerEvent(pid) {}
 
     core::EventType getType() const override {
@@ -77,7 +77,7 @@ struct PlayerReconnectedEvent : network::SessionEvent, domain::PlayerEvent {
 // Получает: ResponseSender
 struct PlayerReconnectionFailedEvent : network::SessionEvent, domain::PlayerEvent {
     explicit PlayerReconnectionFailedEvent(network::SessionId sid, domain::PlayerId pid) noexcept
-        : network::SessionEvent(sid)
+        : SessionEvent(sid)
         , PlayerEvent(pid) {}
 
     core::EventType getType() const override {

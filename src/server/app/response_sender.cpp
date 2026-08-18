@@ -1,8 +1,12 @@
 #include "response_sender.h"
 
 #include <common/types/message_types.h>
+#include <common/utility/logger.h>
 #include <common/wire/serder_game_state.h>
+#include <format>
 #include <server/network/session.h>
+
+#include "session_registry.h"
 
 namespace dungeons::server::app {
 
@@ -48,10 +52,10 @@ void ResponseSender::initialize() {
     subscribeWeakMethod<domain::GameStateUpdateEvent>(&ResponseSender::onGameStateUpdate);
 }
 
+#pragma region onMethods
 void ResponseSender::onPlayerAuthenticated(const PlayerAuthenticatedEvent& event) {
     sendResponse(event, dc_NetMsg::kWelcome);
 }
-
 void ResponseSender::onPlayerReconnected(const PlayerReconnectedEvent& event) {
     sendResponse(event, dc_NetMsg::kReconnected);
 }
@@ -92,6 +96,7 @@ void ResponseSender::onListLobbiesResponse(const domain::ListLobbiesResponseEven
     std::vector<uint64_t> args(event.lobby_ids.begin(), event.lobby_ids.end());
     sendResponse(event, common::types::AppMessageType::kListPartiesCreated, args);
 }
+#pragma endregion
 
 void ResponseSender::onGameStateUpdate(const domain::GameStateUpdateEvent& event) {
     LOG_INFO("ResponseSender::onGameStateUpdate");
@@ -108,6 +113,38 @@ void ResponseSender::onGameStateUpdate(const domain::GameStateUpdateEvent& event
                 session->send(common::network::RawMessage{std::move(*game_state_msg)});
             }
         }
+    }
+}
+
+std::shared_ptr<network::Session> ResponseSender::findSessionBySessionId(network::SessionId id) {
+    auto session = session_registry_->findSessionBySessionId(id);
+    if (!session) {
+        LOG_ERROR(std::format("Session #{} not found", id.get()));
+    }
+    return session;
+}
+
+std::shared_ptr<network::Session> ResponseSender::findSessionByPlayerId(domain::PlayerId id) {
+    auto session = session_registry_->findSessionByPlayerId(id);
+    if (!session) {
+        LOG_ERROR(std::format("Session not found for player #{}", id.get()));
+    }
+    return session;
+}
+
+void ResponseSender::sendResponseImpl(const std::shared_ptr<network::Session>& session,
+                                      std::string_view event_type_name,
+                                      std::optional<common::network::ByteBuffer> opt_buf) {
+    if (!session) {
+        LOG_ERROR(std::format("No session found for event {}, dropping response", event_type_name));
+        return;
+    }
+
+    if (opt_buf.has_value()) {
+        LOG_INFO(std::format("Queued {}", event_type_name));
+        session->send(common::network::RawMessage(std::move(*opt_buf)));
+    } else {
+        LOG_ERROR(std::format("Failed to serialize message for event {}", event_type_name));
     }
 }
 

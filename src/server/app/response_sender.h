@@ -1,10 +1,8 @@
 #pragma once
 
 #include <boost/signals2/connection.hpp>
-#include <common/network/raw_message.h>
-#include <common/utility/logger.h>
+#include <common/network/byte_buffer.h>
 #include <common/wire/serder.h>
-#include <functional>
 #include <memory>
 #include <server/core/event_bus.h>
 #include <server/domain/core/events.h>
@@ -12,7 +10,7 @@
 #include <vector>
 
 #include "events.h"
-#include "session_registry.h"
+#include "session_registry_fwd.h"
 
 namespace dungeons::server::app {
 
@@ -52,14 +50,30 @@ private:
     template <class Event>
     void subscribeWeakMethod(void (ResponseSender::*handler)(const Event&));
 
-    template <typename EventT>
-    std::shared_ptr<network::Session> getSessionForEvent(const EventT& event);
-
     template <typename EventType, typename MsgType, typename... Args>
-    void sendResponse(const EventType& event, MsgType msg_type, Args&&... args);
+    void sendResponse(const EventType& event, MsgType msg_type, Args&&... args) {
+        auto session = getSessionForEvent(event);
+        auto opt_buf = common::wire::serializeMessage(msg_type, std::forward<Args>(args)...);
+        sendResponseImpl(session, core::eventTypeToString(event.getType()), std::move(opt_buf));
+    }
 
-    template <typename EventType, typename MsgType>
-    void sendResponse(const EventType& event, MsgType msg_type, const std::vector<uint64_t>& args);
+    template <typename EventT>
+    std::shared_ptr<network::Session> getSessionForEvent(const EventT& event) {
+        if constexpr (requires { event.session_id; }) {
+            return findSessionBySessionId(event.session_id);
+        } else if constexpr (requires { event.player_id; }) {
+            return findSessionByPlayerId(event.player_id);
+        } else {
+            return nullptr;
+        }
+    }
+
+    std::shared_ptr<network::Session> findSessionBySessionId(network::SessionId id);
+    std::shared_ptr<network::Session> findSessionByPlayerId(domain::PlayerId id);
+
+    static void sendResponseImpl(const std::shared_ptr<network::Session>& session,
+                                 std::string_view event_type_name,
+                                 std::optional<common::network::ByteBuffer> opt_buf);
 };
 
 template <class Event, class Callable, std::enable_if_t<!std::is_member_function_pointer_v<Callable>, int>>
@@ -81,64 +95,6 @@ void ResponseSender::subscribeWeakMethod(void (ResponseSender::*handler)(const E
             ((*self).*handler)(e);
         }
     }));
-}
-
-template <typename EventT>
-std::shared_ptr<network::Session> ResponseSender::getSessionForEvent(const EventT& event) {
-    if constexpr (requires { event.session_id; }) {
-        auto session = session_registry_->findSessionBySessionId(event.session_id);
-        if (!session) {
-            LOG_ERROR(std::format("Session #{} not found", event.session_id.value));
-            return nullptr;
-        }
-        return session;
-    } else if constexpr (requires { event.player_id; }) {
-        auto session = session_registry_->findSessionByPlayerId(event.player_id);
-        if (!session) {
-            LOG_ERROR(std::format("Session not found for player #{}", event.player_id.value));
-            return nullptr;
-        }
-        return session;
-    } else {
-        // no known ID
-        return nullptr;
-    }
-}
-
-template <typename EventType, typename MsgType, typename... Args>
-void ResponseSender::sendResponse(const EventType& event, MsgType msg_type, Args&&... args) {
-    auto event_type = core::eventTypeToString(event.getType());
-    auto session = getSessionForEvent(event);
-    if (!session) {
-        LOG_ERROR(std::format("No session found for event {}, dropping response", event_type));
-        return;
-    }
-
-    auto opt_buf = common::wire::serializeMessage(msg_type, std::forward<Args>(args)...);
-    if (opt_buf.has_value()) {
-        LOG_INFO(std::format("Queued {}", event_type));
-        session->send(common::network::RawMessage(std::move(*opt_buf)));
-    } else {
-        LOG_ERROR(std::format("Failed to serialize message for event {}", event_type));
-    }
-}
-
-template <typename EventType, typename MsgType>
-void ResponseSender::sendResponse(const EventType& event, MsgType msg_type, const std::vector<uint64_t>& args) {
-    auto event_type = core::eventTypeToString(event.getType());
-    auto session = getSessionForEvent(event);
-    if (!session) {
-        LOG_ERROR(std::format("No session found for event {}, dropping response", event_type));
-        return;
-    }
-
-    auto opt_buf = common::wire::serializeMessage(msg_type, std::move(args));
-    if (opt_buf.has_value()) {
-        LOG_INFO(std::format("Queued {}", event_type));
-        session->send(common::network::RawMessage(std::move(*opt_buf)));
-    } else {
-        LOG_ERROR(std::format("Failed to serialize message for event {}", event_type));
-    }
 }
 
 }  // namespace dungeons::server::app
