@@ -6,7 +6,7 @@
 #include <server/domain/core/types.h>
 #include <server/network/events.h>
 
-#include "session_registry.h"
+#include "session_registry_fwd.h"
 
 namespace dungeons::server::app {
 

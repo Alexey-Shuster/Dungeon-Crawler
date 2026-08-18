@@ -1,5 +1,6 @@
 
-add_library(server_app STATIC)
+add_library(server_app STATIC
+        session_registry_fwd.h)
 
 set(SERVER_APP_LIB server_app)
 

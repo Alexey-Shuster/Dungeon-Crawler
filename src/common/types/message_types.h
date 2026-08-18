@@ -62,12 +62,19 @@ static_assert(static_cast<uint8_t>(NetworkMessageType::kMax) <= UINT8_MAX, "Netw
 static_assert(static_cast<uint8_t>(AppMessageType::kMax) <= UINT8_MAX, "AppMessageType exceeds uint8_t");
 static_assert(static_cast<uint8_t>(DomainMessageType::kMax) <= UINT8_MAX, "DomainMessageType exceeds uint8_t");
 
-// -----------------------------------------------------------------------------
-// Type‑safe variant for internal handling
-// -----------------------------------------------------------------------------
+// Type‑safe variant for convenient handling
 using MessageTypeVariant = std::variant<std::monostate,  // unknown / invalid
                                         NetworkMessageType,
                                         AppMessageType,
                                         DomainMessageType>;
 
 }  // namespace dungeons::common::types
+
+namespace dungeons {
+
+using dc_MsgVariant = common::types::MessageTypeVariant;
+using dc_NetMsg = common::types::NetworkMessageType;
+using dc_AppMsg = common::types::AppMessageType;
+using dc_DmnMsg = common::types::DomainMessageType;
+
+}  // namespace dungeons

@@ -5,9 +5,9 @@
 #include <format>
 #include <server/network/session.h>
 
-namespace dungeons::server::app {
+#include "session_registry.h"
 
-// TODO (DRUsmanov): Add a alias for long type names like std::shared_ptr<network::SessionRegistry>
+namespace dungeons::server::app {
 
 std::shared_ptr<ConnectionManager> ConnectionManager::Create(std::shared_ptr<core::EventBus> event_bus,
                                                              std::shared_ptr<SessionRegistry> session_registry) {

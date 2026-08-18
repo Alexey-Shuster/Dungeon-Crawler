@@ -98,29 +98,24 @@ std::shared_ptr<core::Event> CreateEvent(const common::wire::MessageArgs& args) 
  *
  * @todo fix into std::array
  */
-using MsgVariant = common::types::MessageTypeVariant;
-using NetMsg = common::types::NetworkMessageType;
-using AppMsg = common::types::AppMessageType;
-using DmnMsg = common::types::DomainMessageType;
+const std::unordered_map<dc_MsgVariant, EventFactory, MessageTypeVariantHash> kEventFactoryMap = {
+    {dc_NetMsg::kJoin, CreateEvent<AuthRequestedEvent, network::SessionId, domain::PlayerId>},
 
-const std::unordered_map<MsgVariant, EventFactory, MessageTypeVariantHash> kEventFactoryMap = {
-    {NetMsg::kJoin, CreateEvent<AuthRequestedEvent, network::SessionId, domain::PlayerId>},
+    {dc_NetMsg::kReconnect, CreateEvent<ReconnectRequestedEvent, network::SessionId, domain::PlayerId>},
 
-    {NetMsg::kReconnect, CreateEvent<ReconnectRequestedEvent, network::SessionId, domain::PlayerId>},
+    {dc_AppMsg::kCreateParty, CreateEvent<domain::CreateLobbyRequestEvent, domain::PlayerId>},
 
-    {AppMsg::kCreateParty, CreateEvent<domain::CreateLobbyRequestEvent, domain::PlayerId>},
+    {dc_AppMsg::kListParties, CreateEvent<domain::ListLobbiesRequestEvent, domain::PlayerId>},
 
-    {AppMsg::kListParties, CreateEvent<domain::ListLobbiesRequestEvent, domain::PlayerId>},
+    {dc_AppMsg::kJoinParty, CreateEvent<domain::JoinLobbyRequestEvent, domain::PlayerId, domain::LobbyId>},
 
-    {AppMsg::kJoinParty, CreateEvent<domain::JoinLobbyRequestEvent, domain::PlayerId, domain::LobbyId>},
+    {dc_AppMsg::kLeaveParty, CreateEvent<domain::LeaveLobbyRequestEvent, domain::PlayerId>},
 
-    {AppMsg::kLeaveParty, CreateEvent<domain::LeaveLobbyRequestEvent, domain::PlayerId>},
+    {dc_AppMsg::kStartGame, CreateEvent<domain::StartGameRequestEvent, domain::PlayerId>},
 
-    {AppMsg::kStartGame, CreateEvent<domain::StartGameRequestEvent, domain::PlayerId>},
+    {dc_DmnMsg::kMove, CreateEvent<domain::MoveRequestEvent, domain::PlayerId, common::types::Direction>},
 
-    {DmnMsg::kMove, CreateEvent<domain::MoveRequestEvent, domain::PlayerId, common::types::Direction>},
-
-    {DmnMsg::kAttack, CreateEvent<domain::AtackRequestEvent, domain::PlayerId>},
+    {dc_DmnMsg::kAttack, CreateEvent<domain::AtackRequestEvent, domain::PlayerId>},
 };
 
 /**
@@ -138,7 +133,7 @@ const std::unordered_map<MsgVariant, EventFactory, MessageTypeVariantHash> kEven
  *       - Нет зарегистрированной фабрики для msg_type
  *       - Фабрика вернула nullptr (невалидные аргументы)
  */
-[[nodiscard]] inline std::shared_ptr<core::Event> makeEvent(const MsgVariant& msg_type,
+[[nodiscard]] inline std::shared_ptr<core::Event> makeEvent(const dc_MsgVariant& msg_type,
                                                             const common::wire::MessageArgs& msg_args) {
     if (std::holds_alternative<std::monostate>(msg_type)) {
         LOG_ERROR("Cannot create event from unknown message type");

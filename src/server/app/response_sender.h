@@ -4,12 +4,14 @@
 #include <common/network/raw_message.h>
 #include <common/utility/logger.h>
 #include <common/wire/serder.h>
+#include <functional>
 #include <memory>
 #include <server/core/event_bus.h>
 #include <server/domain/core/events.h>
-#include <server/network/session.h>
+#include <server/network/session_fwd.h>
 #include <vector>
 
+#include "events.h"
 #include "session_registry.h"
 
 namespace dungeons::server::app {
@@ -27,20 +29,28 @@ protected:
 private:
     void initialize();
 
+    void onPlayerAuthenticated(const PlayerAuthenticatedEvent& event);
+    void onPlayerReconnected(const PlayerReconnectedEvent& event);
+    void onPlayerReconnectionFailed(const PlayerReconnectionFailedEvent& event);
+    void onLobbyCreationFailed(const domain::LobbyCreationFailedResponseEvent& event);
+    void onListLobbiesFailed(const domain::ListLobbiesFailedResponseEvent& event);
     void onListLobbiesResponse(const domain::ListLobbiesResponseEvent& event);
+    void onJoinLobbyResponse(const domain::JoinLobbyResponseEvent& event);
+    void onJoinLobbyFailed(const domain::JoinLobbyFailedResponseEvent& event);
+    void onLeaveLobbyResponse(const domain::LeaveLobbyResponseEvent& event);
+    void onLeaveLobbyFailed(const domain::LeaveLobbyFailedResponseEvent& event);
+    void onStartGameResponse(const domain::StartGameResponseEvent& event);
     void onGameStateUpdate(const domain::GameStateUpdateEvent& event);
 
     std::shared_ptr<core::EventBus> event_bus_;
     std::shared_ptr<SessionRegistry> session_registry_;
     std::vector<boost::signals2::scoped_connection> connections_;
 
-    // lambdas & callable objects
     template <class Event, class Callable, std::enable_if_t<!std::is_member_function_pointer_v<Callable>, int> = 0>
     void subscribeWeak(Callable&& handler);
 
-    // pointer-to-member-function
-    template <class Event, class Handler, std::enable_if_t<std::is_member_function_pointer_v<Handler>, int> = 0>
-    void subscribeWeak(Handler handler);
+    template <class Event>
+    void subscribeWeakMethod(void (ResponseSender::*handler)(const Event&));
 
     template <typename EventT>
     std::shared_ptr<network::Session> getSessionForEvent(const EventT& event);
@@ -63,8 +73,8 @@ void ResponseSender::subscribeWeak(Callable&& handler) {
         }));
 }
 
-template <class Event, class Handler, std::enable_if_t<std::is_member_function_pointer_v<Handler>, int>>
-void ResponseSender::subscribeWeak(Handler handler) {
+template <class Event>
+void ResponseSender::subscribeWeakMethod(void (ResponseSender::*handler)(const Event&)) {
     auto weak = weak_from_this();
     connections_.push_back(event_bus_->subscribe<Event>([weak, handler](const Event& e) {
         if (auto self = weak.lock()) {

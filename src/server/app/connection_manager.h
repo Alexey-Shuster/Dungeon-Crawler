@@ -10,7 +10,7 @@
 #include <vector>
 
 #include "events.h"
-#include "session_registry.h"
+#include "session_registry_fwd.h"
 
 namespace dungeons::server::app {
 

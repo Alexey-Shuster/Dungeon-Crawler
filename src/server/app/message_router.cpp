@@ -6,6 +6,8 @@
 #include <format>
 #include <server/app/message_dispatcher.h>
 
+#include "session_registry.h"
+
 namespace dungeons::server::app {
 
 std::shared_ptr<MessageRouter> MessageRouter::create(std::shared_ptr<core::EventBus> event_bus,
@@ -27,8 +29,10 @@ MessageRouter::MessageRouter(std::shared_ptr<core::EventBus> event_bus,
     , session_registry_{std::move(session_registry)} {}
 
 void MessageRouter::Initialize() {
-    connection_with_event_bus_ = event_bus_->subscribe<network::RawMessageReceivedEvent>(
-        std::bind(&MessageRouter::OnRawMessage, shared_from_this(), std::placeholders::_1));
+    connection_with_event_bus_ =
+        event_bus_->subscribe<network::RawMessageReceivedEvent>([self = shared_from_this()](const auto& event) {
+            self->OnRawMessage(event);
+        });
 }
 
 void MessageRouter::OnRawMessage(const network::RawMessageReceivedEvent& event) {
@@ -37,7 +41,7 @@ void MessageRouter::OnRawMessage(const network::RawMessageReceivedEvent& event) 
                          sid,
                          event.message.buffer.size()));
 
-    auto message = common::wire::deserializeRawMessage(std::move(event.message.buffer));
+    auto message = common::wire::deserializeRawMessage(event.message.buffer);
 
     if (!message) {
         LOG_ERROR("Failed to deserialize message");
