@@ -27,10 +27,10 @@ private:
 
     void Initialize();
 
-    void HandleClientConnectedEvent(const network::ClientConnectedEvent& event);
+    void HandleClientConnectedEvent(const network::ClientConnectedEvent& event) const;
     void HandleClientDisconnectedEvent(const network::ClientDisconnectedEvent& event);
     void HandlePlayerReconnectRequestedEvent(const ReconnectRequestedEvent& event);
-    void HandlePlayerAuthRequestedEvent(const AuthRequestedEvent& event);
+    void HandlePlayerAuthRequestedEvent(const AuthRequestedEvent& event) const;
 
 private:
     std::shared_ptr<core::EventBus> event_bus_;

@@ -1,8 +1,8 @@
 #include "session.h"
 
 #include <common/network/frame_codec.h>
+#include <common/types/strong_id_format.h>
 #include <common/utility/logger.h>
-#include <format>
 
 #include "events.h"
 
@@ -12,10 +12,8 @@ static constexpr size_t kBufferChunkSize = 16 * 1024;
 
 namespace dungeons::server::network {
 
-std::shared_ptr<Session> Session::create(boost::asio::ip::tcp::socket socket,
-                                         core::EventBus& eventBus,
-                                         SessionId sid) {
-    struct CreateMakeShared : Session {
+std::shared_ptr<Session> Session::create(boost::asio::ip::tcp::socket socket, core::EventBus& eventBus, SessionId sid) {
+    struct CreateMakeShared final : Session {
         CreateMakeShared(boost::asio::ip::tcp::socket socket, core::EventBus& eventBus, SessionId sid)
             : Session(std::move(socket), eventBus, sid) {}
     };
@@ -23,7 +21,7 @@ std::shared_ptr<Session> Session::create(boost::asio::ip::tcp::socket socket,
 }
 
 Session::~Session() {
-    LOG_INFO(std::format("[Session {}] destroyed", sessionId_.value));
+    LOG_INFO(std::format("[Session {}] destroyed", sessionId_));
 }
 
 void Session::start() {
@@ -42,7 +40,7 @@ void Session::send(common::network::RawMessage raw_message) {
         // Encode the message into a frame
         auto encoded = common::network::FrameCodec::encodeFrame(std::move(msg.buffer));
         if (encoded.empty()) {
-            LOG_ERROR(std::format("[Session {}] encoding failed", sessionId_.value));
+            LOG_ERROR(std::format("[Session {}] encoding failed", sessionId_));
             return;
         }
 
@@ -77,7 +75,7 @@ Session::Session(boost::asio::ip::tcp::socket socket, core::EventBus& eventBus, 
     , strand_(socket_.get_executor())
     , eventBus_(eventBus)
     , sessionId_(sid) {
-    LOG_INFO(std::format("[Session {}] created", sessionId_.value));
+    LOG_INFO(std::format("[Session {}] created", sessionId_));
 }
 
 void Session::doRead() {
@@ -100,10 +98,10 @@ void Session::doRead() {
                     auto messages = common::network::FrameCodec::extractFrames(read_buffer_);
                     // TODO: update with FrameCodec return logic
                     if (messages.empty()) {
-                        LOG_INFO(std::format("[Session {}] no data extracted", sessionId_.value));
+                        LOG_INFO(std::format("[Session {}] no data extracted", sessionId_));
                     } else {
                         LOG_INFO(std::format("[Session {}] read buffer success. Processing total={} messages.",
-                                             sessionId_.value,
+                                             sessionId_,
                                              messages.size()));
                     }
 
@@ -111,7 +109,7 @@ void Session::doRead() {
                     for (auto& msg : messages) {
                         int n = 1;
                         LOG_INFO(std::format("[Session {}] processing message #{}, size={} bytes",
-                                             sessionId_.value,
+                                             sessionId_,
                                              n,
                                              msg.size()));
                         processMessage(common::network::RawMessage(std::move(msg)));
@@ -121,7 +119,7 @@ void Session::doRead() {
                     // Continue reading immediately
                     doRead();
                 } else {
-                    LOG_ERROR(std::format("[Session {}] read error: {}", sessionId_.value, ec.message()));
+                    LOG_ERROR(std::format("[Session {}] read error: {}", sessionId_, ec.message()));
                     handleDisconnect();  // Error → close
                 }
             }));
@@ -152,7 +150,7 @@ void Session::doWrite() {
                         doWrite();
                     }
                 } else {
-                    LOG_ERROR(std::format("[Session {}] write error: {}", sessionId_.value, ec.message()));
+                    LOG_ERROR(std::format("[Session {}] write error: {}", sessionId_, ec.message()));
                     handleDisconnect();
                 }
             }));
@@ -160,7 +158,7 @@ void Session::doWrite() {
 
 void Session::processMessage(common::network::RawMessage raw_msg) const {
     LOG_INFO(std::format("[Session {}] sending RawMessageReceivedEvent. Included message size={} bytes",
-                         sessionId_.value,
+                         sessionId_,
                          raw_msg.buffer.size()));
     eventBus_.publish(RawMessageReceivedEvent{getSessionId(), std::move(raw_msg)});
 }

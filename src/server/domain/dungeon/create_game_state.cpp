@@ -28,21 +28,18 @@ common::network::DungeonSnapshot createGameStateDTO(const DungeonState& state) {
         return common::network::EntitySnapshot{
             .type = type,
             .state = static_cast<uint8_t>(entity.isAlive() ? EntityState::Alive : EntityState::Dead),
-            .id = id.value,
+            .id = id.get(),
             .pos_x = static_cast<uint64_t>(entity.GetPosition().x),
             .pos_y = static_cast<uint64_t>(entity.GetPosition().y),
-            .hp = entity.getHealth().value()
-        };
+            .hp = entity.getHealth().value()};
     };
 
     for (const auto& [id, player] : state.players) {
-        snapshot.players.push_back(
-            make_entity_snapshot(id, player, static_cast<uint8_t>(EntityType::Player)));
+        snapshot.players.push_back(make_entity_snapshot(id, player, static_cast<uint8_t>(EntityType::Player)));
     }
 
     for (const auto& [id, monster] : state.monsters) {
-        snapshot.mobs.push_back(
-            make_entity_snapshot(id, monster, static_cast<uint8_t>(EntityType::Monster)));
+        snapshot.mobs.push_back(make_entity_snapshot(id, monster, static_cast<uint8_t>(EntityType::Monster)));
     }
 
     return snapshot;

@@ -1,6 +1,7 @@
 #include "response_sender.h"
 
 #include <common/types/message_types.h>
+#include <common/types/strong_id_format.h>
 #include <common/utility/logger.h>
 #include <common/wire/serder_game_state.h>
 #include <format>
@@ -34,10 +35,10 @@ void ResponseSender::initialize() {
     subscribeWeakMethod<PlayerReconnectionFailedEvent>(&ResponseSender::onPlayerReconnectionFailed);
 
     subscribeWeak<PlayerAuthenticationFailedEvent>([](const auto& self, const auto& event) {
-        self->sendResponse(event, dc_NetMsg::kAuthFailed, event.player_id.value);
+        self->sendResponse(event, dc_NetMsg::kAuthFailed, event.player_id.get());
     });
     subscribeWeak<domain::LobbyCreatedResponseEvent>([](const auto& self, const auto& event) {
-        self->sendResponse(event, common::types::AppMessageType::kPartyCreated, event.lobby_id.value);
+        self->sendResponse(event, common::types::AppMessageType::kPartyCreated, event.lobby_id.get());
     });
 
     subscribeWeakMethod<domain::LobbyCreationFailedResponseEvent>(&ResponseSender::onLobbyCreationFailed);
@@ -72,6 +73,11 @@ void ResponseSender::onListLobbiesFailed(const domain::ListLobbiesFailedResponse
     sendResponse(event, dc_AppMsg::kListPartiesNotCreated);
 }
 
+void ResponseSender::onListLobbiesResponse(const domain::ListLobbiesResponseEvent& event) {
+    std::vector<uint64_t> args(event.lobby_ids.begin(), event.lobby_ids.end());
+    sendResponse(event, common::types::AppMessageType::kListPartiesCreated, args);
+}
+
 void ResponseSender::onJoinLobbyResponse(const domain::JoinLobbyResponseEvent& event) {
     sendResponse(event, dc_AppMsg::kPlayerJoinedParty);
 }
@@ -92,12 +98,6 @@ void ResponseSender::onStartGameResponse(const domain::StartGameResponseEvent& e
     sendResponse(event, dc_AppMsg::kStartGame);
 }
 
-void ResponseSender::onListLobbiesResponse(const domain::ListLobbiesResponseEvent& event) {
-    std::vector<uint64_t> args(event.lobby_ids.begin(), event.lobby_ids.end());
-    sendResponse(event, common::types::AppMessageType::kListPartiesCreated, args);
-}
-#pragma endregion
-
 void ResponseSender::onGameStateUpdate(const domain::GameStateUpdateEvent& event) {
     LOG_INFO("ResponseSender::onGameStateUpdate");
     // TODO: refine logic
@@ -115,19 +115,20 @@ void ResponseSender::onGameStateUpdate(const domain::GameStateUpdateEvent& event
         }
     }
 }
+#pragma endregion
 
-std::shared_ptr<network::Session> ResponseSender::findSessionBySessionId(network::SessionId id) {
+std::shared_ptr<network::Session> ResponseSender::findSessionBySessionId(network::SessionId id) const {
     auto session = session_registry_->findSessionBySessionId(id);
     if (!session) {
-        LOG_ERROR(std::format("Session #{} not found", id.get()));
+        LOG_ERROR(std::format("Session #{} not found", id));
     }
     return session;
 }
 
-std::shared_ptr<network::Session> ResponseSender::findSessionByPlayerId(domain::PlayerId id) {
+std::shared_ptr<network::Session> ResponseSender::findSessionByPlayerId(domain::PlayerId id) const {
     auto session = session_registry_->findSessionByPlayerId(id);
     if (!session) {
-        LOG_ERROR(std::format("Session not found for player #{}", id.get()));
+        LOG_ERROR(std::format("Session not found for player #{}", id));
     }
     return session;
 }

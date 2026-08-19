@@ -1,5 +1,6 @@
 #include "dungeon_registry.h"
 
+#include <common/types/strong_id_format.h>
 #include <common/utility/config.h>
 #include <common/utility/logger.h>
 #include <format>
@@ -27,8 +28,8 @@ bool DungeonRegistry::addDungeon(GameMap game_map, std::vector<PlayerId> player_
     for (PlayerId pid : player_ids) {
         if (player_to_dungeon_.contains(pid)) {
             LOG_ERROR(std::format("Player {} is already in another dungeon with GameId {}",
-                                  pid.value,
-                                  player_to_dungeon_.at(pid).value));
+                                  pid,
+                                  player_to_dungeon_.at(pid)));
             return false;
         }
     }
@@ -39,7 +40,7 @@ bool DungeonRegistry::addDungeon(GameMap game_map, std::vector<PlayerId> player_
     // Insert into primary maps
     auto [it, inserted] = dungeons_.emplace(id, dungeon);
     if (!inserted) {
-        LOG_ERROR(std::format("Failed to register dungeon #{}", id.value));
+        LOG_ERROR(std::format("Failed to register dungeon #{}", id));
         return false;
     }
 
@@ -52,14 +53,14 @@ bool DungeonRegistry::addDungeon(GameMap game_map, std::vector<PlayerId> player_
     size_t num_players = player_ids.size();
     dungeon_to_players_.emplace(id, std::move(player_ids));
 
-    LOG_INFO(std::format("Dungeon #{} created with {} players.", id.value, num_players));
+    LOG_INFO(std::format("Dungeon #{} created with {} players.", id, num_players));
     return true;
 }
 
 bool DungeonRegistry::removeDungeon(GameId id) {
     auto it = dungeons_.find(id);
     if (it == dungeons_.end()) {
-        LOG_ERROR(std::format("Dungeon #{} not found", id.value));
+        LOG_ERROR(std::format("Dungeon #{} not found", id));
         return false;
     }
 
@@ -76,7 +77,7 @@ bool DungeonRegistry::removeDungeon(GameId id) {
 
     // Erase the dungeon itself
     dungeons_.erase(it);
-    LOG_INFO(std::format("Dungeon #{} removed", id.value));
+    LOG_INFO(std::format("Dungeon #{} removed", id));
 
     return true;
 }
@@ -89,7 +90,7 @@ std::shared_ptr<Dungeon> DungeonRegistry::findDungeon(GameId id) const {
 std::optional<GameId> DungeonRegistry::findPlayerDungeon(PlayerId player_id) const {
     auto it = player_to_dungeon_.find(player_id);
     if (it == player_to_dungeon_.end()) {
-        LOG_ERROR(std::format("No Dungeon found for player #{}", player_id.value));
+        LOG_ERROR(std::format("No Dungeon found for player #{}", player_id));
         return std::nullopt;
     }
     return it->second;

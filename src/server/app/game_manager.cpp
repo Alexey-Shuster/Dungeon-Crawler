@@ -1,8 +1,8 @@
 #include "game_manager.h"
 
+#include <common/types/strong_id_format.h>
 #include <common/utility/config.h>
 #include <common/utility/logger.h>
-#include <format>
 #include <server/domain/dungeon/dungeon.h>
 #include <server/domain/dungeon/dungeon_registry.h>
 #include <server/domain/lobby/lobby.h>
@@ -42,17 +42,15 @@ void GameManager::onStartGameRequestEvent(const domain::StartGameRequestEvent& e
             if (dungeon_registry_->addDungeon(domain::GameMap{}, lobby->getAllPlayers())) {
                 for (const auto& pid : lobby->getAllPlayers()) {
                     lobby_registry_->removePlayerFromLobby(pid);
-                    LOG_INFO(std::format("[GameManager] Player {} removed from lobby {}", pid.value, lobby_id.value));
+                    LOG_INFO(std::format("[GameManager] Player {} removed from lobby {}", pid, lobby_id));
                 }
-                LOG_INFO(std::format("[GameManager] Starting game for player {} in lobby {}",
-                                     player_id.value,
-                                     lobby_id.value));
+                LOG_INFO(std::format("[GameManager] Starting game for player {} in lobby {}", player_id, lobby_id));
             }
         } else {
-            LOG_ERROR(std::format("[GameManager] Lobby {} not found for player {}", lobby_id.value, player_id.value));
+            LOG_ERROR(std::format("[GameManager] Lobby {} not found for player {}", lobby_id, player_id));
         }
     } else {
-        LOG_ERROR(std::format("[GameManager] Player {} is not in any lobby", player_id.value));
+        LOG_ERROR(std::format("[GameManager] Player {} is not in any lobby", player_id));
     }
 }
 
@@ -61,30 +59,29 @@ void GameManager::onGameTickEvent(const core::GameTickEvent& event) {
     auto milliseconds =
         std::chrono::duration_cast<std::chrono::milliseconds>(event.timestamp.time_since_epoch()).count();
     for (auto& [game_id, dungeon] : dungeon_registry_->getAllDungeons()) {
-        LOG_INFO(std::format("[GameManager] Processing tick for dungeon #{}", game_id.value));
+        LOG_INFO(std::format("[GameManager] Processing tick for dungeon #{}", game_id));
         auto dungeon_state_ptr = dungeon->processTick(std::chrono::milliseconds(milliseconds));
         if (!dungeon_state_ptr) {
-            LOG_INFO(std::format("[GameManager] Dungeon {} is over. Removing it from registry.", game_id.value));
+            LOG_INFO(std::format("[GameManager] Dungeon {} is over. Removing it from registry.", game_id));
             for (const auto& pid : dungeon->getPlayers()) {
                 postEvent<domain::GameOverEvent>(pid);
-                LOG_INFO(std::format("[GameManager] Published GameOverEvent for player {} in dungeon {}",
-                                     pid.value,
-                                     game_id.value));
+                LOG_INFO(
+                    std::format("[GameManager] Published GameOverEvent for player {} in dungeon {}", pid, game_id));
             }
             dungeons_to_remove.push_back(game_id);
             continue;
         }
         postEvent<domain::GameStateUpdateEvent>(game_id, dungeon_state_ptr);
-        LOG_INFO(std::format("[GameManager] Published GameStateUpdateEvent for dungeon {}", game_id.value));
+        LOG_INFO(std::format("[GameManager] Published GameStateUpdateEvent for dungeon {}", game_id));
     }
     for (const auto& game_id : dungeons_to_remove) {
         if (!dungeon_registry_->removeDungeon(game_id)) {
-            LOG_ERROR(std::format("[GameManager] Failed to remove dungeon #{}", game_id.value));
+            LOG_ERROR(std::format("[GameManager] Failed to remove dungeon #{}", game_id));
         }
     }
 }
 
-void GameManager::onMoveRequestEvent(const domain::MoveRequestEvent& event) {
+void GameManager::onMoveRequestEvent(const domain::MoveRequestEvent& event) const {
     auto player_id = event.player_id;
     auto direction = event.direction;
     std::string dir_str{};
@@ -96,30 +93,30 @@ void GameManager::onMoveRequestEvent(const domain::MoveRequestEvent& event) {
         if (auto dungeon = dungeon_registry_->findDungeon(game_id); dungeon) {
             dungeon->addMovePlayerCommand(player_id, direction);
             LOG_INFO(std::format("[GameManager] Player {} moved in dungeon #{} to direction {}",
-                                 player_id.value,
-                                 game_id.value,
+                                 player_id,
+                                 game_id,
                                  dir_str));
         } else {
-            LOG_ERROR(std::format("[GameManager] Dungeon {} not found for player {}", game_id.value, player_id.value));
+            LOG_ERROR(std::format("[GameManager] Dungeon {} not found for player {}", game_id, player_id));
         }
     } else {
-        LOG_ERROR(std::format("[GameManager] Player {} is not in any dungeon", player_id.value));
+        LOG_ERROR(std::format("[GameManager] Player {} is not in any dungeon", player_id));
     }
 }
 
-void GameManager::onAttackRequestEvent(const domain::AtackRequestEvent& event) {
+void GameManager::onAttackRequestEvent(const domain::AtackRequestEvent& event) const {
     auto player_id = event.player_id;
     static auto attack = common::utility::getSettings().gameplay.player_default_attack;
     if (auto game_id_opt = dungeon_registry_->findPlayerDungeon(player_id); game_id_opt.has_value()) {
         auto game_id = game_id_opt.value();
         if (auto dungeon = dungeon_registry_->findDungeon(game_id); dungeon) {
             dungeon->addPlayerAttackCommand(player_id, attack);
-            LOG_INFO(std::format("[GameManager] Player {} attacked in dungeon {}", player_id.value, game_id.value));
+            LOG_INFO(std::format("[GameManager] Player {} attacked in dungeon {}", player_id, game_id));
         } else {
-            LOG_ERROR(std::format("[GameManager] Dungeon {} not found for player {}", game_id.value, player_id.value));
+            LOG_ERROR(std::format("[GameManager] Dungeon {} not found for player {}", game_id, player_id));
         }
     } else {
-        LOG_ERROR(std::format("[GameManager] Player {} is not in any dungeon", player_id.value));
+        LOG_ERROR(std::format("[GameManager] Player {} is not in any dungeon", player_id));
     }
 }
 

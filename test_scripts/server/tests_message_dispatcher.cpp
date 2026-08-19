@@ -57,8 +57,8 @@ TEST_F(MakeEventTest, CreateAuthRequestedEvent) {
     ASSERT_NE(event, nullptr);
     auto auth_event = std::dynamic_pointer_cast<AuthRequestedEvent>(event);
     ASSERT_NE(auth_event, nullptr);
-    EXPECT_SESSION_EQ(auth_event->session_id.value, 123);
-    EXPECT_PLAYER_EQ(auth_event->player_id.value, 456);
+    EXPECT_SESSION_EQ(auth_event->session_id.get(), 123);
+    EXPECT_PLAYER_EQ(auth_event->player_id.get(), 456);
 }
 
 TEST_F(MakeEventTest, UnknownMessageTypeReturnsNull) {
@@ -119,8 +119,8 @@ TEST_F(SerializationIntegrationTest, SerializeDeserializeJoinMessage) {
     auto auth_event = std::dynamic_pointer_cast<AuthRequestedEvent>(event);
     ASSERT_NE(auth_event, nullptr);
 
-    EXPECT_SESSION_EQ(auth_event->session_id.value, 123);
-    EXPECT_PLAYER_EQ(auth_event->player_id.value, 456);
+    EXPECT_SESSION_EQ(auth_event->session_id.get(), 123);
+    EXPECT_PLAYER_EQ(auth_event->player_id.get(), 456);
 }
 
 TEST_F(SerializationIntegrationTest, SerializeDeserializeWithLargeIds) {
@@ -136,8 +136,8 @@ TEST_F(SerializationIntegrationTest, SerializeDeserializeWithLargeIds) {
     auto auth_event = std::dynamic_pointer_cast<AuthRequestedEvent>(event);
     ASSERT_NE(auth_event, nullptr);
 
-    EXPECT_SESSION_EQ(auth_event->session_id.value, 0xFFFFFFFFFFFFFFFF);
-    EXPECT_PLAYER_EQ(auth_event->player_id.value, 0x0123456789ABCDEF);
+    EXPECT_SESSION_EQ(auth_event->session_id.get(), 0xFFFFFFFFFFFFFFFF);
+    EXPECT_PLAYER_EQ(auth_event->player_id.get(), 0x0123456789ABCDEF);
 }
 
 TEST_F(SerializationIntegrationTest, SerializeMessageCreatesCorrectFormat) {
@@ -300,8 +300,8 @@ TEST(IntegrationTest, RoundTripWithVariousValues) {
         auto auth_event = std::dynamic_pointer_cast<AuthRequestedEvent>(event);
         ASSERT_NE(auth_event, nullptr);
 
-        EXPECT_SESSION_EQ(auth_event->session_id.value, tc.session_id.value);
-        EXPECT_PLAYER_EQ(auth_event->player_id.value, tc.player_id.value);
+        EXPECT_SESSION_EQ(auth_event->session_id.get(), tc.session_id.get());
+        EXPECT_PLAYER_EQ(auth_event->player_id.get(), tc.player_id.get());
     }
 }
 
@@ -329,8 +329,8 @@ TEST(IntegrationTest, SerializeDeserializeMultipleTimes) {
     auto auth_event2 = std::dynamic_pointer_cast<AuthRequestedEvent>(event2);
     ASSERT_NE(auth_event2, nullptr);
 
-    EXPECT_SESSION_EQ(auth_event1->session_id.value, auth_event2->session_id.value);
-    EXPECT_PLAYER_EQ(auth_event1->player_id.value, auth_event2->player_id.value);
+    EXPECT_SESSION_EQ(auth_event1->session_id.get(), auth_event2->session_id.get());
+    EXPECT_PLAYER_EQ(auth_event1->player_id.get(), auth_event2->player_id.get());
 }
 
 // ============================================================================
@@ -352,8 +352,8 @@ TEST(PerformanceTest, SerializeDeserialize1000Messages) {
         auto auth_event = std::dynamic_pointer_cast<AuthRequestedEvent>(event);
         ASSERT_NE(auth_event, nullptr);
 
-        EXPECT_SESSION_EQ(auth_event->session_id.value, i);
-        EXPECT_PLAYER_EQ(auth_event->player_id.value, i * 2);
+        EXPECT_SESSION_EQ(auth_event->session_id.get(), i);
+        EXPECT_PLAYER_EQ(auth_event->player_id.get(), i * 2);
     }
 }
 

@@ -51,25 +51,13 @@ private:
     void subscribeWeakMethod(void (ResponseSender::*handler)(const Event&));
 
     template <typename EventType, typename MsgType, typename... Args>
-    void sendResponse(const EventType& event, MsgType msg_type, Args&&... args) {
-        auto session = getSessionForEvent(event);
-        auto opt_buf = common::wire::serializeMessage(msg_type, std::forward<Args>(args)...);
-        sendResponseImpl(session, core::eventTypeToString(event.getType()), std::move(opt_buf));
-    }
+    void sendResponse(const EventType& event, MsgType msg_type, Args&&... args);
 
     template <typename EventT>
-    std::shared_ptr<network::Session> getSessionForEvent(const EventT& event) {
-        if constexpr (requires { event.session_id; }) {
-            return findSessionBySessionId(event.session_id);
-        } else if constexpr (requires { event.player_id; }) {
-            return findSessionByPlayerId(event.player_id);
-        } else {
-            return nullptr;
-        }
-    }
+    std::shared_ptr<network::Session> getSessionForEvent(const EventT& event);
 
-    std::shared_ptr<network::Session> findSessionBySessionId(network::SessionId id);
-    std::shared_ptr<network::Session> findSessionByPlayerId(domain::PlayerId id);
+    std::shared_ptr<network::Session> findSessionBySessionId(network::SessionId id) const;
+    std::shared_ptr<network::Session> findSessionByPlayerId(domain::PlayerId id) const;
 
     static void sendResponseImpl(const std::shared_ptr<network::Session>& session,
                                  std::string_view event_type_name,
@@ -95,6 +83,24 @@ void ResponseSender::subscribeWeakMethod(void (ResponseSender::*handler)(const E
             ((*self).*handler)(e);
         }
     }));
+}
+
+template <typename EventType, typename MsgType, typename... Args>
+void ResponseSender::sendResponse(const EventType& event, MsgType msg_type, Args&&... args) {
+    auto session = getSessionForEvent(event);
+    auto opt_buf = common::wire::serializeMessage(msg_type, std::forward<Args>(args)...);
+    sendResponseImpl(session, core::eventTypeToString(event.getType()), std::move(opt_buf));
+}
+
+template <typename EventT>
+std::shared_ptr<network::Session> ResponseSender::getSessionForEvent(const EventT& event) {
+    if constexpr (requires { event.session_id; }) {
+        return findSessionBySessionId(event.session_id);
+    } else if constexpr (requires { event.player_id; }) {
+        return findSessionByPlayerId(event.player_id);
+    } else {
+        return nullptr;
+    }
 }
 
 }  // namespace dungeons::server::app

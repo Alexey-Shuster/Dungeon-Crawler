@@ -1,9 +1,9 @@
 #include "message_router.h"
 
 #include <common/types/message_types.h>
+#include <common/types/strong_id_format.h>
 #include <common/utility/logger.h>
 #include <common/wire/serder.h>
-#include <format>
 #include <server/app/message_dispatcher.h>
 
 #include "session_registry.h"
@@ -36,7 +36,7 @@ void MessageRouter::Initialize() {
 }
 
 void MessageRouter::OnRawMessage(const network::RawMessageReceivedEvent& event) {
-    auto& sid = event.session_id.value;
+    auto sid = event.session_id.get();
     LOG_INFO(std::format("[MessageRouter: Session #{}] processing RawMessageReceivedEvent, included message size={}",
                          sid,
                          event.message.buffer.size()));
@@ -61,7 +61,7 @@ void MessageRouter::OnRawMessage(const network::RawMessageReceivedEvent& event) 
         auto type = asNetworkMessage(message->type);
         if (type.has_value() && (type == NetworkMessageType::kJoin || type == NetworkMessageType::kReconnect)) {
             LOG_INFO(std::format("[MessageRouter] adding sessionId #{} to event args", sid));
-            args->emplace_back(event.session_id.value);
+            args->emplace_back(event.session_id.get());
         }
     }
 
@@ -72,7 +72,7 @@ void MessageRouter::OnRawMessage(const network::RawMessageReceivedEvent& event) 
                                  type == AppMessageType::kCreateParty || type == AppMessageType::kListParties ||
                                  type == AppMessageType::kStartGame)) {
             if (auto pid = checkPlayer(event.session_id)) {
-                LOG_INFO(std::format("[MessageRouter] adding playerId #{} to event args", pid->value));
+                LOG_INFO(std::format("[MessageRouter] adding playerId #{} to event args", *pid));
                 args->emplace_back(pid.value());
             } else {
                 LOG_ERROR(std::format("[MessageRouter] cant find Player connected with Session #{}", sid));
@@ -85,7 +85,7 @@ void MessageRouter::OnRawMessage(const network::RawMessageReceivedEvent& event) 
         auto type = asDomainMessage(message->type);
         if (type.has_value() && (type == DomainMessageType::kMove || type == DomainMessageType::kAttack)) {
             if (auto pid = checkPlayer(event.session_id)) {
-                LOG_INFO(std::format("[MessageRouter] adding playerId #{} to event args.", pid->value));
+                LOG_INFO(std::format("[MessageRouter] adding playerId #{} to event args.", *pid));
                 args->emplace_back(pid.value());
             } else {
                 LOG_ERROR(std::format("[MessageRouter] cant find Player connected with Session #{}", sid));
