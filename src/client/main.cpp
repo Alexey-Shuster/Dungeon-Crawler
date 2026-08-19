@@ -82,5 +82,7 @@ int main() {
     LOG_INFO(stop_str);
     std::cout << stop_str << std::endl;
 
+    utility::Logger::Reset();
+
     return EXIT_SUCCESS;
 }

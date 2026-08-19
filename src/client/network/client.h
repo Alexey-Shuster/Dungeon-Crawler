@@ -16,11 +16,13 @@ public:
     void startConnect(const std::string& host, uint16_t port);
     bool isConnected() const;
     void send(common::network::RawMessage message);
+    void disconnect();
 
     using ConnectionCallback = std::function<void()>;
     using DisconnectionCallback = std::function<void()>;
     using ReceiveMessageCallback = std::function<void(common::network::RawMessage)>;
 
+    /// @brief Methods are not thread‑safe. Call single-threaded or protect externally.
     void setOnConnect(ConnectionCallback cb);
     void setOnDisconnect(DisconnectionCallback cb);
     void setOnReceiveMessage(ReceiveMessageCallback cb);
