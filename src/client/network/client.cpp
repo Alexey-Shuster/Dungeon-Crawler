@@ -130,6 +130,13 @@ void Client::send(common::network::RawMessage message) {
         }
     });
 }
+
+void Client::disconnect() {
+    boost::asio::post(strand_, [this, self = shared_from_this()]() {
+        handleDisconnect();
+    });
+}
+
 void Client::setOnConnect(ConnectionCallback cb) {
     on_connect_ = std::move(cb);
 }

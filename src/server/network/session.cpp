@@ -34,9 +34,8 @@ void Session::start() {
 
 void Session::send(common::network::RawMessage raw_message) {
     boost::asio::dispatch(strand_, [this, self = shared_from_this(), msg = std::move(raw_message)]() {
-        if (is_disconnected_.load(std::memory_order_acquire)) {
+        if (state_.load() != State::Connected)
             return;
-        }
         // Encode the message into a frame
         auto encoded = common::network::FrameCodec::encodeFrame(std::move(msg.buffer));
         if (encoded.empty()) {
@@ -57,17 +56,10 @@ SessionId Session::getSessionId() const {
     return sessionId_;
 }
 
-void Session::handleDisconnect() {
-    if (is_disconnected_.exchange(true, std::memory_order_acq_rel)) {
-        return;  // Already disconnecting
-    }
-
-    boost::system::error_code ec;
-    socket_.shutdown(socket_.shutdown_both, ec);
-    socket_.close(ec);  // Ignore close errors
-    write_queue_.clear();
-
-    eventBus_.publish(ClientDisconnectedEvent{shared_from_this()});
+void Session::disconnect() {
+    boost::asio::post(strand_, [self = shared_from_this()]() {
+        self->doDisconnect();
+    });
 }
 
 Session::Session(boost::asio::ip::tcp::socket socket, core::EventBus& eventBus, SessionId sid)
@@ -106,8 +98,9 @@ void Session::doRead() {
                     }
 
                     // Process each complete payload
+                    int n = 0;
                     for (auto& msg : messages) {
-                        int n = 1;
+                        ++n;
                         LOG_INFO(std::format("[Session {}] processing message #{}, size={} bytes",
                                              sessionId_,
                                              n,
@@ -120,7 +113,7 @@ void Session::doRead() {
                     doRead();
                 } else {
                     LOG_ERROR(std::format("[Session {}] read error: {}", sessionId_, ec.message()));
-                    handleDisconnect();  // Error → close
+                    doDisconnect();
                 }
             }));
 }
@@ -151,7 +144,7 @@ void Session::doWrite() {
                     }
                 } else {
                     LOG_ERROR(std::format("[Session {}] write error: {}", sessionId_, ec.message()));
-                    handleDisconnect();
+                    doDisconnect();
                 }
             }));
 }
@@ -162,4 +155,22 @@ void Session::processMessage(common::network::RawMessage raw_msg) const {
                          raw_msg.buffer.size()));
     eventBus_.publish(RawMessageReceivedEvent{getSessionId(), std::move(raw_msg)});
 }
+
+void Session::doDisconnect() {
+    if (state_.exchange(State::Disconnected) == State::Disconnected)
+        return;  // already disconnected
+
+    // Now safe to clear queue and close socket (no concurrent I/O)
+    write_queue_.clear();
+    boost::system::error_code ec;
+    socket_.shutdown(socket_.shutdown_both, ec);
+    socket_.close(ec);
+
+    eventBus_.publish(ClientDisconnectedEvent{shared_from_this()});
+}
+
+bool Session::isConnected() const {
+    return state_.load() == State::Connected;
+}
+
 }  // namespace dungeons::server::network

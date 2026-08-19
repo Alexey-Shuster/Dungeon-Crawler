@@ -44,13 +44,13 @@ TEST(SessionSimpleTest, SessionIdCanBeSpecified) {
 
 TEST(SessionSimpleTest, HandleDisconnectDoesNotCrashWhenCalledOnce) {
     DummySession ds;
-    EXPECT_NO_THROW(ds.session->handleDisconnect());
+    EXPECT_NO_THROW(ds.session->disconnect());
 }
 
 TEST(SessionSimpleTest, HandleDisconnectCanBeCalledTwiceWithoutCrash) {
     DummySession ds;
-    ds.session->handleDisconnect();
-    EXPECT_NO_THROW(ds.session->handleDisconnect());
+    ds.session->disconnect();
+    EXPECT_NO_THROW(ds.session->disconnect());
 }
 
 // ---------------------------------------------------------------------
@@ -59,7 +59,7 @@ TEST(SessionSimpleTest, HandleDisconnectCanBeCalledTwiceWithoutCrash) {
 
 TEST(SessionSimpleTest, SendDoesNothingIfDisconnectedBeforeStart) {
     DummySession ds;
-    ds.session->handleDisconnect();
+    ds.session->disconnect();
     std::string msg = "test message";
     std::vector<uint8_t> bytes(msg.begin(), msg.end());
     EXPECT_NO_THROW(ds.session->send(RawMessage{std::move(bytes)}));
@@ -89,7 +89,7 @@ TEST(SessionSimpleTest, SendAfterDisconnectDoesNothing) {
     DummySession ds;
     ds.session->start();
     ds.io.run_for(std::chrono::milliseconds(10));  // allow the read loop to start
-    ds.session->handleDisconnect();                // disconnect
+    ds.session->disconnect();                      // disconnect
     std::string msg = "should be ignored";
     std::vector<uint8_t> bytes(msg.begin(), msg.end());
     EXPECT_NO_THROW(ds.session->send(RawMessage{std::move(bytes)}));  // returns immediately, no exception

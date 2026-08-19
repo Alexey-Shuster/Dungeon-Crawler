@@ -7,6 +7,7 @@
 #include <memory>
 #include <server/core/event_bus.h>
 
+#include "events.h"
 #include "types.h"
 
 namespace dungeons::server::network {
@@ -27,43 +28,35 @@ public:
     virtual ~Session();
 
     void start();
-
-    /**
-     * @brief Safely sends a message to the client from any thread.
-     * @note The message is encoded into a frame before queueing.
-     */
     virtual void send(common::network::RawMessage raw_message);
-
     SessionId getSessionId() const;
-
-    /**
-     * @brief Initiates a graceful shutdown of the session.
-     * @details Publishes the disconnect event exactly once, even under concurrent calls.
-     */
-    void handleDisconnect();
+    bool isConnected() const;
+    void disconnect();
 
 protected:
     Session(boost::asio::ip::tcp::socket socket, core::EventBus& eventBus, SessionId sid);
 
 private:
     void doRead();
-
     void doWrite();
-
     void processMessage(common::network::RawMessage raw_msg) const;
+    void doDisconnect();
 
 private:
-    boost::asio::ip::tcp::socket socket_;                       ///< Connection socket (runs in its own io_context)
-    boost::asio::strand<boost::asio::any_io_executor> strand_;  ///< Serializes all read/write operations
+    boost::asio::ip::tcp::socket socket_;
+    boost::asio::strand<boost::asio::any_io_executor> strand_;
     core::EventBus& eventBus_;
     const SessionId sessionId_;
 
     boost::asio::streambuf read_buffer_{};
 
-    // Synchronisation for multi‑threaded environment
-    // All access to write_queue_ is performed only on strand_, so no mutex is required
-    std::deque<std::shared_ptr<common::network::RawMessage>> write_queue_;  ///< Outgoing message queue
-    std::atomic<bool> is_disconnected_{false};  ///< true after session is closed (ensures single event publication)
+    std::deque<std::shared_ptr<common::network::RawMessage>> write_queue_;
+
+    enum class State {
+        Connected,
+        Disconnected
+    };
+    std::atomic<State> state_{State::Connected};
 };
 
 }  // namespace dungeons::server::network
