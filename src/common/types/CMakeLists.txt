@@ -1,5 +1,6 @@
 
-add_library(common_types INTERFACE)
+add_library(common_types INTERFACE
+        strong_id_format.h)
 
 set(COMMON_TYPES_LIB common_types)
 

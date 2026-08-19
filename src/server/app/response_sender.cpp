@@ -1,9 +1,13 @@
 #include "response_sender.h"
 
 #include <common/types/message_types.h>
+#include <common/types/strong_id_format.h>
+#include <common/utility/logger.h>
 #include <common/wire/serder_game_state.h>
+#include <format>
+#include <server/network/session.h>
 
-#include "events.h"
+#include "session_registry.h"
 
 namespace dungeons::server::app {
 
@@ -26,61 +30,72 @@ ResponseSender::ResponseSender(std::shared_ptr<core::EventBus> event_bus,
     , session_registry_(std::move(session_registry)) {}
 
 void ResponseSender::initialize() {
-    subscribeWeak<PlayerAuthenticatedEvent>([](auto self, const auto& event) {
-        self->sendResponse(event, common::types::NetworkMessageType::kWelcome);
+    subscribeWeakMethod<PlayerAuthenticatedEvent>(&ResponseSender::onPlayerAuthenticated);
+    subscribeWeakMethod<PlayerReconnectedEvent>(&ResponseSender::onPlayerReconnected);
+    subscribeWeakMethod<PlayerReconnectionFailedEvent>(&ResponseSender::onPlayerReconnectionFailed);
+
+    subscribeWeak<PlayerAuthenticationFailedEvent>([](const auto& self, const auto& event) {
+        self->sendResponse(event, dc_NetMsg::kAuthFailed, event.player_id.get());
+    });
+    subscribeWeak<domain::LobbyCreatedResponseEvent>([](const auto& self, const auto& event) {
+        self->sendResponse(event, common::types::AppMessageType::kPartyCreated, event.lobby_id.get());
     });
 
-    subscribeWeak<PlayerAuthenticationFailedEvent>([](auto self, const auto& event) {
-        self->sendResponse(event, common::types::NetworkMessageType::kAuthFailed, event.player_id.value);
-    });
+    subscribeWeakMethod<domain::LobbyCreationFailedResponseEvent>(&ResponseSender::onLobbyCreationFailed);
+    subscribeWeakMethod<domain::ListLobbiesFailedResponseEvent>(&ResponseSender::onListLobbiesFailed);
+    subscribeWeakMethod<domain::ListLobbiesResponseEvent>(&ResponseSender::onListLobbiesResponse);
+    subscribeWeakMethod<domain::JoinLobbyResponseEvent>(&ResponseSender::onJoinLobbyResponse);
+    subscribeWeakMethod<domain::JoinLobbyFailedResponseEvent>(&ResponseSender::onJoinLobbyFailed);
+    subscribeWeakMethod<domain::LeaveLobbyResponseEvent>(&ResponseSender::onLeaveLobbyResponse);
+    subscribeWeakMethod<domain::LeaveLobbyFailedResponseEvent>(&ResponseSender::onLeaveLobbyFailed);
+    subscribeWeakMethod<domain::StartGameResponseEvent>(&ResponseSender::onStartGameResponse);
 
-    subscribeWeak<PlayerReconnectedEvent>([](auto self, const auto& event) {
-        self->sendResponse(event, common::types::NetworkMessageType::kReconnected);
-    });
+    subscribeWeakMethod<domain::GameStateUpdateEvent>(&ResponseSender::onGameStateUpdate);
+}
 
-    subscribeWeak<PlayerReconnectionFailedEvent>([](auto self, const auto& event) {
-        self->sendResponse(event, common::types::NetworkMessageType::kNotReconnected);
-    });
+#pragma region onMethods
+void ResponseSender::onPlayerAuthenticated(const PlayerAuthenticatedEvent& event) {
+    sendResponse(event, dc_NetMsg::kWelcome);
+}
+void ResponseSender::onPlayerReconnected(const PlayerReconnectedEvent& event) {
+    sendResponse(event, dc_NetMsg::kReconnected);
+}
 
-    subscribeWeak<domain::LobbyCreatedResponseEvent>([](auto self, const auto& event) {
-        self->sendResponse(event, common::types::AppMessageType::kPartyCreated, event.lobby_id.value);
-    });
+void ResponseSender::onPlayerReconnectionFailed(const PlayerReconnectionFailedEvent& event) {
+    sendResponse(event, dc_NetMsg::kNotReconnected);
+}
 
-    subscribeWeak<domain::LobbyCreationFailedResponseEvent>([](auto self, const auto& event) {
-        self->sendResponse(event, common::types::AppMessageType::kPartyNotCreated);
-    });
+void ResponseSender::onLobbyCreationFailed(const domain::LobbyCreationFailedResponseEvent& event) {
+    sendResponse(event, dc_AppMsg::kPartyNotCreated);
+}
 
-    subscribeWeak<domain::ListLobbiesResponseEvent>(&ResponseSender::onListLobbiesResponse);
-
-    subscribeWeak<domain::ListLobbiesFailedResponseEvent>([](auto self, const auto& event) {
-        self->sendResponse(event, common::types::AppMessageType::kListPartiesNotCreated);
-    });
-
-    subscribeWeak<domain::JoinLobbyResponseEvent>([](auto self, const auto& event) {
-        self->sendResponse(event, common::types::AppMessageType::kPlayerJoinedParty);
-    });
-
-    subscribeWeak<domain::JoinLobbyFailedResponseEvent>([](auto self, const auto& event) {
-        self->sendResponse(event, common::types::AppMessageType::kPlayerNotJoinedParty);
-    });
-
-    subscribeWeak<domain::LeaveLobbyResponseEvent>([](auto self, const auto& event) {
-        self->sendResponse(event, common::types::AppMessageType::kPlayerLeavedParty);
-    });
-    subscribeWeak<domain::LeaveLobbyFailedResponseEvent>([](auto self, const auto& event) {
-        self->sendResponse(event, common::types::AppMessageType::kPlayerNotLeavedParty);
-    });
-
-    subscribeWeak<domain::StartGameResponseEvent>([](auto self, const auto& event) {
-        self->sendResponse(event, common::types::AppMessageType::kStartGame);
-    });
-
-    subscribeWeak<domain::GameStateUpdateEvent>(&ResponseSender::onGameStateUpdate);
+void ResponseSender::onListLobbiesFailed(const domain::ListLobbiesFailedResponseEvent& event) {
+    sendResponse(event, dc_AppMsg::kListPartiesNotCreated);
 }
 
 void ResponseSender::onListLobbiesResponse(const domain::ListLobbiesResponseEvent& event) {
     std::vector<uint64_t> args(event.lobby_ids.begin(), event.lobby_ids.end());
     sendResponse(event, common::types::AppMessageType::kListPartiesCreated, args);
+}
+
+void ResponseSender::onJoinLobbyResponse(const domain::JoinLobbyResponseEvent& event) {
+    sendResponse(event, dc_AppMsg::kPlayerJoinedParty);
+}
+
+void ResponseSender::onJoinLobbyFailed(const domain::JoinLobbyFailedResponseEvent& event) {
+    sendResponse(event, dc_AppMsg::kPlayerNotJoinedParty);
+}
+
+void ResponseSender::onLeaveLobbyResponse(const domain::LeaveLobbyResponseEvent& event) {
+    sendResponse(event, dc_AppMsg::kPlayerLeavedParty);
+}
+
+void ResponseSender::onLeaveLobbyFailed(const domain::LeaveLobbyFailedResponseEvent& event) {
+    sendResponse(event, dc_AppMsg::kPlayerNotLeavedParty);
+}
+
+void ResponseSender::onStartGameResponse(const domain::StartGameResponseEvent& event) {
+    sendResponse(event, dc_AppMsg::kStartGame);
 }
 
 void ResponseSender::onGameStateUpdate(const domain::GameStateUpdateEvent& event) {
@@ -98,6 +113,39 @@ void ResponseSender::onGameStateUpdate(const domain::GameStateUpdateEvent& event
                 session->send(common::network::RawMessage{std::move(*game_state_msg)});
             }
         }
+    }
+}
+#pragma endregion
+
+std::shared_ptr<network::Session> ResponseSender::findSessionBySessionId(network::SessionId id) const {
+    auto session = session_registry_->findSessionBySessionId(id);
+    if (!session) {
+        LOG_ERROR(std::format("Session #{} not found", id));
+    }
+    return session;
+}
+
+std::shared_ptr<network::Session> ResponseSender::findSessionByPlayerId(domain::PlayerId id) const {
+    auto session = session_registry_->findSessionByPlayerId(id);
+    if (!session) {
+        LOG_ERROR(std::format("Session not found for player #{}", id));
+    }
+    return session;
+}
+
+void ResponseSender::sendResponseImpl(const std::shared_ptr<network::Session>& session,
+                                      std::string_view event_type_name,
+                                      std::optional<common::network::ByteBuffer> opt_buf) {
+    if (!session) {
+        LOG_ERROR(std::format("No session found for event {}, dropping response", event_type_name));
+        return;
+    }
+
+    if (opt_buf.has_value()) {
+        LOG_INFO(std::format("Queued {}", event_type_name));
+        session->send(common::network::RawMessage(std::move(*opt_buf)));
+    } else {
+        LOG_ERROR(std::format("Failed to serialize message for event {}", event_type_name));
     }
 }
 

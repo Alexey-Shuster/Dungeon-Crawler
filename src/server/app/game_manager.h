@@ -40,8 +40,8 @@ private:
 
     void onStartGameRequestEvent(const domain::StartGameRequestEvent& event);
     void onGameTickEvent(const core::GameTickEvent& event);
-    void onMoveRequestEvent(const domain::MoveRequestEvent& event);
-    void onAttackRequestEvent(const domain::AtackRequestEvent& event);
+    void onMoveRequestEvent(const domain::MoveRequestEvent& event) const;
+    void onAttackRequestEvent(const domain::AtackRequestEvent& event) const;
 
     boost::asio::strand<boost::asio::io_context::executor_type> strand_;
     std::shared_ptr<core::EventBus> event_bus_;

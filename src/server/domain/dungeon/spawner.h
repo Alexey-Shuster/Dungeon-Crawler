@@ -1,7 +1,7 @@
 #pragma once
 
+#include <common/types/strong_id_format.h>
 #include <common/utility/logger.h>
-#include <format>
 
 #include "collision_check.h"
 #include "entity_manager.h"
@@ -20,7 +20,7 @@ public:
     template <typename EntityType, typename IdType>
     bool spawnEntity(EntityManager<EntityType, IdType>& manager, IdType id) {
         if (manager.getEntity(id) != nullptr) {
-            LOG_DEBUG(std::format("Entity with id {} already exists", id.value));
+            LOG_DEBUG(std::format("Entity with id {} already exists", id));
             return false;
         }
 
@@ -32,23 +32,22 @@ public:
             LOG_DEBUG(std::format("Position ({},{}) not available for entity {}, attempt {}/{}",
                                   pos.x,
                                   pos.y,
-                                  id.value,
+                                  id,
                                   attempts,
                                   kMaxSpawnAttempts));
             pos = pos_gen_.generate();
         }
 
         if (!checker_.isAvailable(pos)) {
-            LOG_ERROR(std::format("Failed to spawn entity {}: no free position after {} attempts",
-                                  id.value,
-                                  kMaxSpawnAttempts));
+            LOG_ERROR(
+                std::format("Failed to spawn entity {}: no free position after {} attempts", id, kMaxSpawnAttempts));
             return false;
         }
 
         bool ok = manager.addEntity(id, pos);
 
         if (ok) {
-            LOG_DEBUG(std::format("Entity {} spawned at ({},{}) after {} attempts", id.value, pos.x, pos.y, attempts));
+            LOG_DEBUG(std::format("Entity {} spawned at ({},{}) after {} attempts", id, pos.x, pos.y, attempts));
         }
         return ok;
     }

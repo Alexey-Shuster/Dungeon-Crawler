@@ -24,7 +24,7 @@ public:
                                            core::EventBus& eventBus,
                                            SessionId sid);
 
-    ~Session();
+    virtual ~Session();
 
     void start();
 

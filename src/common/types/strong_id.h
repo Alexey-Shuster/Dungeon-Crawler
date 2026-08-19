@@ -8,10 +8,9 @@
 namespace dungeons::common::types {
 
 template <typename Tag, typename T = uint64_t>
-struct StrongId {
+class StrongId {
+public:
     using value_type = T;
-
-    value_type value{};
 
     constexpr StrongId() noexcept = default;
     explicit constexpr StrongId(value_type v) noexcept
@@ -47,6 +46,9 @@ struct StrongId {
         --value;
         return tmp;
     }
+
+private:
+    value_type value{};
 };
 
 template <typename Tag, typename T>
@@ -97,7 +99,7 @@ struct StrongIdMixedHash {
             constexpr int kShift64To32 = 32;
             constexpr int kShift16 = 16;
 
-            uint32_t low = static_cast<uint32_t>(v ^ (v >> kShift64To32));
+            auto low = static_cast<uint32_t>(v ^ (v >> kShift64To32));
             low ^= low >> kShift16;
             low *= kMixMul32;
             low ^= low >> kShift16;

@@ -80,13 +80,13 @@ protected:
         // Добавляем игроков через реестр
         for (auto pid : players) {
             bool success = lobby_registry_->addPlayerToLobby(pid, lobby_id);
-            ASSERT_TRUE(success) << "Failed to add player " << pid.value << " to lobby " << lobby_id.value;
+            ASSERT_TRUE(success) << "Failed to add player " << pid.get() << " to lobby " << lobby_id.get();
 
             if (all_ready) {
                 auto found_lobby = lobby_registry_->findLobby(lobby_id);
                 ASSERT_NE(found_lobby, nullptr);
                 bool ready_success = found_lobby->setReady(pid, true);
-                ASSERT_TRUE(ready_success) << "Failed to set ready for player " << pid.value;
+                ASSERT_TRUE(ready_success) << "Failed to set ready for player " << pid.get();
             }
         }
     }

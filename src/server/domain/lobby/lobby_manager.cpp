@@ -1,7 +1,7 @@
 #include "lobby_manager.h"
 
+#include <common/types/strong_id_format.h>
 #include <common/utility/logger.h>
-#include <format>
 
 #include "lobby.h"
 #include "lobby_registry.h"
@@ -46,7 +46,7 @@ void LobbyManager::Initialize() {
 void LobbyManager::onCreateLobbyRequest(const CreateLobbyRequestEvent& event) {
     // Quick check – registry will also check, but this avoids creating a lobby if unnecessary
     if (lobby_registry_->isPlayerInLobby(event.player_id)) {
-        LOG_INFO(std::format("Player {} already in a lobby", event.player_id.value));
+        LOG_INFO(std::format("Player {} already in a lobby", event.player_id));
         publishEvent<LobbyCreationFailedResponseEvent>(event.player_id);
         return;
     }
@@ -55,14 +55,13 @@ void LobbyManager::onCreateLobbyRequest(const CreateLobbyRequestEvent& event) {
     auto lobby = std::make_shared<Lobby>(newId, event.player_id);  // does NOT add player
 
     if (!lobby_registry_->addLobby(lobby)) {
-        LOG_ERROR(std::format("Failed to add lobby {} to registry", newId.value));
+        LOG_ERROR(std::format("Failed to add lobby {} to registry", newId));
         publishEvent<LobbyCreationFailedResponseEvent>(event.player_id);
         return;
     }
 
     if (!lobby_registry_->addPlayerToLobby(event.player_id, newId)) {
-        LOG_ERROR(
-            std::format("Failed to add player {} to lobby {}; removing lobby", event.player_id.value, newId.value));
+        LOG_ERROR(std::format("Failed to add player {} to lobby {}; removing lobby", event.player_id, newId));
         lobby_registry_->removeLobby(newId);
         publishEvent<LobbyCreationFailedResponseEvent>(event.player_id);
         return;
@@ -86,8 +85,7 @@ void LobbyManager::onJoinLobbyRequest(const JoinLobbyRequestEvent& event) {
     if (success) {
         publishEvent<JoinLobbyResponseEvent>(event.player_id);
     } else {
-        LOG_INFO(
-            std::format("Join request failed for player {} to lobby {}", event.player_id.value, event.lobby_id.value));
+        LOG_INFO(std::format("Join request failed for player {} to lobby {}", event.player_id, event.lobby_id));
         publishEvent<JoinLobbyFailedResponseEvent>(event.player_id);
     }
 }
@@ -109,7 +107,7 @@ void LobbyManager::onLeaveLobbyRequest(const LeaveLobbyRequestEvent& event) {
     if (removed) {
         publishEvent<LeaveLobbyResponseEvent>(event.player_id);
     } else {
-        LOG_INFO(std::format("Leave lobby request failed for player {}", event.player_id.value));
+        LOG_INFO(std::format("Leave lobby request failed for player {}", event.player_id));
         publishEvent<LeaveLobbyFailedResponseEvent>(event.player_id);
     }
 }
@@ -127,7 +125,7 @@ void LobbyManager::onPlayerReadyRequest(const PlayerReadyRequestEvent& event) {
     if (result.lobby->setReady(event.player_id, event.is_ready)) {
         publishEvent<PlayerReadyResponseEvent>(event.player_id);
     } else {
-        LOG_ERROR(std::format("Failed to set ready for player {} in lobby {}", event.player_id.value, lobbyId.value));
+        LOG_ERROR(std::format("Failed to set ready for player {} in lobby {}", event.player_id, lobbyId));
         publishEvent<PlayerReadyFailedResponseEvent>(event.player_id);
     }
 }
@@ -145,14 +143,14 @@ void LobbyManager::onListLobbiesRequest(const ListLobbiesRequestEvent& event) {
 LobbyManager::LobbyLookupResult LobbyManager::getLobbyForPlayer(PlayerId player_id, LobbyId& out_lobby_id) {
     auto optLobbyId = lobby_registry_->getPlayerLobby(player_id);
     if (!optLobbyId) {
-        LOG_INFO(std::format("Player {} not in any lobby", player_id.value));
+        LOG_INFO(std::format("Player {} not in any lobby", player_id));
         return {nullptr, LobbyLookupError::PlayerNotInLobby};
     }
 
     out_lobby_id = *optLobbyId;
     auto lobby = lobby_registry_->findLobby(out_lobby_id);
     if (!lobby) {
-        LOG_ERROR(std::format("Lobby {} missing for player {} (stale mapping)", out_lobby_id.value, player_id.value));
+        LOG_ERROR(std::format("Lobby {} missing for player {} (stale mapping)", out_lobby_id, player_id));
         // Clean up the stale mapping
         lobby_registry_->removePlayerFromLobby(player_id);
         return {nullptr, LobbyLookupError::StaleMapping};

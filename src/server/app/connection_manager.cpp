@@ -1,13 +1,13 @@
 #include "connection_manager.h"
 
+#include <common/types/strong_id_format.h>
 #include <common/utility/config.h>
 #include <common/utility/logger.h>
-#include <format>
 #include <server/network/session.h>
 
-namespace dungeons::server::app {
+#include "session_registry.h"
 
-// TODO (DRUsmanov): Add a alias for long type names like std::shared_ptr<network::SessionRegistry>
+namespace dungeons::server::app {
 
 std::shared_ptr<ConnectionManager> ConnectionManager::Create(std::shared_ptr<core::EventBus> event_bus,
                                                              std::shared_ptr<SessionRegistry> session_registry) {
@@ -45,16 +45,16 @@ void ConnectionManager::Initialize() {
         }));
 }
 
-void ConnectionManager::HandleClientConnectedEvent(const network::ClientConnectedEvent& event) {
+void ConnectionManager::HandleClientConnectedEvent(const network::ClientConnectedEvent& event) const {
     auto session = event.session;
     if (!session) {
         return;
     }
 
     if (session_registry_->addSession(session)) {
-        LOG_INFO(std::format("Client connected with session id: {}", session->getSessionId().value));
+        LOG_INFO(std::format("Client connected with session id: {}", session->getSessionId()));
     } else {
-        LOG_INFO(std::format("Failed to connect session with id: {}", session->getSessionId().value));
+        LOG_INFO(std::format("Failed to connect session with id: {}", session->getSessionId()));
     }
 }
 
@@ -72,9 +72,9 @@ void ConnectionManager::HandleClientDisconnectedEvent(const network::ClientDisco
     }
 
     if (session_registry_->removeSessionBySessionId(session_id)) {
-        LOG_INFO(std::format("Client disconnected with session id: {}", session_id.value));
+        LOG_INFO(std::format("Client disconnected with session id: {}", session_id));
     } else {
-        LOG_INFO(std::format("Failed to disconnect session with id: {}", session_id.value));
+        LOG_INFO(std::format("Failed to disconnect session with id: {}", session_id));
     }
 }
 
@@ -87,31 +87,31 @@ void ConnectionManager::HandlePlayerReconnectRequestedEvent(const ReconnectReque
 
         if (duration > common::utility::getSettings().server.client_disconnect_timeout) {
             event_bus_->publish(PlayerReconnectionFailedEvent{session_id, player_id});
-            LOG_INFO(std::format("Player {} failed to reconnect to session {}", player_id.value, session_id.value));
+            LOG_INFO(std::format("Player {} failed to reconnect to session {}", player_id, session_id));
         } else if (session_registry_->bindPlayerToSession(player_id, session_id)) {
             event_bus_->publish(PlayerReconnectedEvent{session_id, player_id});
-            LOG_INFO(std::format("Player {} reconnected to session {}", player_id.value, session_id.value));
+            LOG_INFO(std::format("Player {} reconnected to session {}", player_id, session_id));
         } else {
             event_bus_->publish(PlayerReconnectionFailedEvent{session_id, player_id});
-            LOG_INFO(std::format("Player {} failed to reconnect to session {}", player_id.value, session_id.value));
+            LOG_INFO(std::format("Player {} failed to reconnect to session {}", player_id, session_id));
         }
     } else {
         event_bus_->publish(PlayerReconnectionFailedEvent{session_id, player_id});
-        LOG_INFO(std::format("Player {} failed to reconnect to session {}", player_id.value, session_id.value));
+        LOG_INFO(std::format("Player {} failed to reconnect to session {}", player_id, session_id));
     }
     disconnected_players_.erase(player_id);
 }
 
-void ConnectionManager::HandlePlayerAuthRequestedEvent(const AuthRequestedEvent& event) {
+void ConnectionManager::HandlePlayerAuthRequestedEvent(const AuthRequestedEvent& event) const {
     auto player_id = event.player_id;
     auto session_id = event.session_id;
 
     if (session_registry_->bindPlayerToSession(player_id, session_id)) {
         event_bus_->publish(PlayerAuthenticatedEvent{session_id, player_id});
-        LOG_INFO(std::format("Player {} authenticated with session {}", player_id.value, session_id.value));
+        LOG_INFO(std::format("Player {} authenticated with session {}", player_id, session_id));
     } else {
         event_bus_->publish(PlayerAuthenticationFailedEvent{session_id, player_id});
-        LOG_INFO(std::format("Player {} failed to authenticate with session {}", player_id.value, session_id.value));
+        LOG_INFO(std::format("Player {} failed to authenticate with session {}", player_id, session_id));
     }
 }
 

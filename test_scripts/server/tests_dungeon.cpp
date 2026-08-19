@@ -87,9 +87,9 @@ TEST_F(DungeonTest, GetPlayersReturnsCorrectIds) {
     EXPECT_EQ(ids.size(), 2);
     bool found1 = false, found2 = false;
     for (auto id : ids) {
-        if (id.value == 1)
+        if (id.get() == 1)
             found1 = true;
-        if (id.value == 2)
+        if (id.get() == 2)
             found2 = true;
     }
     EXPECT_TRUE(found1);

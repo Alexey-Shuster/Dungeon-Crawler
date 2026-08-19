@@ -1,7 +1,7 @@
 #include "lobby_registry.h"
 
+#include <common/types/strong_id_format.h>
 #include <common/utility/logger.h>
-#include <format>
 #include <ranges>
 
 #include "lobby.h"
@@ -14,15 +14,15 @@ bool LobbyRegistry::addLobby(std::shared_ptr<Lobby> lobby) {
         return false;
     }
 
-    LobbyId id = lobby->getId();
+    LobbyId lid = lobby->getId();
 
-    auto [it, inserted] = lobbies_.emplace(id, std::move(lobby));
+    auto [it, inserted] = lobbies_.emplace(lid, std::move(lobby));
     if (!inserted) {
-        LOG_ERROR(std::format("Lobby with id {} already exists.", static_cast<uint64_t>(id)));
+        LOG_ERROR(std::format("Lobby with id {} already exists.", lid));
         return false;
     }
 
-    LOG_INFO(std::format("Lobby {} added to registry.", id.value));
+    LOG_INFO(std::format("Lobby {} added to registry.", lid));
 
     return true;
 }
@@ -30,7 +30,7 @@ bool LobbyRegistry::addLobby(std::shared_ptr<Lobby> lobby) {
 bool LobbyRegistry::removeLobby(LobbyId lobby_id) {
     auto it = lobbies_.find(lobby_id);
     if (it == lobbies_.end()) {
-        LOG_ERROR(std::format("Attempt to remove non‑existent lobby {}", lobby_id.value));
+        LOG_ERROR(std::format("Attempt to remove non‑existent lobby {}", lobby_id));
         return false;
     }
 
@@ -43,7 +43,7 @@ bool LobbyRegistry::removeLobby(LobbyId lobby_id) {
     }
 
     lobbies_.erase(it);
-    LOG_INFO(std::format("Lobby {} removed from registry.", lobby_id.value));
+    LOG_INFO(std::format("Lobby {} removed from registry.", lobby_id));
 
     return true;
 }
@@ -75,21 +75,21 @@ std::vector<std::shared_ptr<Lobby>> LobbyRegistry::getAllLobbies() const {
 bool LobbyRegistry::addPlayerToLobby(PlayerId player_id, LobbyId lobby_id) {
     // 1. Player already in lobby?
     if (isPlayerInLobby(player_id)) {
-        LOG_INFO(std::format("Player {} already in lobby {}", player_id.value, player_to_lobby_.at(player_id).value));
+        LOG_INFO(std::format("Player {} already in lobby {}", player_id, player_to_lobby_.at(player_id)));
         return false;
     }
 
     // 2. Lobby exists?
     auto lobbyIt = lobbies_.find(lobby_id);
     if (lobbyIt == lobbies_.end()) {
-        LOG_ERROR(std::format("Lobby {} not found.", lobby_id.value));
+        LOG_ERROR(std::format("Lobby {} not found.", lobby_id));
         return false;
     }
     auto lobby_found = lobbyIt->second;
 
     // 3. Try to add player to the lobby
     if (!lobby_found->addPlayer(player_id)) {
-        LOG_INFO(std::format("Failed to add player {} to lobby {}.", player_id.value, lobby_found->getId().value));
+        LOG_INFO(std::format("Failed to add player {} to lobby {}.", player_id, lobby_found->getId()));
         return false;
     }
 
@@ -103,16 +103,14 @@ bool LobbyRegistry::addPlayerToLobby(PlayerId player_id, LobbyId lobby_id) {
             playerSet.erase(player_id);
         if (mapInserted)
             player_to_lobby_.erase(mapIt);
-        LOG_ERROR(std::format("Failed to insert mapping for player {}; rolled back.", player_id.value));
+        LOG_ERROR(std::format("Failed to insert mapping for player {}; rolled back.", player_id));
         if (!lobby_found->removePlayer(player_id)) {
-            LOG_ERROR(std::format("Failed to remove player {} from lobby {} while rolling back.",
-                                  player_id.value,
-                                  lobby_id.value));
+            LOG_ERROR(std::format("Failed to remove player {} from lobby {} while rolling back.", player_id, lobby_id));
         }
         return false;
     }
 
-    LOG_INFO(std::format("Player {} added to lobby {}. Mapping set.", player_id.value, lobby_id.value));
+    LOG_INFO(std::format("Player {} added to lobby {}. Mapping set.", player_id, lobby_id));
 
     return true;
 }
@@ -121,7 +119,7 @@ bool LobbyRegistry::removePlayerFromLobby(PlayerId player_id) {
     // 1. Find the lobby via mapping
     auto mapIt = player_to_lobby_.find(player_id);
     if (mapIt == player_to_lobby_.end()) {
-        LOG_INFO(std::format("Player {} not in any lobby. Remove skipped.", player_id.value));
+        LOG_INFO(std::format("Player {} not in any lobby. Remove skipped.", player_id));
         return false;
     }
     auto lobbyId = mapIt->second;
@@ -131,8 +129,7 @@ bool LobbyRegistry::removePlayerFromLobby(PlayerId player_id) {
     if (lobbyIt == lobbies_.end()) {
         // Inconsistent state: mapping exists but lobby missing
         player_to_lobby_.erase(mapIt);
-        LOG_ERROR(
-            std::format("Lobby {} missing for player {}; removed stale mapping.", lobbyId.value, player_id.value));
+        LOG_ERROR(std::format("Lobby {} missing for player {}; removed stale mapping.", lobbyId, player_id));
         return false;
     }
     auto lobby = lobbyIt->second;
@@ -141,7 +138,7 @@ bool LobbyRegistry::removePlayerFromLobby(PlayerId player_id) {
     if (!lobby->removePlayer(player_id)) {
         // Stale mapping: remove to allow recovery
         player_to_lobby_.erase(mapIt);
-        LOG_ERROR(std::format("Failed to remove player {} from lobby {}.", player_id.value, lobbyId.value));
+        LOG_ERROR(std::format("Failed to remove player {} from lobby {}.", player_id, lobbyId));
         return false;
     }
 
@@ -150,13 +147,13 @@ bool LobbyRegistry::removePlayerFromLobby(PlayerId player_id) {
     playerSet.erase(player_id);
     player_to_lobby_.erase(mapIt);
 
-    LOG_INFO(std::format("Player {} removed from lobby {}.", player_id.value, lobbyId.value));
+    LOG_INFO(std::format("Player {} removed from lobby {}.", player_id, lobbyId));
 
     // 5. If lobby is empty, remove it entirely
     if (lobby->isEmpty()) {
         lobbies_.erase(lobbyIt);
         lobby_players_.erase(lobbyId);
-        LOG_INFO(std::format("Lobby {} empty - deleted.", lobbyId.value));
+        LOG_INFO(std::format("Lobby {} empty - deleted.", lobbyId));
     }
 
     return true;

@@ -1,9 +1,10 @@
 #include "session_registry.h"
 
 #include <boost/format.hpp>
+#include <common/types/strong_id_format.h>
 #include <common/utility/logger.h>
-#include <server/network/session.h>
 #include <ranges>
+#include <server/network/session.h>
 
 namespace dungeons::server::app {
 
@@ -20,7 +21,7 @@ bool SessionRegistry::addSession(std::shared_ptr<network::Session> session) {
     std::lock_guard<std::mutex> lock(mutex_);
     network::SessionId sid = session->getSessionId();
     if (sessions_.contains(sid)) {
-        LOG_ERROR(std::format("Session with id {} already exists.", sid.value));
+        LOG_ERROR(std::format("Session with id {} already exists.", sid));
         return false;
     }
     sessions_[sid] = std::move(session);
@@ -30,7 +31,7 @@ bool SessionRegistry::addSession(std::shared_ptr<network::Session> session) {
 bool SessionRegistry::removeSessionBySessionId(network::SessionId sid) {
     std::lock_guard<std::mutex> lock(mutex_);
     if (sessions_.erase(sid) == 0) {
-        LOG_ERROR(std::format("Session with id {} was not found, may have been already deleted.", sid.value));
+        LOG_ERROR(std::format("Session with id {} was not found, may have been already deleted.", sid));
         return false;
     }
     auto s_to_p_it = session_to_player_.find(sid);
@@ -51,7 +52,7 @@ std::shared_ptr<network::Session> SessionRegistry::findSessionByPlayerId(domain:
     std::lock_guard<std::mutex> lock(mutex_);
     auto p_to_s_it = player_to_session_.find(pid);
     if (p_to_s_it == player_to_session_.end()) {
-        LOG_ERROR(std::format("Session for player {} not found.", pid.value));
+        LOG_ERROR(std::format("Session for player {} not found.", pid));
         return nullptr;
     }
     return findSessionBySID(p_to_s_it->second);
@@ -96,7 +97,7 @@ std::vector<std::shared_ptr<network::Session>> SessionRegistry::getAllSessions()
 bool SessionRegistry::bindPlayerToSession(domain::PlayerId pid, network::SessionId sid) {
     std::lock_guard<std::mutex> lock(mutex_);
     if (!sessions_.contains(sid)) {
-        LOG_ERROR(std::format("Cannot bind player {} to non-existent session {}.", pid.value, sid.value));
+        LOG_ERROR(std::format("Cannot bind player {} to non-existent session {}.", pid, sid));
         return false;
     }
     player_to_session_.emplace(pid, sid);
@@ -107,7 +108,7 @@ bool SessionRegistry::bindPlayerToSession(domain::PlayerId pid, network::Session
 std::shared_ptr<network::Session> SessionRegistry::findSessionBySID(network::SessionId sid) const {
     auto s_it = sessions_.find(sid);
     if (s_it == sessions_.end() || s_it->second == nullptr) {
-        LOG_ERROR(std::format("Session with id {} not found.", sid.value));
+        LOG_ERROR(std::format("Session with id {} not found.", sid));
         return nullptr;
     }
     return s_it->second;
