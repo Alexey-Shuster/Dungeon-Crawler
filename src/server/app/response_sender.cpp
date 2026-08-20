@@ -4,7 +4,7 @@
 #include <common/types/strong_id_format.h>
 #include <common/utility/logger.h>
 #include <common/wire/serder_game_state.h>
-#include <format>
+#include <ranges>
 #include <server/network/session.h>
 
 #include "session_registry.h"
@@ -74,8 +74,8 @@ void ResponseSender::onListLobbiesFailed(const domain::ListLobbiesFailedResponse
 }
 
 void ResponseSender::onListLobbiesResponse(const domain::ListLobbiesResponseEvent& event) {
-    std::vector<uint64_t> args(event.lobby_ids.begin(), event.lobby_ids.end());
-    sendResponse(event, common::types::AppMessageType::kListPartiesCreated, args);
+    common::wire::MessageArgs args(event.lobby_ids.begin(), event.lobby_ids.end());
+    sendResponse(event, common::types::AppMessageType::kListPartiesCreated, std::move(args));
 }
 
 void ResponseSender::onJoinLobbyResponse(const domain::JoinLobbyResponseEvent& event) {

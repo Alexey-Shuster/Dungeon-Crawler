@@ -1,238 +1,189 @@
 #include <common/network/game_state_dto.h>
 #include <common/wire/serder_game_state.h>
+#include <cstdint>
 #include <gtest/gtest.h>
 
 using namespace dungeons::common::network;
 using namespace dungeons::common::wire;
 
-// -----------------------------------------------------------------------------
-// Tests for BarrierSnapshot
-// -----------------------------------------------------------------------------
+// Helper to create a sample DungeonSnapshot for testing
+static DungeonSnapshot makeSampleSnapshot() {
+    DungeonSnapshot snapshot;
 
-TEST(SerializationGameStateTest, BarrierSnapshotRoundTrip) {
-    BarrierSnapshot original{10, 20};
-    auto cbor = detail::serialize(original);
-    ASSERT_NE(cbor, nullptr);
+    // Map
+    snapshot.game_map.blc_x = 0;
+    snapshot.game_map.blc_y = 0;
+    snapshot.game_map.trc_x = 20;
+    snapshot.game_map.trc_y = 20;
+    snapshot.game_map.barriers = {{1, 1}, {2, 2}, {3, 3}};
 
-    auto deserialized = detail::deserialize(cbor.get(), static_cast<BarrierSnapshot*>(nullptr));
+    // Players
+    EntitySnapshot player1{1, 1, 100, 10, 10, 30};  // alive
+    EntitySnapshot player2{1, 0, 101, 12, 12, 0};   // dead
+    snapshot.players = {player1, player2};
+
+    // Mobs
+    EntitySnapshot mob1{2, 1, 200, 15, 15, 40};  // alive
+    snapshot.mobs = {mob1};
+
+    return snapshot;
+}
+
+// ============================================================================
+// Round‑trip tests
+// ============================================================================
+
+TEST(SerializationGameStateTest, FullRoundTrip) {
+    auto original = makeSampleSnapshot();
+
+    auto buffer = serializeGameState(original);
+    ASSERT_TRUE(buffer.has_value());
+
+    auto deserialized = deserializeGameState(*buffer);
     ASSERT_TRUE(deserialized.has_value());
+
     EXPECT_EQ(original, *deserialized);
 }
 
-TEST(SerializationGameStateTest, BarrierSnapshotDeserializeInvalid) {
-    // Not an array => nullopt
-    auto item = detail::CborPtr(cbor_build_uint64(42));
-    auto result = detail::deserialize(item.get(), static_cast<BarrierSnapshot*>(nullptr));
-    EXPECT_FALSE(result.has_value());
-
-    // Array with wrong size (1 instead of 2)
-    auto arr = detail::CborPtr(cbor_new_definite_array(1));
-    auto val = detail::CborPtr(cbor_build_uint64(5));
-    cbor_array_push(arr.get(), val.get());
-    result = detail::deserialize(arr.get(), static_cast<BarrierSnapshot*>(nullptr));
-    EXPECT_FALSE(result.has_value());
-}
-
-// -----------------------------------------------------------------------------
-// Tests for EntitySnapshot
-// -----------------------------------------------------------------------------
-
-TEST(SerializationGameStateTest, EntitySnapshotRoundTrip) {
-    EntitySnapshot original{.type = 1, .state = 2, .id = 12345, .pos_x = 100, .pos_y = 200, .hp = 50};
-    auto cbor = detail::serialize(original);
-    ASSERT_NE(cbor, nullptr);
-
-    auto deserialized = detail::deserialize(cbor.get(), static_cast<EntitySnapshot*>(nullptr));
-    ASSERT_TRUE(deserialized.has_value());
-    EXPECT_EQ(original, *deserialized);
-}
-
-TEST(SerializationGameStateTest, EntitySnapshotDeserializeInvalid) {
-    // Not an array
-    auto item = detail::CborPtr(cbor_build_uint64(42));
-    auto result = detail::deserialize(item.get(), static_cast<EntitySnapshot*>(nullptr));
-    EXPECT_FALSE(result.has_value());
-
-    // Array with wrong size (5 instead of 6)
-    auto arr = detail::CborPtr(cbor_new_definite_array(5));
-    for (int i = 0; i < 5; ++i) {
-        auto val = detail::CborPtr(cbor_build_uint64(i));
-        cbor_array_push(arr.get(), val.get());
-    }
-    result = detail::deserialize(arr.get(), static_cast<EntitySnapshot*>(nullptr));
-    EXPECT_FALSE(result.has_value());
-}
-
-// -----------------------------------------------------------------------------
-// Tests for GameMapSnapshot
-// -----------------------------------------------------------------------------
-
-TEST(SerializationGameStateTest, GameMapSnapshotRoundTrip) {
-    GameMapSnapshot original;
-    original.blc_x = 0;
-    original.blc_y = 0;
-    original.trc_x = 10;
-    original.trc_y = 10;
-    original.barriers = {{2, 3}, {5, 6}, {8, 9}};
-
-    auto cbor = detail::serialize(original);
-    ASSERT_NE(cbor, nullptr);
-
-    auto deserialized = detail::deserialize(cbor.get(), static_cast<GameMapSnapshot*>(nullptr));
-    ASSERT_TRUE(deserialized.has_value());
-    EXPECT_EQ(original, *deserialized);
-}
-
-TEST(SerializationGameStateTest, GameMapSnapshotEmptyBarriers) {
-    GameMapSnapshot original;
-    original.blc_x = 0;
-    original.blc_y = 0;
-    original.trc_x = 5;
-    original.trc_y = 5;
-    // barriers empty
-
-    auto cbor = detail::serialize(original);
-    ASSERT_NE(cbor, nullptr);
-
-    auto deserialized = detail::deserialize(cbor.get(), static_cast<GameMapSnapshot*>(nullptr));
-    ASSERT_TRUE(deserialized.has_value());
-    EXPECT_TRUE(deserialized->barriers.empty());
-    EXPECT_EQ(original.blc_x, deserialized->blc_x);
-    // etc.
-}
-
-TEST(SerializationGameStateTest, GameMapSnapshotDeserializeInvalid) {
-    // Not an array
-    auto item = detail::CborPtr(cbor_build_uint64(42));
-    auto result = detail::deserialize(item.get(), static_cast<GameMapSnapshot*>(nullptr));
-    EXPECT_FALSE(result.has_value());
-
-    // Array with wrong size (4 instead of 5)
-    auto arr = detail::CborPtr(cbor_new_definite_array(4));
-    for (int i = 0; i < 4; ++i) {
-        auto val = detail::CborPtr(cbor_build_uint64(i));
-        cbor_array_push(arr.get(), val.get());
-    }
-    result = detail::deserialize(arr.get(), static_cast<GameMapSnapshot*>(nullptr));
-    EXPECT_FALSE(result.has_value());
-
-    // 5th element is not an array (barriers)
-    auto arr2 = detail::CborPtr(cbor_new_definite_array(5));
-    for (int i = 0; i < 4; ++i) {
-        auto val = detail::CborPtr(cbor_build_uint64(i));
-        cbor_array_push(arr2.get(), val.get());
-    }
-    auto bad = detail::CborPtr(cbor_build_uint64(99));  // not an array
-    cbor_array_push(arr2.get(), bad.get());
-    result = detail::deserialize(arr2.get(), static_cast<GameMapSnapshot*>(nullptr));
-    EXPECT_FALSE(result.has_value());
-}
-
-// -----------------------------------------------------------------------------
-// Tests for full DungeonSnapshot (serializeGameState / deserializeGameState)
-// -----------------------------------------------------------------------------
-
-TEST(SerializationGameStateTest, DungeonSnapshotRoundTrip) {
-    DungeonSnapshot original;
-    original.game_map.blc_x = 0;
-    original.game_map.blc_y = 0;
-    original.game_map.trc_x = 20;
-    original.game_map.trc_y = 20;
-    original.game_map.barriers = {{1, 1}, {2, 2}, {3, 3}};
-
-    EntitySnapshot player1{1, 1, 100, 10, 10, 30};  // type=player, alive
-    EntitySnapshot player2{1, 0, 101, 12, 12, 0};   // type=player, dead
-    EntitySnapshot mob1{2, 1, 200, 15, 15, 40};     // type=monster, alive
-    original.players = {player1, player2};
-    original.mobs = {mob1};
-
-    auto msg = serializeGameState(original);
-    ASSERT_TRUE(msg.has_value());
-
-    auto deserialized = deserializeGameState(*msg);
-    ASSERT_TRUE(deserialized.has_value());
-    EXPECT_EQ(original, *deserialized);
-}
-
-TEST(SerializationGameStateTest, DungeonSnapshotEmptyPlayersAndMobs) {
+TEST(SerializationGameStateTest, RoundTripWithEmptyCollections) {
     DungeonSnapshot original;
     original.game_map.blc_x = 0;
     original.game_map.blc_y = 0;
     original.game_map.trc_x = 10;
     original.game_map.trc_y = 10;
-    // no barriers, no entities
+    // barriers, players, mobs left empty
 
-    auto msg = serializeGameState(original);
-    ASSERT_TRUE(msg.has_value());
+    auto buffer = serializeGameState(original);
+    ASSERT_TRUE(buffer.has_value());
 
-    auto deserialized = deserializeGameState(*msg);
+    auto deserialized = deserializeGameState(*buffer);
     ASSERT_TRUE(deserialized.has_value());
+
     EXPECT_TRUE(deserialized->game_map.barriers.empty());
     EXPECT_TRUE(deserialized->players.empty());
     EXPECT_TRUE(deserialized->mobs.empty());
 }
 
-TEST(SerializationGameStateTest, DeserializeGameStateInvalid) {
-    using namespace dungeons::common::wire::detail;
-    // 1. Not a map (array)
-    auto arr_msg = []() {
-        auto arr = CborPtr(cbor_new_definite_array(1));
-        auto val = CborPtr(cbor_build_uint64(42));
-        cbor_array_push(arr.get(), val.get());
-        auto msg_opt = cborToMessage(std::move(arr));
-        return msg_opt.value();
-    }();
-    auto result = deserializeGameState(arr_msg);
-    EXPECT_FALSE(result.has_value());
+TEST(SerializationGameStateTest, RoundTripWithLargeValues) {
+    DungeonSnapshot original;
+    original.game_map.blc_x = -1000;
+    original.game_map.blc_y = -1000;
+    original.game_map.trc_x = 1000;
+    original.game_map.trc_y = 1000;
 
-    // 2. Map missing "map" key
-    auto bad_map_msg = []() {
-        auto map = CborPtr(cbor_new_definite_map(1));
-        auto key = CborPtr(cbor_build_string("wrong"));
-        auto val = CborPtr(cbor_build_uint64(123));
-        cbor_map_add(map.get(), {.key = key.get(), .value = val.get()});
-        return cborToMessage(std::move(map)).value();
-    }();
-    result = deserializeGameState(bad_map_msg);
-    EXPECT_FALSE(result.has_value());
+    original.game_map.barriers = {BarrierSnapshot{UINT64_MAX, UINT64_MAX}, BarrierSnapshot{0, 0}};
 
-    // 3. Map with "map" key but value is not an array
-    auto bad_map_msg2 = []() {
-        auto map = CborPtr(cbor_new_definite_map(1));
-        auto key = CborPtr(cbor_build_string(kMap));
-        auto val = CborPtr(cbor_build_uint64(999));  // not array
-        cbor_map_add(map.get(), {.key = key.get(), .value = val.get()});
-        return cborToMessage(std::move(map)).value();
-    }();
-    result = deserializeGameState(bad_map_msg2);
+    EntitySnapshot player{1, 1, UINT64_MAX, 123456789, 987654321, 100};
+    original.players = {player};
+
+    EntitySnapshot mob{2, 0, UINT64_MAX - 1, 111, 222, 0};
+    original.mobs = {mob};
+
+    auto buffer = serializeGameState(original);
+    ASSERT_TRUE(buffer.has_value());
+
+    auto deserialized = deserializeGameState(*buffer);
+    ASSERT_TRUE(deserialized.has_value());
+
+    // Compare field by field
+    EXPECT_EQ(original.game_map.blc_x, deserialized->game_map.blc_x);
+    EXPECT_EQ(original.game_map.blc_y, deserialized->game_map.blc_y);
+    EXPECT_EQ(original.game_map.trc_x, deserialized->game_map.trc_x);
+    EXPECT_EQ(original.game_map.trc_y, deserialized->game_map.trc_y);
+    EXPECT_EQ(original.game_map.barriers, deserialized->game_map.barriers);
+    EXPECT_EQ(original.players, deserialized->players);
+    EXPECT_EQ(original.mobs, deserialized->mobs);
+}
+
+// ============================================================================
+// Deserialization error cases (public API)
+// ============================================================================
+
+TEST(SerializationGameStateTest, DeserializeEmptyBuffer) {
+    ByteBuffer empty;
+    auto result = deserializeGameState(empty);
     EXPECT_FALSE(result.has_value());
 }
 
-// -----------------------------------------------------------------------------
-// Tests for cborToMessage / messageToCbor (helpers)
-// -----------------------------------------------------------------------------
-
-TEST(SerializationGameStateTest, CborToMessageRoundTrip) {
-    auto item = detail::CborPtr(cbor_build_uint64(123456));
-    auto msg_opt = cborToMessage(std::move(item));
-    ASSERT_TRUE(msg_opt.has_value());
-
-    cbor_load_result result;
-    auto loaded = detail::bufferToCbor(*msg_opt, &result);
-    ASSERT_NE(loaded, nullptr);
-    EXPECT_EQ(result.error.code, CBOR_ERR_NONE);
-    EXPECT_TRUE(cbor_isa_uint(loaded.get()));
-    EXPECT_EQ(cbor_get_uint64(loaded.get()), 123456);
+TEST(SerializationGameStateTest, DeserializeInvalidCbor) {
+    // A single byte that is not a valid CBOR map
+    ByteBuffer invalid = {0x01};
+    auto result = deserializeGameState(invalid);
+    EXPECT_FALSE(result.has_value());
 }
 
-TEST(SerializationGameStateTest, MessageToCborInvalid) {
-    ByteBuffer invalid{ByteBuffer{0x01, 0x02, 0x03}};
-    auto loaded = detail::bufferToCbor(invalid);
-    EXPECT_EQ(loaded, nullptr);
+TEST(SerializationGameStateTest, DeserializeNonMapCbor) {
+    // CBOR array (not a map)
+    ByteBuffer array = {0x80};  // empty array
+    auto result = deserializeGameState(array);
+    EXPECT_FALSE(result.has_value());
 }
 
-TEST(SerializationGameStateTest, MessageToCborTrulyInvalid) {
-    ByteBuffer invalid{ByteBuffer{0xFF, 0xFF}};  // not a valid CBOR item
-    auto loaded = detail::bufferToCbor(invalid);
-    EXPECT_EQ(loaded, nullptr);
+TEST(SerializationGameStateTest, DeserializeMapMissingKeys) {
+    // CBOR map with only "map" key (missing "players" and "mobs")
+    // This is a minimal but incomplete snapshot.
+    std::vector<uint8_t> data = {
+        0xA1,  // map of 1 pair
+        0x63,
+        0x6D,
+        0x61,
+        0x70,  // "map"
+        0x85,  // array of 5
+        0x00,
+        0x00,
+        0x0A,
+        0x0A,  // blc_x=0, blc_y=0, trc_x=10, trc_y=10
+        0x80   // empty barriers array
+    };
+    ByteBuffer buffer(data);
+    auto result = deserializeGameState(buffer);
+    EXPECT_FALSE(result.has_value());  // missing players/mobs
+}
+
+TEST(SerializationGameStateTest, DeserializeMapWithWrongValueTypes) {
+    // Map with "map" key as integer (should be array)
+    std::vector<uint8_t> data = {
+        0xA1,  // map of 1 pair
+        0x63,
+        0x6D,
+        0x61,
+        0x70,  // "map"
+        0x18,
+        0x2A  // integer 42 (not array)
+    };
+    ByteBuffer buffer(data);
+    auto result = deserializeGameState(buffer);
+    EXPECT_FALSE(result.has_value());
+}
+
+TEST(SerializationGameStateTest, DeserializeMapWithInvalidBarriers) {
+    // "map" array with barriers element as integer instead of array
+    std::vector<uint8_t> data = {
+        0xA1,  // map of 1 pair
+        0x63,
+        0x6D,
+        0x61,
+        0x70,  // "map"
+        0x85,  // array of 5
+        0x00,
+        0x00,
+        0x0A,
+        0x0A,  // blc_x=0, blc_y=0, trc_x=10, trc_y=10
+        0x18,
+        0x2A  // 42 (not array)
+    };
+    ByteBuffer buffer(data);
+    auto result = deserializeGameState(buffer);
+    EXPECT_FALSE(result.has_value());
+}
+
+// ============================================================================
+// Additional sanity: serialization produces something
+// ============================================================================
+
+TEST(SerializationGameStateTest, SerializationProducesNonEmptyBuffer) {
+    auto snapshot = makeSampleSnapshot();
+    auto buffer = serializeGameState(snapshot);
+    ASSERT_TRUE(buffer.has_value());
+    EXPECT_FALSE(buffer->empty());
 }

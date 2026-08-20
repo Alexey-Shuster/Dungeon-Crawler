@@ -6,20 +6,6 @@
 #include <optional>
 #include <vector>
 
-namespace dungeons::common::wire {
-
-/**
- * @brief Тип для хранения аргументов сообщения
- *
- * std::optional используется для различения:
- * - std::nullopt: ошибка при извлечении аргументов
- * - пустой вектор: аргументы отсутствуют (только тип сообщения)
- * - вектор с данными: аргументы присутствуют
- */
-using MessageArgs = std::optional<std::vector<uint64_t>>;
-
-}  // namespace dungeons::common::wire
-
 namespace dungeons::common::wire::detail {
 
 /**

@@ -79,7 +79,7 @@ void routeMessage(common::network::RawMessage data, const ConsoleOutput& output)
         return;
     }
 
-    auto parsed = common::wire::deserializeRawMessage(std::move(data.buffer));
+    auto parsed = common::wire::deserializeBufferToMessage(std::move(data.buffer));
     if (!parsed) {
         output("Failed to parse incoming message");
         return;

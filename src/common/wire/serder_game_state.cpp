@@ -3,6 +3,8 @@
 #include <format>
 #include <utility/logger.h>
 
+#include "serder_gto_base.h"
+
 namespace dungeons::common::wire {
 
 using namespace dungeons::common::network;
@@ -29,7 +31,7 @@ std::optional<BarrierSnapshot> deserialize(cbor_item_t* item, BarrierSnapshot*) 
     auto y = readCborUint(cbor_array_get(item, 1));
     if (!x || !y)
         return std::nullopt;
-    return BarrierSnapshot{.pos_x = static_cast<uint32_t>(*x), .pos_y = static_cast<uint32_t>(*y)};
+    return BarrierSnapshot{.pos_x = *x, .pos_y = *y};
 }
 
 CborPtr serialize(const EntitySnapshot& entity) {
@@ -55,8 +57,8 @@ std::optional<EntitySnapshot> deserialize(cbor_item_t* item, EntitySnapshot*) {
     return EntitySnapshot{.type = static_cast<uint8_t>(*type),
                           .state = static_cast<uint8_t>(*state),
                           .id = *id,
-                          .pos_x = static_cast<uint32_t>(*pos_x),
-                          .pos_y = static_cast<uint32_t>(*pos_y),
+                          .pos_x = *pos_x,
+                          .pos_y = *pos_y,
                           .hp = static_cast<uint32_t>(*hp)};
 }
 

@@ -4,6 +4,7 @@
 #include <common/types/strong_id_format.h>
 #include <common/utility/logger.h>
 #include <common/wire/serder.h>
+#include <ranges>
 #include <server/app/message_dispatcher.h>
 
 #include "session_registry.h"
@@ -41,7 +42,7 @@ void MessageRouter::OnRawMessage(const network::RawMessageReceivedEvent& event) 
                          sid,
                          event.message.buffer.size()));
 
-    auto message = common::wire::deserializeRawMessage(event.message.buffer);
+    auto message = common::wire::deserializeBufferToMessage(event.message.buffer);
 
     if (!message) {
         LOG_ERROR("Failed to deserialize message");
@@ -52,7 +53,7 @@ void MessageRouter::OnRawMessage(const network::RawMessageReceivedEvent& event) 
                          sid,
                          message->args.size()));
 
-    common::wire::MessageArgs args{std::in_place};
+    common::wire::MessageArgs args{};
 
     using namespace dungeons::common::types;
 
@@ -61,7 +62,7 @@ void MessageRouter::OnRawMessage(const network::RawMessageReceivedEvent& event) 
         auto type = asNetworkMessage(message->type);
         if (type.has_value() && (type == NetworkMessageType::kJoin || type == NetworkMessageType::kReconnect)) {
             LOG_INFO(std::format("[MessageRouter] adding sessionId #{} to event args", sid));
-            args->emplace_back(event.session_id.get());
+            args.emplace_back(event.session_id.get());
         }
     }
 
@@ -73,7 +74,7 @@ void MessageRouter::OnRawMessage(const network::RawMessageReceivedEvent& event) 
                                  type == AppMessageType::kStartGame)) {
             if (auto pid = checkPlayer(event.session_id)) {
                 LOG_INFO(std::format("[MessageRouter] adding playerId #{} to event args", *pid));
-                args->emplace_back(pid.value());
+                args.emplace_back(pid.value());
             } else {
                 LOG_ERROR(std::format("[MessageRouter] cant find Player connected with Session #{}", sid));
             }
@@ -86,15 +87,15 @@ void MessageRouter::OnRawMessage(const network::RawMessageReceivedEvent& event) 
         if (type.has_value() && (type == DomainMessageType::kMove || type == DomainMessageType::kAttack)) {
             if (auto pid = checkPlayer(event.session_id)) {
                 LOG_INFO(std::format("[MessageRouter] adding playerId #{} to event args.", *pid));
-                args->emplace_back(pid.value());
+                args.emplace_back(pid.value());
             } else {
                 LOG_ERROR(std::format("[MessageRouter] cant find Player connected with Session #{}", sid));
             }
         }
     }
 
-    std::ranges::move(message->args, std::back_inserter(args.value()));
-    auto event_from_message = makeEvent(message->type, args);
+    std::ranges::move(message->args, std::back_inserter(args));
+    auto event_from_message = makeEvent(message->type, std::move(args));
 
     if (!event_from_message) {
         LOG_ERROR("Failed to create event");
@@ -104,7 +105,7 @@ void MessageRouter::OnRawMessage(const network::RawMessageReceivedEvent& event) 
     LOG_INFO(std::format("[MessageRouter: Session #{}] publishing event {} with args number={}",
                          sid,
                          core::eventTypeToString(event_from_message->getType()),
-                         args->size()));
+                         args.size()));
 
     event_bus_->publish(*event_from_message);
 }

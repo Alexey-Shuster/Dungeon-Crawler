@@ -16,7 +16,7 @@ namespace {
 
 template <typename MsgType, typename... Args>
 std::optional<common::network::RawMessage> trySerialize(MsgType type, const ConsoleOutput& out, Args&&... args) {
-    auto optBuffer = common::wire::serializeMessage(type, std::forward<Args>(args)...);
+    auto optBuffer = common::wire::serializeMessageToBuffer(type, std::forward<Args>(args)...);
     if (!optBuffer) {
         out(std::format("Failed to serialize {} message", commandFromMessageType(type)));
         return std::nullopt;
