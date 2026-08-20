@@ -1,11 +1,23 @@
 #pragma once
 
+#include <common/network/game_state_dto.h>
 #include <optional>
-#include <vector>
 
-#include "serder_vector_base.h"
+#include "serder_base.h"
 
 namespace dungeons::common::wire::detail {
+
+CborPtr serialize(const network::BarrierSnapshot& barrier);
+
+std::optional<network::BarrierSnapshot> deserialize(cbor_item_t* item, network::BarrierSnapshot*);
+
+CborPtr serialize(const network::EntitySnapshot& entity);
+
+std::optional<network::EntitySnapshot> deserialize(cbor_item_t* item, network::EntitySnapshot*);
+
+CborPtr serialize(const network::GameMapSnapshot& map);
+
+std::optional<network::GameMapSnapshot> deserialize(cbor_item_t* item, network::GameMapSnapshot*);
 
 // Define a concept to check if a type can be serialized/deserialized
 template <typename T>
@@ -66,4 +78,4 @@ std::optional<std::vector<T>> deserializeVector(cbor_item_t* array) {
     return result;
 }
 
-}  // namespace dungeons::common::wire
+}  // namespace dungeons::common::wire::detail

@@ -1,15 +1,16 @@
 #include "serder.h"
 
+#include <common/utility/logger.h>
 #include <format>
 
 #include "message_utils.h"
+#include "serder_base.h"
 
 namespace dungeons::common::wire {
 
 namespace detail {
 
 bool addArgToArray(cbor_item_t* array, uint64_t value) {
-    // TODO попробовать сделать через append(cbor, value) для разных типов через перегрузки - комментарий и задача
     CborPtr item = CborPtr(cbor_build_uint64(value));
     if (!item) {
         LOG_ERROR("Failed to create CBOR item for argument");
@@ -22,7 +23,7 @@ bool addArgToArray(cbor_item_t* array, uint64_t value) {
     return true;
 }
 
-MessageArgs getMsgArgsFromCborArray(cbor_item_t* array) {
+std::optional<MessageArgs> getMsgArgsFromCborArray(cbor_item_t* array) {
     if (!array || !cbor_isa_array(array)) {
         LOG_ERROR("Cbor data is not array");
         return std::nullopt;
@@ -38,7 +39,7 @@ MessageArgs getMsgArgsFromCborArray(cbor_item_t* array) {
         return std::vector<uint64_t>{};
     }
 
-    std::vector<uint64_t> msg_args;
+    MessageArgs msg_args;
     msg_args.reserve(array_size - 1);
     for (size_t i = 1; i < array_size; ++i) {
         auto msg_arg_item = CborPtr(cbor_array_get(array, i));
@@ -91,8 +92,8 @@ CborPtr createMessageArray(const types::MessageTypeVariant& msg_type, size_t num
 
 }  // namespace detail
 
-std::optional<network::ByteBuffer> serializeMessage(const types::MessageTypeVariant& msg_type,
-                                                    const std::vector<uint64_t>& args) {
+std::optional<network::ByteBuffer> serializeMessageToBuffer(const types::MessageTypeVariant& msg_type,
+                                                            MessageArgs&& args) {
     auto msg_array = detail::createMessageArray(msg_type, args.size());
     if (!msg_array) {
         LOG_ERROR("Failed to create CBOR array for provided message");
@@ -109,7 +110,7 @@ std::optional<network::ByteBuffer> serializeMessage(const types::MessageTypeVari
     return cborToMessage(std::move(msg_array));
 }
 
-std::optional<DeserializedRawMessage> deserializeRawMessage(network::ByteBuffer buffer) {
+std::optional<DeserializedRawMessage> deserializeBufferToMessage(network::ByteBuffer buffer) {
     cbor_load_result load_result{};
     auto msg_array = detail::bufferToCbor(std::move(buffer), &load_result);
 

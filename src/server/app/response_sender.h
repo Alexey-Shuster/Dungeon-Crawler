@@ -88,7 +88,7 @@ void ResponseSender::subscribeWeakMethod(void (ResponseSender::*handler)(const E
 template <typename EventType, typename MsgType, typename... Args>
 void ResponseSender::sendResponse(const EventType& event, MsgType msg_type, Args&&... args) {
     auto session = getSessionForEvent(event);
-    auto opt_buf = common::wire::serializeMessage(msg_type, std::forward<Args>(args)...);
+    auto opt_buf = common::wire::serializeMessageToBuffer(msg_type, std::forward<Args>(args)...);
     sendResponseImpl(session, core::eventTypeToString(event.getType()), std::move(opt_buf));
 }
 

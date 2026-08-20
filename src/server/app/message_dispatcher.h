@@ -69,13 +69,13 @@ template <typename EventType, typename... ArgTypes>
 std::shared_ptr<core::Event> CreateEvent(const common::wire::MessageArgs& args) {
     constexpr size_t ExpectedSize = sizeof...(ArgTypes);
 
-    if (!args.has_value() || args->size() != ExpectedSize) {
+    if (args.size() != ExpectedSize) {
         return nullptr;
     }
 
     return [&]<size_t... Is>(std::index_sequence<Is...>) -> std::shared_ptr<core::Event> {
         // Получаем пакет из std::optional<ArgTypes>...
-        auto casted_args = std::make_tuple(safe_argument_cast<ArgTypes>((*args)[Is])...);
+        auto casted_args = std::make_tuple(safe_argument_cast<ArgTypes>((args)[Is])...);
 
         // Проверяем, что ВСЕ optional внутри кортежа содержат значения.
         // Используем свертку && для std::get<Is>(casted_args).has_value()
@@ -134,7 +134,7 @@ const std::unordered_map<dc_MsgVariant, EventFactory, MessageTypeVariantHash> kE
  *       - Фабрика вернула nullptr (невалидные аргументы)
  */
 [[nodiscard]] inline std::shared_ptr<core::Event> makeEvent(const dc_MsgVariant& msg_type,
-                                                            const common::wire::MessageArgs& msg_args) {
+                                                            common::wire::MessageArgs msg_args) {
     if (std::holds_alternative<std::monostate>(msg_type)) {
         LOG_ERROR("Cannot create event from unknown message type");
         return nullptr;
@@ -152,7 +152,7 @@ const std::unordered_map<dc_MsgVariant, EventFactory, MessageTypeVariantHash> kE
         }
         return nullptr;
     }
-    return it->second(msg_args);
+    return it->second(std::move(msg_args));
 }
 
 // ----------------------------------------------------------------------------
@@ -171,7 +171,7 @@ const std::unordered_map<dc_MsgVariant, EventFactory, MessageTypeVariantHash> kE
  * @see makeEvent
  */
 [[nodiscard]] inline std::shared_ptr<core::Event> deserializeMessage(common::network::RawMessage message) {
-    auto raw = common::wire::deserializeRawMessage(std::move(message.buffer));
+    auto raw = common::wire::deserializeBufferToMessage(std::move(message.buffer));
     if (!raw) {
         LOG_ERROR("Failed to deserialize raw message");
         return nullptr;

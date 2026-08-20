@@ -1,6 +1,8 @@
 #pragma once
 
-#include "serder_vector.h"  // IWYU pragma: keep // serialize & deserialize
+#include <common/network/byte_buffer.h>
+#include <common/network/game_state_dto.h>
+#include <optional>
 
 namespace dungeons::common::wire {
 
