@@ -8,7 +8,7 @@
 #include <memory>
 #include <server/app/connection_manager.h>
 #include <server/app/game_manager.h>
-#include <server/app/message_router.h>
+#include <server/app/msg_router.h>
 #include <server/app/response_sender.h>
 #include <server/app/session_registry.h>
 #include <server/core/event_bus.h>

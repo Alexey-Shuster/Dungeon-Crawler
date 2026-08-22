@@ -3,15 +3,13 @@
 #include <common/network/byte_buffer.h>
 #include <common/types/message_types.h>
 #include <optional>
-#include <vector>
+
+#include "serder_args.h"
 
 namespace dungeons::common::wire {
 
-/// @brief Тип для хранения аргументов сообщения
-using MessageArgs = std::vector<uint64_t>;
-
 /**
- * @brief Serializes a message with a vector of arguments (runtime-known count).
+ * @brief Serializes a message with arguments (runtime-known count).
  *
  * @details Creates a CBOR array: [type, arg0, arg1, ...].
  */

@@ -1,6 +1,6 @@
 #include <utility/logger.h>
 
-#include "serder_base.h"
+#include "serder_dtl.h"
 
 namespace dungeons::common::wire::detail {
 

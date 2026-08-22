@@ -1,18 +1,20 @@
 
-add_library(server_app STATIC
-        session_registry_fwd.h)
+add_library(server_app STATIC)
 
 set(SERVER_APP_LIB server_app)
 
 target_sources(${SERVER_APP_LIB} PRIVATE
         events.h
+        session_registry_fwd.h
         session_registry.h
         session_registry.cpp
         connection_manager.h
         connection_manager.cpp
-        message_router.h
-        message_router.cpp
-        message_dispatcher.h
+        msg_router.h
+        msg_router.cpp
+        msg_dispatcher_dtl.h
+        msg_dispatcher.h
+        msg_dispatcher.cpp
         response_sender.h
         response_sender.cpp
         game_manager.h
