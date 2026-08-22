@@ -25,8 +25,6 @@ using EventFactory = std::function<std::shared_ptr<core::Event>(const common::wi
  *
  * Каждая фабрика проверяет количество и корректность аргументов.
  * Если аргументы невалидны, возвращает nullptr.
- *
- * @todo fix into std::array
  */
 const std::unordered_map<dc_MsgVariant, EventFactory, MessageTypeVariantHash> kEventFactoryMap = {
     {dc_NetMsg::kJoin, detail::createEvent<AuthRequestedEvent, network::SessionId, domain::PlayerId>},
