@@ -2,7 +2,8 @@
 #include <common/types/message_utils.h>
 #include <common/wire/serder.h>
 #include <gtest/gtest.h>
-#include <server/app/message_dispatcher.h>
+#include <server/app/events.h>
+#include <server/app/msg_dispatcher.h>
 #include <server/domain/dungeon/dungeon.h>
 
 using namespace dungeons::server::app;

@@ -3,7 +3,7 @@
 #include <common/network/game_state_dto.h>
 #include <optional>
 
-#include "serder_base.h"
+#include "serder_dtl.h"
 
 namespace dungeons::common::wire::detail {
 

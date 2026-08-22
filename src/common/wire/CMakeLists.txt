@@ -5,12 +5,12 @@ set(COMMON_WIRE_LIB common_wire)
 
 target_sources(${COMMON_WIRE_LIB} PRIVATE
         message_utils.h
-        serder_base.h
-        serder_base.cpp
+        serder_args.h
+        serder_dtl.h
+        serder_dtl.cpp
         serder.h
         serder.cpp
         serder_gto_base.h
-        serder_vector.h
         serder_game_state.h
         serder_game_state.cpp
 )

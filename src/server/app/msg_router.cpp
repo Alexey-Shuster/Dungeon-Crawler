@@ -1,11 +1,11 @@
-#include "message_router.h"
+#include "msg_router.h"
 
-#include <common/types/message_types.h>
+#include <common/types/message_utils.h>
 #include <common/types/strong_id_format.h>
 #include <common/utility/logger.h>
 #include <common/wire/serder.h>
 #include <ranges>
-#include <server/app/message_dispatcher.h>
+#include <server/app/msg_dispatcher.h>
 
 #include "session_registry.h"
 

@@ -4,7 +4,7 @@
 #include <format>
 
 #include "message_utils.h"
-#include "serder_base.h"
+#include "serder_dtl.h"
 
 namespace dungeons::common::wire {
 
