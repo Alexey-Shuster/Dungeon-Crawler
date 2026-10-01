@@ -36,6 +36,8 @@ file(GENERATE
         INPUT "${CMAKE_SOURCE_DIR}/config.json"
 )
 
+option(BUILD_TESTS "Build tests" ON)
+
 # -----------------------------------------------------------------------------
 #   Add subprojects
 # -----------------------------------------------------------------------------
@@ -43,7 +45,6 @@ add_subdirectory(src/client)
 add_subdirectory(src/common)
 add_subdirectory(src/server)
 
-option(BUILD_TESTS "Build tests" ON)
 if (BUILD_TESTS)
     enable_testing()
     add_subdirectory(test_scripts)

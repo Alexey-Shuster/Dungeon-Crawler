@@ -35,6 +35,7 @@ if (NOT WIN32)
 endif ()
 
 # for config-testing
-if (BUILD_TESTS)
-    target_compile_definitions(${COMMON_UTILITY_LIB} PRIVATE BUILD_TESTS)
-endif ()
+target_compile_definitions(${COMMON_UTILITY_LIB} PUBLIC
+        $<$<BOOL:${BUILD_TESTS}>:BUILD_TESTS>
+)
+
