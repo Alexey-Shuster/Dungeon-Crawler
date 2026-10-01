@@ -27,9 +27,8 @@ bool DungeonRegistry::addDungeon(GameMap game_map, std::vector<PlayerId> player_
     // Check if ANY player is already in another dungeon
     for (PlayerId pid : player_ids) {
         if (player_to_dungeon_.contains(pid)) {
-            LOG_ERROR(std::format("Player {} is already in another dungeon with GameId {}",
-                                  pid,
-                                  player_to_dungeon_.at(pid)));
+            LOG_ERROR(
+                std::format("Player {} is already in another dungeon with GameId {}", pid, player_to_dungeon_.at(pid)));
             return false;
         }
     }

@@ -8,16 +8,19 @@ namespace network {
 
 std::shared_ptr<ClientManager> ClientManager::create(boost::asio::io_context& io, const ClientConfig& config) {
     struct EnableMakeShared : ClientManager {
-        EnableMakeShared(boost::asio::io_context& io_ref, const ClientConfig& config_ref) :
-            ClientManager(io_ref, config_ref) {}
+        EnableMakeShared(boost::asio::io_context& io_ref, const ClientConfig& config_ref)
+            : ClientManager(io_ref, config_ref) {}
     };
 
     return std::make_shared<EnableMakeShared>(io, config);
 }
 
-ClientManager::ClientManager(boost::asio::io_context& io, const ClientConfig& config) :
-    io_(io), config_(config), strand_(boost::asio::make_strand(io)), actions_global_enabled_(config.enable_actions),
-    auth_global_enabled_(config.enable_auth) {
+ClientManager::ClientManager(boost::asio::io_context& io, const ClientConfig& config)
+    : io_(io)
+    , config_(config)
+    , strand_(boost::asio::make_strand(io))
+    , actions_global_enabled_(config.enable_actions)
+    , auth_global_enabled_(config.enable_auth) {
     clients_.reserve(config.client_count);
     for (size_t i = 0; i < config.client_count; ++i) {
         ManagedClient mc;

@@ -52,7 +52,12 @@ private:
         std::shared_ptr<Client> client;
         std::shared_ptr<boost::asio::steady_timer> action_timer;
         std::shared_ptr<boost::asio::steady_timer> auth_timer;
-        enum State { Disconnected, Connecting, Authenticating, Ready } state = Disconnected;
+        enum State {
+            Disconnected,
+            Connecting,
+            Authenticating,
+            Ready
+        } state = Disconnected;
         bool auth_enabled;
         bool actions_enabled;
         size_t messages_sent = 0;
