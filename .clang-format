@@ -15,7 +15,7 @@ IndentPPDirectives: BeforeHash
 CompactNamespaces: true
 FixNamespaceComments: true
 
-# Commnets
+# Comments
 ReflowComments: true
 
 # Classes / access
@@ -25,8 +25,8 @@ AccessModifierOffset: -4
 BreakBeforeBraces: Attach
 BreakConstructorInitializers: BeforeComma
 ConstructorInitializerIndentWidth: 4
-ConstructorInitializerAllOnOneLineOrOnePerLine: false
-AlwaysBreakTemplateDeclarations: true
+PackConstructorInitializers: Never
+BreakTemplateDeclarations: Yes
 
 # Short constructs
 AllowShortFunctionsOnASingleLine: Empty
@@ -62,3 +62,5 @@ IncludeCategories:
     Priority: 1
   - Regex: '^".*"$'
     Priority: 2
+  - Regex: '.*'
+    Priority: 3

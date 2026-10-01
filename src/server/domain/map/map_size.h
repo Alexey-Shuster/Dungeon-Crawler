@@ -7,7 +7,9 @@ namespace dungeons::server::domain {
 struct MapSize {
     using Dimension = Position::Dimension;
 
-    constexpr explicit MapSize(Position blc, Position trc) : bottom_left_corner_{blc}, top_right_corner_{trc} {
+    constexpr explicit MapSize(Position blc, Position trc)
+        : bottom_left_corner_{blc}
+        , top_right_corner_{trc} {
         assert(isCorrect() && "Invalid map size");
     }
 

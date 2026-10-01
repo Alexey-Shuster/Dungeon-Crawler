@@ -51,10 +51,6 @@ target_link_libraries(test_common PRIVATE
 )
 gtest_discover_tests(test_common)
 
-if (BUILD_TESTS)
-    target_compile_definitions(test_common PRIVATE BUILD_TESTS)
-endif ()
-
 add_executable(test_server
         tests_init_config_logger.cpp
         server/tests_eventbus.cpp

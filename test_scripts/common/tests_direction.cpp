@@ -1,5 +1,5 @@
-#include <gtest/gtest.h>
 #include <common/types/direction.h>
+#include <gtest/gtest.h>
 #include <server/domain/map/position.h>
 
 using namespace dungeons::server::domain;

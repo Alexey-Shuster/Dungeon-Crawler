@@ -1,5 +1,5 @@
-#include <gtest/gtest.h>
 #include <atomic>
+#include <gtest/gtest.h>
 #include <server/core/event_bus.h>
 #include <thread>
 #include <vector>

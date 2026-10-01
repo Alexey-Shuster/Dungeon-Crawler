@@ -4,6 +4,11 @@
 #include <cctype>
 #include <iostream>
 
+#ifndef _WIN32
+    #include <X11/Xlib.h>
+    #include <X11/keysym.h>
+#endif
+
 namespace dungeons::common::utility {
 
 // Platform‑independent constants for key‑state queries

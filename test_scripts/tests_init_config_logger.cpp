@@ -1,6 +1,6 @@
-#include <gtest/gtest.h>
 #include <common/utility/config.h>
 #include <common/utility/logger.h>
+#include <gtest/gtest.h>
 
 class GlobalSetupEnvironment : public ::testing::Environment {
 public:

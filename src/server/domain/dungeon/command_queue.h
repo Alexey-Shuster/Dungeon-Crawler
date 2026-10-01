@@ -1,8 +1,8 @@
 #pragma once
 
-#include <queue>
 #include <functional>
 #include <mutex>
+#include <queue>
 
 namespace dungeons::server::domain {
 
@@ -28,4 +28,4 @@ private:
     std::mutex mutex_;
 };
 
-} // namespace dungeons::server::domain
+}  // namespace dungeons::server::domain

@@ -1,5 +1,5 @@
-#include <gtest/gtest.h>
 #include <common/utility/hash.h>
+#include <gtest/gtest.h>
 
 using namespace dungeons::common::utility;
 

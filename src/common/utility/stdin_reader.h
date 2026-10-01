@@ -8,9 +8,9 @@
 
 // Platform-specific includes
 #ifdef _WIN32
-#include <boost/asio/windows/stream_handle.hpp>
+    #include <boost/asio/windows/stream_handle.hpp>
 #else
-#include <boost/asio/posix/stream_descriptor.hpp>
+    #include <boost/asio/posix/stream_descriptor.hpp>
 #endif
 
 namespace dungeons::common::utility {
@@ -19,14 +19,12 @@ class StdinReader : public std::enable_shared_from_this<StdinReader> {
 public:
     using LineCallback = std::function<void(const std::string&)>;
 
-    explicit StdinReader(boost::asio::io_context& io) :
-        io_context_(io)
+    explicit StdinReader(boost::asio::io_context& io)
+        : io_context_(io)
 #ifdef _WIN32
-        ,
-        stdin_handle_(io, openConsoleInputHandle())
+        , stdin_handle_(io, openConsoleInputHandle())
 #else
-        ,
-        stdin_descriptor_(io, ::dup(STDIN_FILENO))
+        , stdin_descriptor_(io, ::dup(STDIN_FILENO))
 #endif
     {
     }

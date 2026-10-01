@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstdint> // IWYU pragma: keep // uint32_t
+#include <cstdint>  // IWYU pragma: keep // uint32_t
 
 namespace dungeons::server::domain {
 
@@ -8,7 +8,8 @@ using HP = uint32_t;
 
 class Health {
 public:
-    constexpr explicit Health(HP max_hp) : hp_{max_hp} {}
+    constexpr explicit Health(HP max_hp)
+        : hp_{max_hp} {}
 
     void operator-=(HP hp) {
         hp_ < hp ? hp_ = 0 : hp_ -= hp;
@@ -26,4 +27,4 @@ private:
     HP hp_;
 };
 
-} // namespace dungeons::server::domain
+}  // namespace dungeons::server::domain
