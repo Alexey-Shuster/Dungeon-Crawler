@@ -11,8 +11,10 @@
 #include "win_defs.h"  // IWYU pragma: keep // windows.h
 
 #ifndef _WIN32
-    #include <X11/Xlib.h>
-    #include <X11/keysym.h>
+// Forward declaration only — no X11 headers exposed
+struct _XDisplay;  // Xlib's Display is `typedef struct _XDisplay Display;`
+using Display = _XDisplay;
+using KeyCode = unsigned char;  // Xlib: typedef unsigned char KeyCode
 #endif
 
 namespace dungeons::common::utility {
