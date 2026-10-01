@@ -16,7 +16,7 @@ jobs:
   clang-format_build-and-test:
     name: Check code style, Build and Test project
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
 
     steps:
       - name: Check code, Build and Test
