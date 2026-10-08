@@ -168,8 +168,9 @@ public:
     private:
         friend class FrameCodec;
 
-        Frame(std::array<std::uint8_t, kHeaderLength> h, std::vector<std::uint8_t> p) noexcept :
-            header_(h), payload_(std::move(p)) {}
+        Frame(std::array<std::uint8_t, kHeaderLength> h, std::vector<std::uint8_t> p) noexcept
+            : header_(h)
+            , payload_(std::move(p)) {}
 
         std::array<std::uint8_t, kHeaderLength> header_{};
         std::vector<std::uint8_t> payload_;
