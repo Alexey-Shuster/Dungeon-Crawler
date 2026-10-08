@@ -1,0 +1,4 @@
+# Users below auto-assigned as reviewers to any PR
+# GitHub branch protection / ruleset - requires at least one Approve from any person below
+
+* @Alexey-Shuster
